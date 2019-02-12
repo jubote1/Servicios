@@ -9,7 +9,7 @@ import capaDAO.UsuarioDAO;
  * @author Juan David Botero Duque
  * @
  */
-public class AutenticacionCtrl {
+public class AutenticacionCtrl { 
 	
 	
 	private static AutenticacionCtrl instance;
