@@ -5,9 +5,16 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
-import Conexion.ConexionBaseDatos;
+import CapaDAOServicios.GeneralDAO;
+import CapaDAOServicios.InsumoAlertaDAO;
+import CapaDAOServicios.TiendaDAO;
+import ConexionServicios.ConexionBaseDatos;
+import Modelo.Correo;
+import Modelo.InsumoAlerta;
+import utilidades.ControladorEnvioCorreo;
 
 
 public class ServicioInventarios {
@@ -76,7 +83,7 @@ public class ServicioInventarios {
 	{
 	    //obtenenemos la tienda donde estamos corriendo
 		int idtienda = ObtenerTienda();
-		
+		String nombreTienda = TiendaDAO.obtenerNombreTienda();
         
 			ConexionBaseDatos conexion = new ConexionBaseDatos();
 			Connection conTiendaPixel = conexion.obtenerConexionBDLocal();
@@ -87,16 +94,28 @@ public class ServicioInventarios {
 			ResultSet rsTiendaPixel;
 			Connection conInventario = conexion.obtenerConexionBDInventario();
 			Statement stmInventario;
+			ArrayList<InsumoAlerta> insumosAlertas = InsumoAlertaDAO.retornarInsumosAlerta();
+			ArrayList<InsumoAlerta> insumosNuevosAlertar = new ArrayList();
+			//Variables para enviar correo con los items que tienen menos de inventario
+			String cuerpoCorreo = "";
+			boolean enviarCorreo = false;
+			cuerpoCorreo = cuerpoCorreo + "<table border='2'> <tr> ALERTAS POR INVENTARIOS "+ nombreTienda +"</tr>";
+			cuerpoCorreo = cuerpoCorreo + "<tr>"
+					+  "<td><strong>Item Inventario</strong></td>"
+					+  "<td><strong>Cantidad Actual</strong></td>"
+					+  "</tr>";
+			String nombreInsumo = "";
+			int banderaInventario = 1;
+			int idinsumotienda;
+			int idinsumointerno = 0;
+			double cantidad;
+			String fechaApertura  = TiendaDAO.obtenerFechaAperturaTienda();
+			Date fechaTemporal = new Date();
 			try
 			{
 				stmTiendaPixel = conTiendaPixel.createStatement();
 				rsTiendaPixel = stmTiendaPixel.executeQuery(consulta);
 				stmInventario = conInventario.createStatement();
-				int banderaInventario = 1;
-				int idinsumotienda;
-				int idinsumointerno;
-				double cantidad;
-				Date fechaTemporal = new Date();
 				DateFormat formatoFinal = new SimpleDateFormat("yyyy-MM-dd");
 				String fecha="";
 				try
@@ -115,6 +134,7 @@ public class ServicioInventarios {
 					}
 					banderaInventario++;
 					idinsumotienda = rsTiendaPixel.getInt("iditem");
+					nombreInsumo = rsTiendaPixel.getString("nombre_item");
 					idinsumointerno = obtenerIdInsumoIntero(idtienda, idinsumotienda);
 					//Control para solo insertar los productos que tengan homologación
 					if(idinsumointerno > 0)
@@ -122,6 +142,29 @@ public class ServicioInventarios {
 						cantidad = rsTiendaPixel.getDouble("cantidad");
 						String insert = "insert into insumo_tienda_tmp (idinsumo, idtienda, cantidad, fecha) values ("+ idinsumointerno + " , " + idtienda + " , " + cantidad + " , '" + fecha + "')" ;
 						stmInventario.executeUpdate(insert);
+						//En este punto validamos si se tiene un insumo que tenga el valor menor al tope
+						for(int  i = 0; i < insumosAlertas.size(); i++)
+						{
+							InsumoAlerta insTemp = insumosAlertas.get(i);
+							if(insTemp.getIdInsumo() == idinsumointerno)
+							{
+								//Si la cantidad retirada de la tienda es menor al tope definido
+								if(cantidad < insTemp.getCantidad())
+								{
+									// Se Acumula el insumo en la conformación de la tabla
+									cuerpoCorreo = cuerpoCorreo + "<tr><td>"+nombreInsumo +"</td><td>" +  cantidad + "</td></tr>";
+									//Se valida si el insumo no ha sido reportado
+									boolean insumoReportado = InsumoAlertaDAO.insumoAlertaReportado(idinsumointerno, idtienda, fechaApertura);
+									//Se prenderá el indicador para envío de correo y se adicionará en la tabla de reportados
+									if(!insumoReportado)
+									{
+										InsumoAlertaDAO.insertarInsumoAlerta(idinsumointerno, idtienda, fechaApertura);
+										enviarCorreo = true;
+									}
+									break;
+								}
+							}
+						}
 					}
 				}
 				// Al pasar este punto y no se ha salido es porque no se ha disparado excepción por lo tanto aqui podemos realizar el borrado de la tabla oficial y
@@ -130,6 +173,20 @@ public class ServicioInventarios {
 				stmInventario.executeUpdate(deleteFinal);
 				String insertFinal = "insert into insumo_tienda (select * from insumo_tienda_tmp where idtienda = " + idtienda + ")";
 				stmInventario.executeUpdate(insertFinal);
+				//En este punto haremos la validación de si hay que enviar el correo
+				if(enviarCorreo)
+				{
+						Date fechaHoraExacta = new Date();
+						cuerpoCorreo = cuerpoCorreo +  "</table> <br/>";
+						Correo correo = new Correo();
+						correo.setAsunto("ALERTA INSUMO INVENTARIO " + nombreTienda + " " + fechaHoraExacta.toString() );
+						correo.setContrasena("Pizzaamericana2017");
+						ArrayList correos = GeneralDAO.obtenerCorreosParametro("ALERTAINVENTARIO");
+						correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+						correo.setMensaje("A continuación el reporte de insumos de inventario que están por debajo de los parámetros establecidos: \n" + cuerpoCorreo);
+						ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+						contro.enviarCorreoHTML();
+				}
 				stmInventario.close();
 				conInventario.close();
 				rsTiendaPixel.close();
@@ -147,11 +204,6 @@ public class ServicioInventarios {
 					
 				}
 			}
-			
-			
-			
-        
-	
 	}
 	
 	public static void windowsService(String args[]) {

@@ -7,7 +7,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import Conexion.ConexionBaseDatos;
+import ConexionServicios.ConexionBaseDatos;
 
 
 public class ServicioInventariosBKCHILI {

@@ -10,7 +10,16 @@ public class PedidoFueraTiempo {
 	private double porcDesviacion;
 	private String domiciliario;
 	private String estadoPedido;
+	private String observacion;
 	
+	
+	
+	public String getObservacion() {
+		return observacion;
+	}
+	public void setObservacion(String observacion) {
+		this.observacion = observacion;
+	}
 	public int getIdPedido() {
 		return idPedido;
 	}
@@ -61,7 +70,7 @@ public class PedidoFueraTiempo {
 		this.porcDesviacion = porcDesviacion;
 	}
 	public PedidoFueraTiempo(int idPedido, int idTienda,  long transact, double tiempoDado, double tiempoActual, double porcDesviacion, String domiciliario,
-			String estadoPedido) {
+			String estadoPedido, String observacion) {
 		this.idPedido = idPedido;
 		this.idTienda = idTienda;
 		this.transact = transact;
@@ -70,6 +79,7 @@ public class PedidoFueraTiempo {
 		this.porcDesviacion = porcDesviacion;
 		this.domiciliario = domiciliario;
 		this.estadoPedido = estadoPedido;
+		this.observacion = observacion; 
 		
 	}
 	

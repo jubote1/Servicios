@@ -51,12 +51,15 @@ public boolean enviarCorreo()
 		{
 			BodyPart adjunto = new MimeBodyPart();
 			String cadenaCompleta = archAnexos[i];
-			StringTokenizer tokens = new StringTokenizer(cadenaCompleta,"%&");
-			String ruta = tokens.nextToken();
-			String nombreArchivo = tokens.nextToken();
-			adjunto.setDataHandler(new DataHandler(new FileDataSource(ruta)));
-			adjunto.setFileName(nombreArchivo);
-			m.addBodyPart(adjunto);
+			if(!(cadenaCompleta == null))
+			{
+				StringTokenizer tokens = new StringTokenizer(cadenaCompleta,"%&");
+				String ruta = tokens.nextToken();
+				String nombreArchivo = tokens.nextToken();
+				adjunto.setDataHandler(new DataHandler(new FileDataSource(ruta)));
+				adjunto.setFileName(nombreArchivo);
+				m.addBodyPart(adjunto);
+			}
 		}
 		
 		//
@@ -77,7 +80,7 @@ public boolean enviarCorreo()
 	}
 	catch(Exception e)
 	{
-		System.out.println(e.toString());
+		System.out.println(e.toString() + e.getStackTrace() + e.getMessage());
 		return(false);
 	}
 	

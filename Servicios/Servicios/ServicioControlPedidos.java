@@ -8,16 +8,16 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import CapaDAOServicios.ParametrosDAO;
+import CapaDAOServicios.PedidoDAO;
+import CapaDAOServicios.PedidoFueraTiempoDAO;
+import CapaDAOServicios.PedidoPOSPMDAO;
+import CapaDAOServicios.PedidoPixelDAO;
+import CapaDAOServicios.TiendaDAO;
+import ConexionServicios.ConexionBaseDatos;
 import Modelo.Pedido;
 import Modelo.PedidoFueraTiempo;
 import Modelo.PedidoPixel;
-import CapaDAO.ParametrosDAO;
-import CapaDAO.PedidoDAO;
-import CapaDAO.PedidoFueraTiempoDAO;
-import CapaDAO.PedidoPOSPMDAO;
-import CapaDAO.PedidoPixelDAO;
-import CapaDAO.TiendaDAO;
-import Conexion.ConexionBaseDatos;
 
 public class ServicioControlPedidos {
 	
@@ -25,7 +25,7 @@ public class ServicioControlPedidos {
 	public static boolean controlTiempo = true;
 	public static double minutosDesviacion = 5;
 	public static double porcenDesviacionTiempo;
-	
+	public static double minutosSinRuta = 5;
 	
 	
 		
@@ -63,7 +63,7 @@ public class ServicioControlPedidos {
 		//Variable que almacenará el porcentaje de desviación de tiempos
 		double porcDesvTiempo;
 		//Variable temporal para almacenar los pedidos fuera de tiempo
-		PedidoFueraTiempo pedFueraTiempo = new PedidoFueraTiempo(0,0,0,0,0,0,"","");
+		PedidoFueraTiempo pedFueraTiempo = new PedidoFueraTiempo(0,0,0,0,0,0,"","","");
 		
 		//Realizamos el recorrido de todos los pedidos de tienda con el fin de verificar los tiempos
 		for(int i = 0; i < pedidosPOS.size(); i++)
@@ -78,6 +78,8 @@ public class ServicioControlPedidos {
 					tiempoPedido = pedidoContactTemp.getTiempopedido();
 					//Validamos si el tiempo actual del pedido es mayor al dado al pedido
 					tiempoActualPedido = pedidoTiendaTemp.getTiempoPedido();
+					//Esta variable booleana me ayudara a controlar si ya fue reportado el pedido para no reportarlo doble
+					boolean reportado = false;
 					if(tiempoActualPedido > tiempoPedido)
 					{
 						//En caso de cumplirse está confición validaremos la diferencia entre el tiempo dado y el tiempo actual
@@ -93,13 +95,14 @@ public class ServicioControlPedidos {
 								boolean existe = PedidoFueraTiempoDAO.existePedido(pedidoContactTemp.getIdpedido());
 								if(!existe)
 								{
-									pedFueraTiempo = new PedidoFueraTiempo(pedidoContactTemp.getIdpedido(),pedidoContactTemp.getIdtienda(), pedidoTiendaTemp.getTransact(), pedidoContactTemp.getTiempopedido(),pedidoTiendaTemp.getTiempoPedido(), porcDesvTiempo, pedidoTiendaTemp.getDomiciliario(), pedidoTiendaTemp.getEstadoPedido());
+									pedFueraTiempo = new PedidoFueraTiempo(pedidoContactTemp.getIdpedido(),pedidoContactTemp.getIdtienda(), pedidoTiendaTemp.getTransact(), pedidoContactTemp.getTiempopedido(),pedidoTiendaTemp.getTiempoPedido(), porcDesvTiempo, pedidoTiendaTemp.getDomiciliario(), pedidoTiendaTemp.getEstadoPedido(), "PEDIDO EXCEDE ESTANDAR DE TIEMPO");
 									PedidoFueraTiempoDAO.insertarPedidoFueraTiempo(pedFueraTiempo);
 									//Aqui se deberá almacenar la información
 								}else//Deberemos de actualizar la infromación
 								{
-									PedidoFueraTiempoDAO.ActualizarPedidoFueraTiempo(pedidoContactTemp.getIdpedido(), porcDesvTiempo,pedidoTiendaTemp.getDomiciliario(), pedidoTiendaTemp.getEstadoPedido(), tiempoActualPedido);
+									PedidoFueraTiempoDAO.ActualizarPedidoFueraTiempo(pedidoContactTemp.getIdpedido(), porcDesvTiempo,pedidoTiendaTemp.getDomiciliario(), pedidoTiendaTemp.getEstadoPedido(), tiempoActualPedido, "PEDIDO EXCEDE ESTANDAR DE TIEMPO");
 								}
+								reportado = true;
 							}
 						}else if(controlTiempo)
 						{
@@ -109,18 +112,36 @@ public class ServicioControlPedidos {
 								boolean existe = PedidoFueraTiempoDAO.existePedido(pedidoContactTemp.getIdpedido());
 								if(!existe)
 								{
-									System.out.println("Insertar pedido fuera tiempo " + pedidoContactTemp.getIdtienda() );
-									pedFueraTiempo = new PedidoFueraTiempo(pedidoContactTemp.getIdpedido(), pedidoContactTemp.getIdtienda(), pedidoTiendaTemp.getTransact(), pedidoContactTemp.getTiempopedido(),pedidoTiendaTemp.getTiempoPedido(), diferenciaTiempos, pedidoTiendaTemp.getDomiciliario(), pedidoTiendaTemp.getEstadoPedido());
+									pedFueraTiempo = new PedidoFueraTiempo(pedidoContactTemp.getIdpedido(), pedidoContactTemp.getIdtienda(), pedidoTiendaTemp.getTransact(), pedidoContactTemp.getTiempopedido(),pedidoTiendaTemp.getTiempoPedido(), diferenciaTiempos, pedidoTiendaTemp.getDomiciliario(), pedidoTiendaTemp.getEstadoPedido(),"PEDIDO EXCEDE ESTANDAR DE TIEMPO");
 									PedidoFueraTiempoDAO.insertarPedidoFueraTiempo(pedFueraTiempo);
 									//Aqui se deberá almacenar la información
 								}else//Deberemos de actualizar la infromación
 								{
-									System.out.println("Actualizando pedido fuera tiempo " + pedidoContactTemp.getIdtienda() );
-									PedidoFueraTiempoDAO.ActualizarPedidoFueraTiempo(pedidoContactTemp.getIdpedido(), diferenciaTiempos, pedidoTiendaTemp.getDomiciliario(), pedidoTiendaTemp.getEstadoPedido(),tiempoActualPedido);
+									PedidoFueraTiempoDAO.ActualizarPedidoFueraTiempo(pedidoContactTemp.getIdpedido(), diferenciaTiempos, pedidoTiendaTemp.getDomiciliario(), pedidoTiendaTemp.getEstadoPedido(),tiempoActualPedido, "PEDIDO EXCEDE ESTANDAR DE TIEMPO");
 								}
+								reportado = true;
 							}
 						}
-						
+						//Validamos si no ha sido reportado
+						if(!reportado)
+						{
+							//Colocamos validación de la otra condición de los tiempos
+							if(((diferenciaTiempos < 0)&&(Math.abs(diferenciaTiempos)< minutosSinRuta)&&(pedidoTiendaTemp.getEstadoPedido().equals(new String("Esperando"))))||((diferenciaTiempos > 0)&&(pedidoTiendaTemp.getEstadoPedido().equals(new String("Esperando")))))
+							{
+								//Debemos de validar si el pedido ya había sido ingresado, o si por el contrario sería una actualización
+								boolean existe = PedidoFueraTiempoDAO.existePedido(pedidoContactTemp.getIdpedido());
+								if(!existe)
+								{
+									pedFueraTiempo = new PedidoFueraTiempo(pedidoContactTemp.getIdpedido(), pedidoContactTemp.getIdtienda(), pedidoTiendaTemp.getTransact(), pedidoContactTemp.getTiempopedido(),pedidoTiendaTemp.getTiempoPedido(), diferenciaTiempos, pedidoTiendaTemp.getDomiciliario(), pedidoTiendaTemp.getEstadoPedido(),"PEDIDO MUY RETARDADO PARA SALIR DE TIENDA");
+									PedidoFueraTiempoDAO.insertarPedidoFueraTiempo(pedFueraTiempo);
+									//Aqui se deberá almacenar la información
+								}else//Deberemos de actualizar la infromación
+								{
+									PedidoFueraTiempoDAO.ActualizarPedidoFueraTiempo(pedidoContactTemp.getIdpedido(), diferenciaTiempos, pedidoTiendaTemp.getDomiciliario(), pedidoTiendaTemp.getEstadoPedido(),tiempoActualPedido,"PEDIDO MUY RETARDADO PARA SALIR DE TIENDA");
+								}
+								
+							}
+						}
 					}
 					break;
 				}
@@ -165,12 +186,13 @@ public class ServicioControlPedidos {
 	      int segundosEje;
 	      //En este punto deberemos de recuperar el número de minutos en el cual se ejecutará el proceso
 		  //Traemos de una variable de configuración el valor de la marcacion domicilios.com
-		  numMinutos = ParametrosDAO.retornarValorNumerico("REPCONTTIEMPOS");
+		  numMinutos = ParametrosDAO.retornarValorNumerico("REPCONTTIEMPOSINSUMO");
 		  segundosEje = numMinutos * 60 * 1000;
 		  //Recuperamos el valor desviación de los tiempos para saber si el tiempo tiene desviación en el tiempo
 		  //inicialmente dado al cliente.
 		  porcenDesviacionTiempo = ParametrosDAO.retornarValorNumerico("DESVPORCENTAJETIEMPO");
 		  minutosDesviacion =  ParametrosDAO.retornarValorNumerico("MINUTOSDESVIACION");
+		  minutosSinRuta =  ParametrosDAO.retornarValorNumerico("MINUTOSSINRUTA");
 		  String strControlTiempo = ParametrosDAO.retornarValorAlfanumerico("DESVTIEMPOPORCEN");
 		  controlTiempo = false;
 		  if(strControlTiempo.equals(new String("S")))

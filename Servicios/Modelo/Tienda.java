@@ -13,9 +13,16 @@ public class Tienda {
 	private String dsnTienda;
 	private String url;
 	private int pos;
+	private String hostBD;
 		
 	
 	
+	public String getHostBD() {
+		return hostBD;
+	}
+	public void setHostBD(String hostBD) {
+		this.hostBD = hostBD;
+	}
 	public int getPos() {
 		return pos;
 	}

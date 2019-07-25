@@ -8,6 +8,15 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import CapaDAOServicios.GeneralDAO;
+import CapaDAOServicios.ParametrosDAO;
+import CapaDAOServicios.PedidoDAO;
+import CapaDAOServicios.PedidoFueraTiempoDAO;
+import CapaDAOServicios.PedidoPOSPMDAO;
+import CapaDAOServicios.PedidoPixelDAO;
+import CapaDAOServicios.TiempoPedidoDAO;
+import CapaDAOServicios.TiendaDAO;
+import ConexionServicios.ConexionBaseDatos;
 import Modelo.Pedido;
 import Modelo.PedidoFueraTiempo;
 import Modelo.PedidoPixel;
@@ -15,15 +24,6 @@ import Modelo.TiempoPedido;
 import Modelo.Tienda;
 import Modelo.Correo;
 import utilidades.ControladorEnvioCorreo;
-import CapaDAO.GeneralDAO;
-import CapaDAO.ParametrosDAO;
-import CapaDAO.PedidoDAO;
-import CapaDAO.PedidoFueraTiempoDAO;
-import CapaDAO.PedidoPOSPMDAO;
-import CapaDAO.PedidoPixelDAO;
-import CapaDAO.TiempoPedidoDAO;
-import CapaDAO.TiendaDAO;
-import Conexion.ConexionBaseDatos;
 
 public class ServicioReporteControlTiempo {
 	
@@ -76,13 +76,14 @@ public class ServicioReporteControlTiempo {
 						+  "<td><strong>Tiempo Desviacion</strong></td>"
 						+  "<td><strong>Domiciliario</strong></td>"
 						+  "<td><strong>Estado Pedido</strong></td>"
+						+  "<td><strong>Observacion</strong></td>"
 						+  "</tr>";
 				//Recorremos el arreglo para rellenar la información de la tabla con los pedidos fuera de tiempo
 				for(int j = 0; j < pedFueraTiempo.size(); j++)
 				{
 					indEnvioCorreo = true;
 					PedidoFueraTiempo pedTemp = pedFueraTiempo.get(j);
-					respuesta = respuesta + "<tr><td>" +  pedTemp.getIdPedido() + "</td><td>" +  pedTemp.getTransact()  + "</td><td>" +  pedTemp.getTiempoDado() + "</td><td>" +pedTemp.getTiempoActual() + "</td><td>" + pedTemp.getPorcDesviacion() + "</td><td>" + pedTemp.getDomiciliario() + "</td><td>" + pedTemp.getEstadoPedido() + "</td></tr>";
+					respuesta = respuesta + "<tr><td>" +  pedTemp.getIdPedido() + "</td><td>" +  pedTemp.getTransact()  + "</td><td>" +  pedTemp.getTiempoDado() + "</td><td>" +pedTemp.getTiempoActual() + "</td><td>" + pedTemp.getPorcDesviacion() + "</td><td>" + pedTemp.getDomiciliario() + "</td><td>" + pedTemp.getEstadoPedido() + "</td><td>" + pedTemp.getObservacion()  + "</td></tr>";
 				}
 				respuesta = respuesta + "</table> <br/>";
 			}
