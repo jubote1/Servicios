@@ -529,6 +529,7 @@ public class PedidoDAO {
 						+"where a.idtienda = b.idtienda and b.idtienda = e.idtienda and e.idrazon = " + idRazon +"  and a.idpedido = f.idpedido "
 						+"and f.idmarcacion = 1 and a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido <= '" + fechaActual + "' and a.idpedido = g.idpedido order by b.nombre, fechapedido";
 				ResultSet rs = stm.executeQuery(consulta);
+				System.out.println(consulta);
 				String[] resTemp = new String[9];
 				while(rs.next()){
 					resTemp = new String[9];

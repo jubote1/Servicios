@@ -128,6 +128,7 @@ public class ReporteSemanalONLINE {
 			for(int y = 0; y < pedidosDomCOM.size();y++)
 			{
 				resTemp = (String[]) pedidosDomCOM.get(y);
+				idFormaPago = Integer.parseInt(resTemp[6]);
 				try 
 				{
 					descuento = Double.parseDouble(resTemp[7]);
