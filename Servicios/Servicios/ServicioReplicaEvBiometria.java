@@ -72,13 +72,22 @@ public void generarReplicaEvBiometria()
 	//Variable para administrar las inserciones de evento en el general
 	boolean insEventoGeneral;
 	boolean marMigrado;
+	//Variable donde almacenaremos si hay contingencias activadas
+	String contingencia = "";
 	//Obtenemos los eventos matriculados en la base de datos general
 	ArrayList<EmpleadoEvento> eventosEmpGeneral = EmpleadoEventoDAO.obtenerEventosGeneral();
 	for(Tienda tien : tiendas)
 	{
 		if(!tien.getHostBD().equals(new String("")))
 		{
-			
+			//Validamos si está en contingencia
+			String estadoConting = ParametrosDAO.retornarValorAlfanumericoTienda(tien.getHostBD(), "CONFBIOMEREMOTA");
+			if(estadoConting.equals(new String("N")))
+			{
+				contingencia = contingencia + " " + tien.getNombreTienda();
+				//Se realiza la devolución de la contingencia de la tienda
+				ParametrosDAO.EditarParametroTienda(tien.getHostBD(), "CONFBIOMEREMOTA", "S", 0);
+			}
 			//Borramos eventos de días anteriores, dado que en el local solo nos interesan eventos del día en cuestión
 			boolean borradoLocal = EmpleadoEventoDAO.borrarEventoRegistroEmpleadoLocal(tien.getHostBD());
 			//Si se tuvo un erro con el borrado local se salta a la siguiente iteración del for de tiendas
@@ -93,6 +102,8 @@ public void generarReplicaEvBiometria()
 			{
 				//Realizamos la inserción en la base de datos general
 				insEventoGeneral = EmpleadoEventoDAO.insertarEventoRegistroEmpleado(evenTemp);
+				//Realizamos actualización de la fecha_hora_log en el sistema de contact
+				EmpleadoEventoDAO.actualizarEventoRegistroEmpleadoGeneral(evenTemp);
 				//Si la inserción es exitosa, se realizará el marcado de migrado
 				if(insEventoGeneral)
 				{
@@ -110,7 +121,8 @@ public void generarReplicaEvBiometria()
 				}
 					
 			}
-			
+			//Actualizamos el valro de eventosEmpGeneral que pudo haber cambiando en el fragmento anterior
+			eventosEmpGeneral = EmpleadoEventoDAO.obtenerEventosGeneral();
 			//Continuamos con la sincronización en la otra vía en donde basicamente buscamos sincronizar lo realizado en el servidor central para llevarlo a los puntos de venta
 			for(EmpleadoEvento evenTemp : eventosEmpGeneral)
 			{
@@ -143,7 +155,19 @@ public void generarReplicaEvBiometria()
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 	}
-	
+	if(!contingencia.trim().equals(new String("")))
+	{
+		Correo correo = new Correo();
+		correo.setAsunto("HAY ACTIVADA CONTINGENCIA BIOMETRIA " + fechaActual.toString());
+		correo.setContrasena("Pizzaamericana2017");
+		//Tendremos que definir los destinatarios de este correo
+		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
+		correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+		correo.setMensaje("A continuación informamos las tiendas que tienen actividad contingencia "
+				+ contingencia);
+		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+		contro.enviarCorreoHTML();
+	}
 }
 
 

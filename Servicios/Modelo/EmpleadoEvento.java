@@ -8,9 +8,14 @@ public class EmpleadoEvento {
 	private int idTienda;
 	private String usoBiometria;
 	private String nombreEmpleado;
+	private String dia;
 	
-	
-	
+	public String getDia() {
+		return dia;
+	}
+	public void setDia(String dia) {
+		this.dia = dia;
+	}
 	public String getNombreEmpleado() {
 		return nombreEmpleado;
 	}

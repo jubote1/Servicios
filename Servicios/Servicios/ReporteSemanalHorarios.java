@@ -27,6 +27,7 @@ import Modelo.PedidoPixel;
 import Modelo.TiempoPedido;
 import Modelo.Tienda;
 import Modelo.Correo;
+import Modelo.EmpleadoEvento;
 import utilidades.ControladorEnvioCorreo;
 
 public class ReporteSemanalHorarios {
@@ -44,6 +45,7 @@ public class ReporteSemanalHorarios {
 				//Creamos el objeto calendario
 				Calendar calendarioActual = Calendar.getInstance();
 				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+				SimpleDateFormat dateFormatHora = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 				//Obtenemos la fecha Actual
 				try
 				{
@@ -110,8 +112,102 @@ public class ReporteSemanalHorarios {
 		//En respuesta guardaremos el html que guardará todo lo que se desplegará en el correo.
 		String respuesta = "";
 		
+		//En este punto vamos a replicar la lógica para procesar y generar el reporte
+		
+		
+		//Instanciamos la respuesta ArrayList
+				ArrayList<String[]> respuestaReporte = new ArrayList();
+				//Recuperamos el arreglo con los eventos deberemos reprocesarlos para tener la vista qeu requerimos
+				ArrayList<EmpleadoEvento>  repEntradasSalidas = ReporteHorariosDAO.obtenerEntradasSalidasEmpleadosEventos(fechaAnterior,fechaActual);
+				//Variables necesarias para el recorrido
+				EmpleadoEvento eventoTemp;
+				//Arreglo donde iremos dejando cada fila
+				String[] filaTemp = new String[7];
+				//Variables que nos permitiran saber si hubo error en la conversión de las fechas
+				boolean errorInicial = false;
+				boolean errorFinal = false;
+				//Variables qeu nos permitiran saber en que punto vamos de la formación del registro
+				boolean ingreso = false;
+				//Salida empezará prendido dado que iniciamos con uno nuevo
+				boolean salida = true;
+				for(int i = 0; i < repEntradasSalidas.size(); i++)
+				{
+					//Retomamos el evento que vamos a procesar
+					eventoTemp = repEntradasSalidas.get(i);
+					//Hacemos la verificación de si el evento es de ingreso o de salida
+					if(eventoTemp.getTipoEvento().equals(new String("INGRESO")))
+					{
+						//Esto quiere decir que solo hay un ingreso por lo que llenamos el arreglo
+						if(ingreso)
+						{
+							filaTemp[4] = "0";
+							filaTemp[5] = "0";
+							respuestaReporte.add(filaTemp);
+							filaTemp = new String[7];
+							filaTemp[0] = eventoTemp.getNombreEmpleado();
+							filaTemp[1] = eventoTemp.getFecha();
+							filaTemp[2] = eventoTemp.getDia();
+							filaTemp[3] = eventoTemp.getFechaHoraLog();
+							filaTemp[6] = Integer.toString(eventoTemp.getIdTienda());
+						}if(salida)
+						{
+							filaTemp = new String[7];
+							filaTemp[0] = eventoTemp.getNombreEmpleado();
+							filaTemp[1] = eventoTemp.getFecha();
+							filaTemp[2] = eventoTemp.getDia();
+							filaTemp[3] = eventoTemp.getFechaHoraLog();
+							filaTemp[6] = Integer.toString(eventoTemp.getIdTienda());
+						}
+						ingreso = true;
+						salida = false;
+					}else if(eventoTemp.getTipoEvento().equals(new String("SALIDA")))
+					{
+						filaTemp[4] = eventoTemp.getFechaHoraLog();
+						//Hacer la resta de tiempos para lo cual formateamos las fechas
+						Date fechaFinal = new Date(), fechaInicial = new Date();
+						double horas = 0;
+						//Intentamos la conversión de las fechas
+						try
+						{
+							fechaInicial=dateFormatHora.parse(filaTemp[3]);
+						}catch(Exception e)
+						{
+							errorInicial = true;
+						}
+						try
+						{
+							fechaFinal=dateFormatHora.parse(filaTemp[4]);
+						}catch(Exception e)
+						{
+							errorFinal = true;
+						}
+				        if(!errorInicial && !errorFinal)
+				        {
+				        	  horas = ((fechaFinal.getTime()-fechaInicial.getTime())/1000);
+				        	  horas =(horas)/3600;
+				        }
+				        //DecimalFormat df = new DecimalFormat("#.00");
+				        filaTemp[5] = Double.toString(horas);
+						respuestaReporte.add(filaTemp);
+						//volvemos a iniciarlizar las banderas de inicio y final
+						errorInicial = false;
+						errorFinal = false;
+						//Prendemos la variable de salida
+						salida = true;
+						ingreso = false;
+					}
+				}
+				//A la salida del for damos una revisa si no hay salida entonces se agrega al arreglo del resultado
+				if(ingreso && !salida)
+				{
+					filaTemp[4] = "0";
+					filaTemp[5] = "0";
+					respuestaReporte.add(filaTemp);
+				}
+		
+		
 		//Obtenemos la información consolidada por persona y día
-		ArrayList reporteHorarios = ReporteHorariosDAO.obtenerReporteHorarios(fechaAnterior, fechaActual);
+		ArrayList reporteHorarios = respuestaReporte;
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		
 		//Comenzamos toda la lógica para recorrer el arreglo de empleados por fecha y pintar la inforación como lo requerimos
@@ -119,6 +215,7 @@ public class ReporteSemanalHorarios {
 		String empleadoAnterior = "";
 		String empleadoActual = "";
 		double horas = 0;
+		String strHoras = "";
 		double acumuladoHoras = 0;
 		String tienda = "";
 		int idTienda;
@@ -161,7 +258,10 @@ public class ReporteSemanalHorarios {
 			//Debemos de cambiar de minutos a horas y debemos de consultar la tienda
 			try
 			{
-				horas = Double.parseDouble(fila[5])/60;
+				
+				horas = Double.parseDouble(fila[5]);
+				DecimalFormat df = new DecimalFormat("#.00");
+				strHoras = df.format(horas);
 			}catch(Exception e)
 			{
 				horas = 0;
@@ -190,7 +290,7 @@ public class ReporteSemanalHorarios {
 				tienda = "No Identificada";
 			}
 			//Realizamos el pintado de la fila
-			respuesta = respuesta + "<tr><td width='120' nowrap>" + fila[0] + "</td><td width='50' nowrap> " + fila[1] + "</td><td width='50' nowrap> " + fila[2] + "</td><td width='50' nowrap> " + fila[3] + "</td><td width='50' nowrap> "+ fila[4] + "</td><td width='50' nowrap> " + formatea.format(horas) + "</td><td width='50' nowrap> " + tienda +"</td></tr>";
+			respuesta = respuesta + "<tr><td width='120' nowrap>" + fila[0] + "</td><td width='50' nowrap> " + fila[1] + "</td><td width='50' nowrap> " + fila[2] + "</td><td width='50' nowrap> " + fila[3] + "</td><td width='50' nowrap> "+ fila[4] + "</td><td width='50' nowrap> " + strHoras + "</td><td width='50' nowrap> " + tienda +"</td></tr>";
 			//Al final del procesamiento decimos que el empleadoAnterior es el actual
 			empleadoAnterior = empleadoActual;
 		}

@@ -103,30 +103,35 @@ public class ReporteHorariosDAO {
 	 * @param auditoria
 	 * @return
 	 */
-	public static ArrayList<EmpleadoEvento> obtenerEntradasSalidasEmpleadosEventos(int idTienda, String fecha,  String bdGeneral, boolean auditoria )
+	public static ArrayList<EmpleadoEvento> obtenerEntradasSalidasEmpleadosEventos(String fechaInicial, String fechaFinal )
 	{
 		ConexionBaseDatos con = new ConexionBaseDatos();
 		Connection con1 = con.obtenerConexionBDGeneralLocal();
-		String select  = "select b.nombre_largo, a.* from empleado_evento a , empleado b where a.idtienda = " + idTienda + " and a.fecha = '" + fecha + "' and a.id = b.id order by a.id,a.fecha_hora_log asc";
+		String select  = "select b.nombre_largo, (ELT(WEEKDAY(a.fecha) + 1, 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo')) AS DIA , a.* from empleado_evento a , empleado b where a.fecha >= '" + fechaInicial + "' and a.fecha <= '" + fechaFinal + "' and a.id = b.id order by a.id,a.fecha_hora_log asc";
+		System.out.println(select);
 		Statement stm;
 		ArrayList<EmpleadoEvento> eventosEmpleado = new ArrayList();
 		try
 		{
 			stm = con1.createStatement();
 			ResultSet rs = stm.executeQuery(select);
-			int id;
+			int id, idTienda;
 			String tipoEvento, fechaHoraLog, usoBiometria;
-			String nombreEmpleado;
+			String nombreEmpleado, fecha, dia;
 			EmpleadoEvento empEvento;
 			while(rs.next())
 			{
 				id = rs.getInt("id");
+				dia = rs.getString("dia");
+				idTienda = rs.getInt("idtienda");
 				tipoEvento = rs.getString("tipo_evento");
 				fechaHoraLog = rs.getString("fecha_hora_log");
 				usoBiometria = rs.getString("uso_biometria");
 				nombreEmpleado = rs.getString("nombre_largo");
+				fecha = rs.getString("fecha");
 				empEvento = new EmpleadoEvento(id, tipoEvento, fecha, fechaHoraLog, idTienda, usoBiometria);
 				empEvento.setNombreEmpleado(nombreEmpleado);
+				empEvento.setDia(dia);
 				eventosEmpleado.add(empEvento);
 			}
 		}

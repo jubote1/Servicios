@@ -116,6 +116,17 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	}
 	//-- En este punto finalizamos la fijación de las tiendas
 	
+	//Vamos a realizar una modificación para calcular la venta total de la semana para tienda
+	//Definimos la variable en donde vamos a almacenar dicho total
+	double ventaTotalTiendas = 0;
+	for(Tienda tien : tiendas)
+	{
+		if(!tien.getHostBD().equals(new String("")))
+		{
+			//Realizamos la acumulación despues de cada iteración
+			ventaTotalTiendas  = ventaTotalTiendas + PedidoDAO.obtenerTotalesPedidosSemana(fechaAnterior, fechaActual, tien.getHostBD());
+		}
+	}
 	
 	//Realizamos un ciclo para recorrer cada una de las tiendas	
 	int fila = 0;
@@ -126,7 +137,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
 			try
 			{
 				
-					rutasArchivos[fila] = CalcularCierreSemanalTiendaFormatoExcel(tien, fechaActual, fechaAnterior);
+					rutasArchivos[fila] = CalcularCierreSemanalTiendaFormatoExcel(tien, fechaActual, fechaAnterior, ventaTotalTiendas);
 			}
 			catch(Exception e)
 			{
@@ -156,7 +167,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
  * @param fecha
  * @return
  */
-public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fechaActual, String fechaAnterior)
+public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fechaActual, String fechaAnterior, double ventaTotalTiendas)
 {
 	String rutaArchivoGenerado="";
 	String rutaArchivoBD = ParametrosDAO.retornarValorAlfanumericoLocal("RUTACIERREINVENTARIO");
@@ -345,8 +356,15 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             double totalVentaSemana = PedidoDAO.obtenerTotalesPedidosSemana(fechaAnterior, fechaActual, tienda.getHostBD());
             cellFila2 = equitetasInfReporte.createCell((short) 7);
             cellFila2.setCellValue(totalVentaSemana);
-            
-            
+            //Adicionamos la etiqueta de TOTAL TIENDAS
+            cellFila2 = equitetasInfReporte.createCell((short) 8);
+            cellFila2.setCellValue("TOTAL TIENDAS");
+            cellFila2.setCellStyle(cellInfoReporte);
+            cellFila2 = equitetasInfReporte.createCell((short) 9);
+            cellFila2.setCellValue(ventaTotalTiendas);
+            double porcentajeVentaTienda = (totalVentaSemana/ventaTotalTiendas)*100;
+            cellFila2 = equitetasInfReporte.createCell((short) 10);
+            cellFila2.setCellValue(porcentajeVentaTienda);
             //Etiquetas reporte
             HSSFRow equitetasRow = sheet.createRow(2);
 	        for (int i = 0; i < headers.length; ++i) 

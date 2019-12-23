@@ -85,6 +85,39 @@ public class EmpleadoEventoDAO {
 	}
 	
 	
+	/**
+	 * Método para realizar la actualización de la inserción en la bodega
+	 * @param empEvento
+	 * @param hostBD
+	 * @return
+	 */
+	public static boolean actualizarEventoRegistroEmpleadoGeneral(EmpleadoEvento empEvento)
+	{
+		ConexionServicios.ConexionBaseDatos con = new ConexionServicios.ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDGeneralLocal();
+		String update = "update empleado_evento set fecha_hora_log = '"+ empEvento.getFechaHoraLog() +"' where id =" + empEvento.getId()+ " and tipo_evento =  '" + empEvento.getTipoEvento() + "' and fecha = '" + empEvento.getFecha() + "'";
+		Statement stm;
+		try
+		{
+			stm = con1.createStatement();
+			stm.executeUpdate(update);
+			return(true);
+		}
+		catch (Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+				return(false);
+			}catch(Exception e1)
+			{
+				return(false);
+			}
+			
+		}
+		
+	}
+	
 	public static boolean actualizarEventoRegistroEmpleadoLocal(EmpleadoEvento empEvento, String hostBD)
 	{
 		ConexionServicios.ConexionBaseDatos con = new ConexionServicios.ConexionBaseDatos();
@@ -120,7 +153,17 @@ public class EmpleadoEventoDAO {
 		//Capturamos la fecha actual
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		Calendar calendarioActual = Calendar.getInstance();
-		calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
+		//Capturaremos la hora y validaremos la resta del día
+		int horaActual = calendarioActual.get(Calendar.HOUR_OF_DAY);
+		if (horaActual < 3)
+		{
+			//Restamos en 2 dado que ya pasamos de día pero todavía estamos en trabajo seguramente
+			calendarioActual.add(Calendar.DAY_OF_YEAR, -2);
+		}else
+		{
+			//Restamos en 1 el día para borrar lo del día anterior
+			calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
+		}
 		Date datFechaAnterior = calendarioActual.getTime();
 		String fechaAnterior = dateFormat.format(datFechaAnterior);
 		//En este punto ya tenemos la fecha que utilizaremos en el where
