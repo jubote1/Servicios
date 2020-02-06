@@ -45,95 +45,84 @@ import Modelo.Insumo;
 import Modelo.Tienda;
 import Modelo.Usuario;
 
-public class ServicioReplicaUsuarios {
+public class ServicioRevisionCierres {
 	
 	
 	
-	
+/**
+ * Este programa se encargará de correr como un servicio todos los días a las 12:50 am, con el fin de revisar
+ * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisión.
+ * @param args
+ */
 public static void main(String[] args)
 {
-	ServicioReplicaUsuarios reporteReplicaUsuarios = new ServicioReplicaUsuarios();
-	reporteReplicaUsuarios.generarReplicaUsuarios();
+	ServicioRevisionCierres reporteRevisionCierres = new ServicioRevisionCierres();
+	reporteRevisionCierres.generarRevisionCierres();
 	
 }
 
-public void generarReplicaUsuarios()
+public void generarRevisionCierres()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
 	System.out.println("EMPEZAMOS LA EJECUCIÓN");
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
+	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	//Formateamos la fecha Actual para consulta
+	String strFechaActual = dateFormat.format(fechaActual);
+	//Vamos a recuperar el día anterior que según esto es el día real de trabajo
+	Calendar calendarioActual = Calendar.getInstance();
+	calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
+	Date fechaAnterior = calendarioActual.getTime();
+	String strFechaAnterior = dateFormat.format(fechaAnterior);
+	//Con lo anterior ya tenemos las variables para el proceso
+	
 	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo.
 	String exitoso = "", noExitoso = "";
 	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 	//Retornamos los objetos de empleados y la biometria, primero debemos retornar
-	ArrayList<Usuario> usuarios = UsuarioDAO.obtenerEmpleadosGeneral();
-	ArrayList<EmpleadoBiometria> usuariosBiometria = UsuarioDAO.obtenerEmpleadosBiometriaGeneral();
-	//Variable idUsuarioIns para controlar si hay error insertando
-	int idUsuarioIns;
 	for(Tienda tien : tiendas)
 	{
-		idUsuarioIns = 0;
 		if(!tien.getHostBD().equals(new String("")))
 		{
-			//Realizamos clareo de las tablas locales
-			boolean respuestaEliminacion = UsuarioDAO.eliminarInfoEmpleadoLocal(tien.getHostBD());
-			if(respuestaEliminacion)
+			//Recuperamos el indicador de cierre de la tienda
+			String indicadorCierre = ParametrosDAO.retornarValorAlfanumericoTienda(tien.getHostBD(), "INDICADORCIERRE");
+			if(indicadorCierre.equals(new String("ERROR")))
 			{
-				//Realizamos el recorrido para la inserción de todos los empleados
-				for(Usuario usuTemp: usuarios)
-				{
-					idUsuarioIns = UsuarioDAO.insertarEmpleadoLocal(usuTemp, tien.getHostBD());
-					if(idUsuarioIns == -1)
-					{
-						noExitoso = noExitoso + " " + tien.getNombreTienda();
-						break;
-					}
-					//En la inserción de cada usuario local se debe validar si se debe insertar o actualizar el usaurio ya existente
-					//Validamos si el usuario tiene asignada clave rápida 
-					if(usuTemp.getClaveRapida() != null)
-					{
-						if(usuTemp.getClaveRapida().length() > 0)
-						{
-							//Validamos la existencia del usuario en la tienda con el idUsuario
-							boolean usuarioExiste = UsuarioDAO.existeUsuarioLocal(usuTemp.getIdUsuario(), tien.getHostBD());
-							if(usuarioExiste)
-							{
-								UsuarioDAO.actualizarUsuarioLocal(usuTemp, tien.getHostBD());
-							}else
-							{
-								UsuarioDAO.insertarUsuarioLocal(usuTemp, tien.getHostBD());
-							}
-						}
-					}
-				}
-				if(idUsuarioIns != -1)
-				{
-					for(EmpleadoBiometria empBioTemp: usuariosBiometria)
-					{
-						UsuarioDAO.insertarEmpleadoBiometriaLocal(empBioTemp, tien.getHostBD());
-					}
-					exitoso = exitoso + " <p>" + tien.getNombreTienda()+ " </p>";
-				}
-			}
-			else
+				noExitoso = noExitoso + " " + tien.getNombreTienda() + " no se tuvo conexión.";
+			}else
 			{
-				noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " </p>";
+				//Recuperaremos el valor de la fecha del sistema para compararla	
+				String fechaApertura = TiendaDAO.retornarFechaTiendaRemota(tien.getHostBD());
+				//Hacemos la comparación de las fechas
+				if(fechaApertura.trim().equals(new String(indicadorCierre.trim())))
+				{
+					exitoso = exitoso + " <p>" + tien.getNombreTienda() + " se encuentra OK Cerrado." + "</p>";
+				}else if(fechaApertura.trim().equals(new String(strFechaAnterior.trim())))
+				{
+					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema está abierto al día anterior." + "</p>";
+				}else if(fechaApertura.trim().equals(new String(strFechaActual.trim())))
+				{
+					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema está abierto al día siguiente." + "</p>";
+				}else
+				{
+					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema está abierto a una fecha no explicable." + "</p>";
+				}
 			}
 		}
 	}
 	
 	//Realizamos el envío del correo electrónico con los archivos
 	Correo correo = new Correo();
-	correo.setAsunto("REPLICA DE USUARIOS EN TIENDAS " + fechaActual.toString());
+	correo.setAsunto("REVISIÓN CIERRE DIARIO TIENDAS " + fechaAnterior.toString());
 	correo.setContrasena("Pizzaamericana2017");
 	//Tendremos que definir los destinatarios de este correo
-	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
+	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REVISIONCIERRE");
 	correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
-	String mensaje = "A continuación informamos que las tiendas que actualizaron correctamente los usuarios fueron " + exitoso;
+	String mensaje = "A continuación informamos el estado de los cierres de las tiendas  " + exitoso ;
 	if(noExitoso.trim().length() > 0)
 	{
-		mensaje = mensaje + " , y las tiendas que no lograron la actualización fueron "
+		mensaje = mensaje + " , y las tiendas"
 				+ " con problemas fueron " + noExitoso;
 	}
 	correo.setMensaje(mensaje);

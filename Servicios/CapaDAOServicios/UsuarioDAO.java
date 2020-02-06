@@ -41,8 +41,8 @@ public class UsuarioDAO {
 			String consulta = "select * from empleado ";
 			ResultSet rs = stm.executeQuery(consulta);
 			int id;
-			String nombre, nombreLargo, administrador, tipoInicio;
-			int tipoEmpleado;
+			String nombre, nombreLargo, administrador, tipoInicio, contrasena, claveRapida;
+			int tipoEmpleado, esEmpleado;
 			
 			
 			while(rs.next()){
@@ -52,8 +52,17 @@ public class UsuarioDAO {
 				administrador = rs.getString("administrador");
 				tipoInicio = rs.getString("tipoinicio");
 				tipoEmpleado = rs.getInt("idtipoempleado");
-				Usuario usuarioTemp = new Usuario(id, nombre, "", nombreLargo, tipoEmpleado,
+				contrasena = rs.getString("password");
+				try {
+					esEmpleado = rs.getInt("es_empleado");
+				}catch(Exception e){
+					esEmpleado = 0;
+				}
+				claveRapida = rs.getString("claverapida");
+				Usuario usuarioTemp = new Usuario(id, nombre, contrasena, nombreLargo, tipoEmpleado,
 			tipoInicio, administrador);
+				usuarioTemp.setEsEmpleado(esEmpleado);
+				usuarioTemp.setClaveRapida(claveRapida);
 				empleados.add(usuarioTemp);
 				
 			}
@@ -61,6 +70,7 @@ public class UsuarioDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
+			System.out.println(e.toString());
 			try
 			{
 				con1.close();
@@ -226,5 +236,120 @@ public class UsuarioDAO {
 	}
 	
 	
+	/**
+	 * Método que se encarga de retornar un valor booleano indicando si el empleado determinado existe o no en la tabla de usuarios
+	 * de la tienda, para saber si debe lanzar la creación o una actualización.
+	 * @param idUsuario
+	 * @param hostBD
+	 * @return
+	 */
+	public static boolean existeUsuarioLocal(int idUsuario, String hostBD)
+	{
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+		boolean respuesta = false;
+		try
+		{
+			Statement stm = con1.createStatement();
+			String select = " select id from usuario where id = " + idUsuario; 
+			ResultSet rs = stm.executeQuery(select);
+			while(rs.next())
+			{
+				respuesta = true;
+				break;
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}
+		catch (Exception e){
+			
+			respuesta = false;
+
+			try
+			{
+				System.out.println(e.toString());
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+		
+		}
+		return(respuesta);
+	}
+	
+	/**
+	 * Método qeu se encarga de insertar un usuario en el sistema PÖS
+	 * @param empleado Se recibe un objeto de tipo usuario con la información del usuario que termina siendo un autor del sistema
+	 * @return Se retorna un entero con id asignado por el sistema en la inserción.
+	 */
+	public static int insertarUsuarioLocal(Usuario usuario, String hostBD)
+	{
+		int idEmpleadoIns = 0;
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+		try
+		{
+			Statement stm = con1.createStatement();
+			String insert = "insert into usuario (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, es_empleado, claverapida) values (" + usuario.getIdUsuario() + " ,'" + usuario.getNombreUsuario() + "' , '" + usuario.getContrasena() + "' , '" + usuario.getNombreLargo() + "' , '" + usuario.getAdministrador() + "', " + usuario.getidTipoEmpleado() + " , '" + usuario.getTipoInicio() + "' ," + usuario.getEsEmpleado() + " , '" + usuario.getClaveRapida()  + "')"; 
+			stm.executeUpdate(insert);
+			ResultSet rs = stm.getGeneratedKeys();
+			if (rs.next()){
+				idEmpleadoIns=rs.getInt(1);
+				
+	        }
+			stm.close();
+			con1.close();
+		}
+		catch (Exception e){
+			
+			if(e instanceof NullPointerException)
+			{
+				idEmpleadoIns = -1;
+			}
+
+			try
+			{
+				System.out.println(e.toString());
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+			return(0);
+		}
+		return(idEmpleadoIns);
+	}
+	
+	/**
+	 * Método qeu se encarga de actualizar un usuario en el sistema PÖS
+	 * @param empleado Se recibe un objeto de tipo usuario con la información del usuario que termina siendo un autor del sistema
+	 * @return Se retorna un valor booleano que indica si se realizó o no la actualización.
+	 */
+	public static boolean actualizarUsuarioLocal(Usuario usuario, String hostBD)
+	{
+		boolean respuesta = false;
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+		try
+		{
+			Statement stm = con1.createStatement();
+			String update = "update usuario set nombre = '" + usuario.getNombreUsuario() + "' , password  = '" + usuario.getContrasena() + "' ,  nombre_largo = '" + usuario.getNombreLargo() + "' , administrador = '" + usuario.getAdministrador() + "' , idtipoempleado = " + usuario.getIdTipoEmpleado() + " , tipoinicio = '" + usuario.getTipoInicio() +"' , es_empleado = " + usuario.getEsEmpleado() + " , claverapida = '" + usuario.getClaveRapida() + "' where id = " + usuario.getIdUsuario(); 
+			stm.executeUpdate(update);
+			stm.close();
+			con1.close();
+			respuesta = true;
+		}
+		catch (Exception e){
+			try
+			{
+				System.out.println(e.toString());
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+			
+		}
+		return(respuesta);
+	}
 	
 }

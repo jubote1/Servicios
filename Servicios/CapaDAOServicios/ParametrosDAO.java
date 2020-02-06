@@ -158,7 +158,10 @@ public class ParametrosDAO {
 			con1.close();
 		}catch (Exception e)
 		{
-			
+			if(e instanceof NullPointerException)
+			{
+				valor = "ERROR";
+			}
 			try
 			{
 				con1.close();

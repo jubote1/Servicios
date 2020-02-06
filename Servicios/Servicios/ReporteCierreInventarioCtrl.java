@@ -291,7 +291,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             //Create an anchor that is attached to the worksheet
             ClientAnchor anchor = helper.createClientAnchor();
             //set top-left corner for the image
-             anchor.setDx1(0);
+            anchor.setDx1(0);
             anchor.setDy1(0);
             anchor.setDx2(1023);
             anchor.setDy2(6000);

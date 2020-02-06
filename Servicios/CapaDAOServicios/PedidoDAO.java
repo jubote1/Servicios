@@ -8,6 +8,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
+
 import com.mysql.jdbc.ResultSetMetaData;
 import CapaDAOServicios.TiendaDAO;
 import ConexionServicios.ConexionBaseDatos;
@@ -558,6 +560,133 @@ public class PedidoDAO {
 				}
 			}
 			return(pedidosDomCOM);
+		}
+		
+		
+		/**
+		 * Método que se encargaría tener la cantidad de pedidos en un estado determinado para una fecha determinada
+		 * @param fechaSistema
+		 * @param idEstado
+		 * @param url
+		 * @return
+		 */
+		public static int obtenerCantidadPedidoPorEstado(String fechaSistema, int idEstado , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			int cantPedidos = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select count(*) from pedido where fechapedido = '" + fechaSistema  + "'  and idmotivoanulacion IS NULL and idestado = " + idEstado; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					cantPedidos = rs.getInt(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(cantPedidos);
+		}
+		
+		/**
+		 * Métodoq que se encarga desde la capa DAO de obtener la cantidad de pedidos desde la última hora
+		 * @param fechaSistema
+		 * @param fechaHora
+		 * @param url
+		 * @return
+		 */
+		public static int obtenerCantidadPedidoDespuesHora(String fechaSistema, String fechaHora, String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			int cantPedidos = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select count(*) from pedido where fechapedido = '" + fechaSistema  +"' and fechainsercion >= '" + fechaHora +"' and idmotivoanulacion IS NULL"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					cantPedidos = rs.getInt(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(cantPedidos);
+		}
+		
+		/**
+		 * Método que se encarga de obtener el tiempo en minutos del pedido más antiguo en el estado y fecha enviada como parámetros
+		 * @param fechaSistema
+		 * @param fechaHora
+		 * @param idEstado
+		 * @param url
+		 * @return
+		 */
+		public static String obtenerTiempoUltimoPedidoEstado(String fechaSistema,  int idEstado, String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd H:m:s");
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			int cantidadMinutos = 0;
+			int idPedido = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select * from pedido where fechapedido = '" + fechaSistema  +"' and idmotivoanulacion IS NULL and idestado = " + idEstado + " order by idpedidotienda asc limit 1"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				String fechaInsercion = "";
+				Date datFechaInsercion = new Date();
+				
+				while(rs.next()){
+					idPedido = rs.getInt("idpedidotienda");
+					fechaInsercion = rs.getString("fechainsercion");
+					datFechaInsercion = dateFormat.parse(fechaInsercion);
+					break;
+				}
+				//Con la fecha capturada, vamos a realizar los cálculos correspondientes
+				Date fechaActual = new Date();
+				int difTiempo =(int) (fechaActual.getTime() - datFechaInsercion.getTime());
+				cantidadMinutos = (int)TimeUnit.MILLISECONDS.toMinutes(difTiempo );
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return("0");
+			}
+			return(Integer.toString(cantidadMinutos) + " min - Ped:" + Integer.toString(idPedido) );
 		}
 
 }

@@ -19,10 +19,15 @@ public class Usuario {
 	private String ultimoIngreso;
 	private int esEmpleado;
 	private int caducado;
+	private String claveRapida;
 	
 	
-	
-		
+	public String getClaveRapida() {
+		return claveRapida;
+	}
+	public void setClaveRapida(String claveRapida) {
+		this.claveRapida = claveRapida;
+	}
 	public String getUltimoIngreso() {
 		return ultimoIngreso;
 	}

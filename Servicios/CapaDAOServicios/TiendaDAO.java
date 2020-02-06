@@ -187,6 +187,37 @@ public class TiendaDAO {
 			return(tiendas);
 			
 		}
+		
+		//Método creado para retornar el valor de la fecha de sistema en una tienda remota
+		public static String retornarFechaTiendaRemota(String hostBD)
+		{
+			String valorFecha = "";
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select fecha_apertura from tienda";
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					valorFecha = rs.getString("fecha_apertura");
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e)
+			{
+				
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+					
+				}
+			}
+			return(valorFecha);
+		}
 
 
 }
