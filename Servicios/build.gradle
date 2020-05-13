@@ -1,0 +1,69 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'application'
+archivesBaseName = 'ReportePedidosPendientes'
+mainClassName = 'ReportePedidosPendientes'
+
+sourceSets.main.java.srcDirs = ['src/main/java']
+
+repositories {
+	mavenLocal()
+    mavenCentral()
+}
+
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+	manifest {
+        attributes 'Implementation-Title': 'Servicios Varios',
+        	'Class-Path': '.', 
+        	'Main-Class': 'ServiciosSer.ReportePedidosPendientes'
+    }
+    baseName = archivesBaseName
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+    
+    exclude "META-INF/*.SF"
+    exclude "META-INF/*.DSA"
+    exclude "META-INF/*.RSA"
+    
+    from('src/main/java') {
+
+      include 'imagenes/*.png'
+      include 'imagenes/*.jpg'
+      include 'icons/*.png'
+      include 'icons/*.jpg'
+      include 'iconos/*.png'
+      include 'iconos/*.jpg'
+
+   }
+    
+}
+
+dependencies {
+   compile  'log4j:log4j:1.2.16'
+   
+   compile fileTree(dir: 'libs', include: '*.jar')
+   
+   // https://mvnrepository.com/artifact/javax.mail/mail
+   compile group: 'javax.mail', name: 'mail', version: '1.4.7'
+   
+   // https://mvnrepository.com/artifact/org.apache.poi/poi
+   compile group: 'org.apache.poi', name: 'poi', version: '4.0.0'
+   
+   // https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
+   compile group: 'org.apache.poi', name: 'poi-ooxml', version: '4.0.0'
+   
+   // https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml-schemas
+   compile group: 'org.apache.poi', name: 'poi-ooxml-schemas', version: '4.0.0'
+   
+   //Incluyendo el proyecto de Inventario Americana para el tema de control de inventarios
+   //compile project(':ProyectoTiendaAmericanaCliente')
+   //implementation project(path:':ProyectoTiendaAmericanaCliente', configuration: 'default')
+   
+   // https://mvnrepository.com/artifact/mysql/mysql-connector-java
+   compile group: 'mysql', name: 'mysql-connector-java', version: '8.0.19'
+   
+   // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
+   compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.10'
+     
+}
