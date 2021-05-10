@@ -26,13 +26,13 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
-
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
-import CapaDAOSer.RazonSocialDAO;
 import ModeloSer.Correo;
-import ModeloSer.RazonSocial;
+import ModeloSer.CorreoElectronico;
+import capaDAOCC.RazonSocialDAO;
+import capaModeloCC.RazonSocial;
 import utilidadesSer.ControladorEnvioCorreo;
 
 public class ReporteMensualDomiciliosCOM {
@@ -174,10 +174,11 @@ public class ReporteMensualDomiciliosCOM {
 			respuesta = respuesta + "</table> <br/>";
 			//Procedemos al envío del correo
 			Correo correo = new Correo();
+			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setAsunto("DOMICILIOS.COM REPORTE MENSUAL DE COMISIÓN " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion() + " " + fechaActual);
-			correo.setContrasena("Pizzaamericana2017");
+			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEDOMICILIOSCOMMENSUAL");
-			correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 			correo.setMensaje("A continuación el reporte Mensual de pedidos tomados para domicilios.com separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();

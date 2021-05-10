@@ -6,7 +6,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 
 import ConexionSer.ConexionBaseDatos;
-import ModeloSer.MarcacionAnulacionPedido;
+import capaModeloCC.MarcacionAnulacionPedido;
 
 public class MarcacionAnulacionPedidoDAO {
 	

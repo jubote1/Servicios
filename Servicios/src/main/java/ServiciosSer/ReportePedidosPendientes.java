@@ -32,6 +32,7 @@ import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import ControladorSer.PedidoCtrl;
 import ModeloSer.Correo;
+import ModeloSer.CorreoElectronico;
 import ModeloSer.Pedido;
 import ModeloSer.Tienda;
 import utilidadesSer.ControladorEnvioCorreo;
@@ -61,6 +62,10 @@ public class ReportePedidosPendientes {
 		//Se crea la variable que se encargará de la respuesta
 		String respuesta = "";
 		boolean indicadorCorreo = false;
+		//Variable para definir si el pedido es de tienda Kuno
+		String tiendaKuno = "";
+		//Variable para controlar que se tenga un error
+		boolean seTuvoError = false;
 		//ESPACIO PARA EXTRAER LAS OFERTAS NUEVAS
 		respuesta = respuesta + "<table border='2'> <tr> INFORMATIVO PEDIDOS PENDIENTES QUE SE INTENTARON ENVIAR " + " </tr>";
 		respuesta = respuesta + "<tr>"
@@ -74,6 +79,13 @@ public class ReportePedidosPendientes {
 		for(int j = 0; j < pedidosPendientes.size(); j++)
 		{
 			Pedido pedido = pedidosPendientes.get(j);
+			if(pedido.getOrigen().equals(new String("TK")))
+			{
+				tiendaKuno = "S";
+			}else
+			{
+				tiendaKuno = "";
+			}
 			//Controlamos que solo se ejecute una vez el retorno de la URL del contact center
 			if(!indicadorCorreo)
 			{
@@ -81,7 +93,7 @@ public class ReportePedidosPendientes {
 			}
 			//La idea es que en este punto se va a intentar reenviar el pedido y se notificará el resultado en el correo
 			PedidoCtrl pedCtrl = new PedidoCtrl();
-			boolean respReenvio = pedCtrl.reenviarPedidoJava(pedido, urlServerContact);
+			boolean respReenvio = pedCtrl.reenviarPedidoJava(pedido, urlServerContact, tiendaKuno);
 			String strRespReenvio = "";
 			if(respReenvio)
 			{
@@ -89,24 +101,26 @@ public class ReportePedidosPendientes {
 			}else
 			{
 				strRespReenvio = "Se reenvió y NOK";
+				seTuvoError = true;
 			}
 			respuesta = respuesta + "<tr><td>" +  pedido.getIdpedido() + "</td><td>" +  pedido.getNombretienda() + "</td><td>" + pedido.getNombrecliente() + "</td><td>" + pedido.getFechainsercion() + "</td><td>" + pedido.getUsuariopedido() + "</td><td>" + strRespReenvio + "</td></tr>";
 			indicadorCorreo = true;
 		}	
 		respuesta = respuesta + "</table> <br/>";
-		
-		if(indicadorCorreo)
+		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+		if(indicadorCorreo && seTuvoError)
 		{
 			//Recuperar la lista de distribución para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDOPENDIENTE");
 			Date fecha = new Date();
 			Correo correo = new Correo();
 			correo.setAsunto("INFORMATIVO PEDIDOS PENDIENTES ENVIADOS " + fecha.toString());
-			correo.setContrasena("Pizzaamericana2017");
-			correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+			correo.setContrasena(infoCorreo.getClaveCorreo());
+			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 			correo.setMensaje("Existían pedidos pendientes, los cuales se intentaron reenviar con los siguientes detalles y resultados: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-			contro.enviarCorreoHTML();
+			//Documentamos esta parte dado que igual se va a reportar a continuación el pedido pendiente
+			//contro.enviarCorreoHTML();
 		}
 		
 		
@@ -144,8 +158,8 @@ public class ReportePedidosPendientes {
 			Date fecha = new Date();
 			Correo correo = new Correo();
 			correo.setAsunto("URGENTE PEDIDOS PENDIENTES CONTACT CENTER " + fecha.toString());
-			correo.setContrasena("Pizzaamericana2017");
-			correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+			correo.setContrasena(infoCorreo.getClaveCorreo());
+			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 			correo.setMensaje("Urgente existen pedidos pendientes por ser enviado a las tiendas: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
@@ -187,8 +201,8 @@ public class ReportePedidosPendientes {
 			Date fecha = new Date();
 			Correo correo = new Correo();
 			correo.setAsunto("ATENCIÓN PEDIDOS QUE SE ESTÁN TOMANDO HACE MÁS DE 7 MINUTOS " + fecha.toString());
-			correo.setContrasena("Pizzaamericana2017");
-			correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+			correo.setContrasena(infoCorreo.getClaveCorreo());
+			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 			correo.setMensaje("CUIDADO! Existen pedidos que se están tomando hace más de 7 minutos y no se han enviado a la tienda: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();

@@ -32,7 +32,6 @@ public class ConexionBaseDatos {
 //			    con = DriverManager.getConnection(
 //		                  "jdbc:mysql://localhost/pizzaamericana?"
 //		            + "user=root&password=4m32017");
-			    
 			    con = DriverManager.getConnection(
 			            "jdbc:mysql://192.168.0.25/pizzaamericana?"
 			            + "user=root&password=4m32017&serverTimezone=UTC");
@@ -107,7 +106,7 @@ public class ConexionBaseDatos {
 //		            + "user=root&password=4m32017");
 			    
 			    con = DriverManager.getConnection(
-			            "jdbc:mysql://192.168.0.25/general?"
+			            "jdbc:mysql://localhost/general?"
 			            + "user=root&password=4m32017&serverTimezone=UTC");
 
 		    // Otros y operaciones sobre la base de datos...
@@ -329,8 +328,9 @@ public class ConexionBaseDatos {
 		//...
 
 		try {
-
-		
+			
+			
+			DriverManager.setLoginTimeout(10);
 			con = DriverManager.getConnection(
 		            "jdbc:mysql://" + url + "/tiendaamericana?"
 		            + "user=root&password=4m32017&serverTimezone=UTC");

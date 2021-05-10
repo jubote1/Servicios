@@ -14,17 +14,18 @@ import java.util.GregorianCalendar;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import capaDAOINV.GeneralDAO;
-import capaDAOINV.InventarioDAO;
-import capaDAOINV.MarcacionAnulacionPedidoDAO;
-import capaDAOINV.MarcacionCambioPedidoDAO;
-import capaDAOINV.ParametrosDAO;
-import capaDAOINV.PedidoDAO;
-import capaDAOINV.RazonSocialDAO;
-import capaDAOINV.TiendaDAO;
-import capaModeloINV.*;
+import CapaDAOSer.GeneralDAO;
 import conexionINV.ConexionBaseDatos;
-import utilidadesINV.ControladorEnvioCorreo;
+import utilidadesSer.ControladorEnvioCorreo;
+import ModeloSer.CorreoElectronico;
+import capaDAOCC.MarcacionAnulacionPedidoDAO;
+import capaDAOCC.MarcacionCambioPedidoDAO;
+import capaDAOCC.PedidoDAO;
+import capaDAOCC.RazonSocialDAO;
+import capaModeloCC.MarcacionAnulacionPedido;
+import capaModeloCC.MarcacionCambioPedido;
+import capaModeloCC.RazonSocial;
+import ModeloSer.Correo;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
@@ -64,7 +65,7 @@ public class ReporteSemanalDomiciliosCOM {
 		{
 			//OJO
 			fechaActual = dateFormat.format(calendarioActual.getTime());
-			//fechaActual = "2020-05-04";
+			//fechaActual = "2021-02-01";
 		}catch(Exception exc)
 		{
 			System.out.println(exc.toString());
@@ -131,6 +132,10 @@ public class ReporteSemanalDomiciliosCOM {
 			ArrayList pedidosDomCOM = PedidoDAO.obtenerPedidosDomiciliosCOM(razTemp.getIdRazon(), fechaAnterior, fechaActual);
 			//Obtenemos un total por tienda de los pedidos
 			ArrayList pedidosDomCOMTienda = PedidoDAO.obtenerPedidosDomiciliosCOMTienda(razTemp.getIdRazon(), fechaAnterior, fechaActual);
+			//Obtenemos totales de pago online por tienda
+			ArrayList pedidosDomCOMONLINETienda = PedidoDAO.obtenerPedidosDomiciliosCOMONLINETienda(razTemp.getIdRazon(), fechaAnterior, fechaActual);
+			//Obtenemos totales de pago online por tienda
+			ArrayList descuentosDomCOMTienda = PedidoDAO.obtenerDescuentosDomiciliosCOMTienda(razTemp.getIdRazon(), fechaAnterior, fechaActual);
 			//Procedemos a procesar la información y a enviar el correo con el reporte
 			String respuesta = "";
 			respuesta = respuesta + "<table border='2'> <tr> RESUMEN SEMANAL DOMICILIOS.COM RAZON SOCIAL " + razTemp.getNombreRazon() +  " </tr>";
@@ -168,7 +173,9 @@ public class ReporteSemanalDomiciliosCOM {
 				{
 					descuento = 0;
 				}
-				totalPedido = Double.parseDouble(resTemp[1]) - descuento;
+				//Ya realizamos los cambios pora que el total_neto tenga el descuento por lo tanto no es necesario
+				//totalPedido = Double.parseDouble(resTemp[1]) - descuento;
+				totalPedido = Double.parseDouble(resTemp[1]);
 				if(idFormaPago == 1)
 				{
 					formaPago = "EFE";
@@ -203,6 +210,35 @@ public class ReporteSemanalDomiciliosCOM {
 			for(int j = 0; j < pedidosDomCOMTienda.size(); j++)
 			{
 				resTotalTienda = (String[]) pedidosDomCOMTienda.get(j);
+				respuesta = respuesta + "<tr><td>" + resTotalTienda[0] + "</td><td>" + formatea.format(Double.parseDouble(resTotalTienda[1])) + "</td></tr>";
+			}
+			respuesta = respuesta + "</table> <br/>";
+			
+			
+			//Agregaremos el TOTAL de pago ONLINE por tienda
+			respuesta = respuesta + "<table border='2'> <tr> TOTAL PAGO ONLINE POR TIENDA " + razTemp.getNombreRazon() +  " </tr>";
+			respuesta = respuesta + "<tr>"
+					+  "<td><strong>Tienda</strong></td>"
+					+  "<td><strong>Total Pedidos ONLINE</strong></td>"
+					+  "<td><strong>FORMA DE PAGO</strong></td>"
+					+"</tr>";
+			for(int j = 0; j < pedidosDomCOMONLINETienda.size(); j++)
+			{
+				resTotalTienda = (String[]) pedidosDomCOMONLINETienda.get(j);
+				respuesta = respuesta + "<tr><td>" + resTotalTienda[0] + "</td><td>" + formatea.format(Double.parseDouble(resTotalTienda[1])) + "</td><td>" + resTotalTienda[2] + "</td></tr>";
+			}
+			respuesta = respuesta + "</table> <br/>";
+			
+			
+			//Agregaremos el TOTAL de descuentos por tienda
+			respuesta = respuesta + "<table border='2'> <tr> TOTAL DESCUENTOS POR TIENDA " + razTemp.getNombreRazon() +  " </tr>";
+			respuesta = respuesta + "<tr>"
+					+  "<td><strong>Tienda</strong></td>"
+					+  "<td><strong>Total Descuentos</strong></td>"
+					+"</tr>";
+			for(int j = 0; j < descuentosDomCOMTienda.size(); j++)
+			{
+				resTotalTienda = (String[]) descuentosDomCOMTienda.get(j);
 				respuesta = respuesta + "<tr><td>" + resTotalTienda[0] + "</td><td>" + formatea.format(Double.parseDouble(resTotalTienda[1])) + "</td></tr>";
 			}
 			respuesta = respuesta + "</table> <br/>";
@@ -247,10 +283,11 @@ public class ReporteSemanalDomiciliosCOM {
 						
 			//Procedemos al envío del correo
 			Correo correo = new Correo();
+			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setAsunto("Reporte Semanal Domicilios.com de la Razón Social " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion());
-			correo.setContrasena("Pizzaamericana2017");
+			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEDOMICILIOSCOM");
-			correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 			correo.setMensaje("A continuación el reporte semanal de pedidos tomados para domicilios.com separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();

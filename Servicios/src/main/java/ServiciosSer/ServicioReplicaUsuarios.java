@@ -40,6 +40,7 @@ import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import CapaDAOSer.UsuarioDAO;
 import ModeloSer.Correo;
+import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
 import ModeloSer.Insumo;
 import ModeloSer.Tienda;
@@ -65,10 +66,12 @@ public void generarReplicaUsuarios()
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
 	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo.
-	String exitoso = "", noExitoso = "";
+	String noExitoso = "";
 	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 	//Retornamos los objetos de empleados y la biometria, primero debemos retornar
 	ArrayList<Usuario> usuarios = UsuarioDAO.obtenerEmpleadosGeneral();
+	//Obtenemos los empleados inactivos
+	ArrayList<Usuario> usuariosIna = UsuarioDAO.obtenerEmpleadosInactivosGeneral();
 	ArrayList<EmpleadoBiometria> usuariosBiometria = UsuarioDAO.obtenerEmpleadosBiometriaGeneral();
 	//Variable idUsuarioIns para controlar si hay error insertando
 	int idUsuarioIns;
@@ -114,7 +117,22 @@ public void generarReplicaUsuarios()
 					{
 						UsuarioDAO.insertarEmpleadoBiometriaLocal(empBioTemp, tien.getHostBD());
 					}
-					exitoso = exitoso + " <p>" + tien.getNombreTienda()+ " </p>";
+				}
+				//Continuamos con la verificación de eliminación de los empleados inactivos
+				for(Usuario usuTemp: usuariosIna)
+				{
+					if(usuTemp.getClaveRapida() != null)
+					{
+						if(usuTemp.getClaveRapida().length() > 0)
+						{
+							//Validamos la existencia del usuario en la tienda con el idUsuario
+							boolean usuarioExiste = UsuarioDAO.existeUsuarioLocal(usuTemp.getIdUsuario(), tien.getHostBD());
+							if(usuarioExiste)
+							{
+								UsuarioDAO.eliminarUsuarioLocal(usuTemp.getIdUsuario(), tien.getHostBD());
+							}
+						}
+					}
 				}
 			}
 			else
@@ -124,22 +142,22 @@ public void generarReplicaUsuarios()
 		}
 	}
 	
-	//Realizamos el envío del correo electrónico con los archivos
-	Correo correo = new Correo();
-	correo.setAsunto("REPLICA DE USUARIOS EN TIENDAS " + fechaActual.toString());
-	correo.setContrasena("Pizzaamericana2017");
-	//Tendremos que definir los destinatarios de este correo
-	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
-	correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
-	String mensaje = "A continuación informamos que las tiendas que actualizaron correctamente los usuarios fueron " + exitoso;
-	if(noExitoso.trim().length() > 0)
+	if(!noExitoso.equals(new String("")))
 	{
-		mensaje = mensaje + " , y las tiendas que no lograron la actualización fueron "
-				+ " con problemas fueron " + noExitoso;
+		//Realizamos el envío del correo electrónico con los archivos
+		Correo correo = new Correo();
+		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+		correo.setAsunto("PROBLEMAS REPLICA DE USUARIOS EN TIENDAS " + fechaActual.toString());
+		correo.setContrasena(infoCorreo.getClaveCorreo());
+		//Tendremos que definir los destinatarios de este correo
+		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
+		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+		String mensaje = "Las tiendas que no lograron la actualización fueron " + noExitoso;
+		correo.setMensaje(mensaje);
+		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+		contro.enviarCorreoHTML();
 	}
-	correo.setMensaje(mensaje);
-	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-	contro.enviarCorreoHTML();
+	
 }
 
 

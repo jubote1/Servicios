@@ -21,7 +21,7 @@ public class GeneralDAO {
 			Statement stm = con1.createStatement();
 			String consulta = "select correo from parametros_correo where valorparametro = '" +parametro+"'";
 			ResultSet rs = stm.executeQuery(consulta);
-			
+			System.out.println(consulta);
 			while(rs.next()){
 				String correo = rs.getString("correo");
 				correos.add(correo);
@@ -31,7 +31,7 @@ public class GeneralDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println(e.toString() + e.getMessage() +  e.getStackTrace());
+			System.out.println("OJO " + e.toString() + e.getMessage() +  e.getStackTrace());
 			try
 			{
 				con1.close();

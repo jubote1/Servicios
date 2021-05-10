@@ -16,6 +16,8 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 import ModeloSer.Correo;
+import CapaDAOSer.ParametrosDAO;
+import ModeloSer.CorreoElectronico;
 
 public class ControladorEnvioCorreo {
 
@@ -35,6 +37,7 @@ public boolean enviarCorreo()
 	{
 		Properties p = new Properties();
 		p.put("mail.smtp.host", "smtp.gmail.com");
+		p.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		p.setProperty("mail.smtp.starttls.enable", "true");
 		p.setProperty("mail.smtp.port", "587");
 		p.setProperty("mail.smtp.user", c.getUsuarioCorreo());
@@ -91,7 +94,9 @@ public boolean enviarCorreoHTML()
 	try
 	{
 		Properties p = new Properties();
+		p.put("mail.debug", "true");
 		p.put("mail.smtp.host", "smtp.gmail.com");
+		p.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		p.setProperty("mail.smtp.starttls.enable", "true");
 		p.setProperty("mail.smtp.port", "587");
 		p.setProperty("mail.smtp.user", c.getUsuarioCorreo());
@@ -133,6 +138,7 @@ public boolean enviarCorreoHTMLAnexo()
 	{
 		Properties p = new Properties();
 		p.put("mail.smtp.host", "smtp.gmail.com");
+		p.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		p.setProperty("mail.smtp.starttls.enable", "true");
 		p.setProperty("mail.smtp.port", "587");
 		p.setProperty("mail.smtp.user", c.getUsuarioCorreo());
@@ -183,6 +189,14 @@ public boolean enviarCorreoHTMLAnexo()
 		return(false);
 	}
 	
+}
+
+public static CorreoElectronico recuperarCorreo(String variableCuenta, String variableClave)
+{
+	String cuentaCorreo = ParametrosDAO.retornarValorAlfanumerico(variableCuenta);
+	String claveCorreo = ParametrosDAO.retornarValorAlfanumerico(variableClave);
+	CorreoElectronico respuesta = new CorreoElectronico(cuentaCorreo, claveCorreo);
+	return(respuesta);
 }
 	
 }

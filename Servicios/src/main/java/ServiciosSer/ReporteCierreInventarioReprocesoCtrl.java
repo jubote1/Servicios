@@ -39,18 +39,19 @@ import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import ModeloSer.Correo;
+import ModeloSer.CorreoElectronico;
 import ModeloSer.Insumo;
 import ModeloSer.Tienda;
 import utilidadesSer.ControladorEnvioCorreo;
 
-public class ReporteCierreInventarioCtrl {
+public class ReporteCierreInventarioReprocesoCtrl {
 	
 	
 	
 	
 public static void main(String[] args)
 {
-	ReporteCierreInventarioCtrl reporteTiendas = new ReporteCierreInventarioCtrl();
+	ReporteCierreInventarioReprocesoCtrl reporteTiendas = new ReporteCierreInventarioReprocesoCtrl();
 	reporteTiendas.generarReporteSemanalCierreInventarioTiendas();
 	
 }
@@ -75,8 +76,8 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	//Obtenemos la fecha Actual en el formato necesario de base de datos
 	try
 	{
-		fechaActual = dateFormat.format(calendarioActual.getTime());
-		//fechaActual = "2019-05-13";
+		//fechaActual = dateFormat.format(calendarioActual.getTime());
+		fechaActual =  ParametrosDAO.retornarValorAlfanumerico("FECHAREPROCESO");
 	}catch(Exception exc)
 	{
 		System.out.println(exc.toString());
@@ -150,11 +151,12 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	
 	//Realizamos el envío del correo electrónico con los archivos
 	Correo correo = new Correo();
+	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 	correo.setAsunto("CIERRE SEMANAL DE INVENTARIO" + fechaActual + " " + fechaAnterior);
-	correo.setContrasena("Pizzaamericana2017");
+	correo.setContrasena(infoCorreo.getClaveCorreo());
 	//Tendremos que definir los destinatarios de este correo
 	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPCIERREINVENTARIO");
-	correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 	correo.setMensaje("A continuación todos los CIERRES de inventarios de las tiendas de pizza americana");
 	correo.setRutasArchivos(rutasArchivos);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
@@ -217,8 +219,8 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 		   	ArrayList cierreInventario = new ArrayList();
 		   	ArrayList cierreInventarioGas = new ArrayList();
 		   	//Llamamos método qeu llenará el ArrayList con el resumen de la información
-		   	cierreInventario = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumos(fechaActual, fechaAnterior, "Insumos", tienda.getHostBD());
-		   	cierreInventarioGas = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumos(fechaActual, fechaAnterior, "Bebidas", tienda.getHostBD());
+		   	cierreInventario = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumosReproceso(fechaActual, fechaAnterior, "Insumos", tienda.getHostBD());
+		   	cierreInventarioGas = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumosReproceso(fechaActual, fechaAnterior, "Bebidas", tienda.getHostBD());
 			//Contralaremos la fila en la que vamos con la variable fila
 			int fila = 0;
 			int filasInforme = 0;

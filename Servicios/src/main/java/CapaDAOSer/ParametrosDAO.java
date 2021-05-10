@@ -139,6 +139,7 @@ public class ParametrosDAO {
 		{
 			Statement stm = con1.createStatement();
 			String consulta = "select valortexto from parametros where valorparametro = '"+ variable +"'";
+			System.out.println(consulta);
 			ResultSet rs = stm.executeQuery(consulta);
 			while(rs.next()){
 				
@@ -157,7 +158,7 @@ public class ParametrosDAO {
 			con1.close();
 		}catch (Exception e)
 		{
-			
+			System.out.println("OJO ERROR" + e.toString());
 			try
 			{
 				con1.close();

@@ -21,6 +21,7 @@ import CapaDAOSer.TiempoPedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import ConexionSer.ConexionBaseDatos;
 import ModeloSer.Correo;
+import ModeloSer.CorreoElectronico;
 import ModeloSer.Pedido;
 import ModeloSer.PedidoFueraTiempo;
 import ModeloSer.PedidoPixel;
@@ -184,15 +185,31 @@ public class ServicioReporteContactCenter {
 		}
 		respuesta = respuesta + "</table> <br/>";
 		
+		//Agregamos la información de tienda virtual
+		ArrayList cantVirtualPersona = ReporteContactCenterDAO.obtenerPedidosVirtualPorUsuario(fechaAnterior, fechaActual);
+		respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS TIENDA VIRTUAL POR USUARIO "  + "</TH> </tr>";
+		respuesta = respuesta + "<tr>"
+				+  "<td width='140' nowrap><strong>USUARIO QUE REALIZÓ ENVIO</strong></td>"
+				+  "<td width='60' nowrap><strong>CANTIDAD</strong></td>"
+				+  "</tr>";
+		for(int y = 0; y < cantVirtualPersona.size();y++)
+		{
+			fila = (String[]) cantVirtualPersona .get(y);
+			respuesta = respuesta + "<tr><td width='140' nowrap>" + fila[0] + "</td><td width='110' nowrap> " + fila[1] + "</td></tr>";
+			contador = contador +1 ;
+		}
+		respuesta = respuesta + "</table> <br/>";
+		
 		
 	
 		//Recuperar la lista de distribución para este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTESEMANALCONTACT");
 		Date fecha = new Date();
 		Correo correo = new Correo();
+		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto("CONTACT CENTER SEMANAL DE " + fechaAnterior + " HASTA " + fechaActual);
-		correo.setContrasena("Pizzaamericana2017");
-		correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+		correo.setContrasena(infoCorreo.getClaveCorreo());
+		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 		correo.setMensaje("Resumen Semanal de estadísticas Contact Center: \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();

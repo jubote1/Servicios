@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import CapaDAOSer.GeneralDAO;
-import CapaDAOSer.Impresion;
 import CapaDAOSer.ImprimirAdmDAO;
 import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
@@ -26,6 +25,7 @@ import ModeloSer.PedidoFueraTiempo;
 import ModeloSer.PedidoPixel;
 import ModeloSer.TiempoPedido;
 import ModeloSer.Tienda;
+import interfazGraficaPOS.Impresion;
 import utilidadesSer.ControladorEnvioCorreo;
 
 public class ServicioImpresion {
@@ -38,14 +38,14 @@ public class ServicioImpresion {
 	{
 		
 		ArrayList<ImprimirAdm> impresiones = ImprimirAdmDAO.pendientesImpresion();
-		System.out.println(impresiones.size());
+		
 		//Realizamos un recorrido de las tiendas para de cada uno se recuperan los pedidos.
 		for(int i = 0; i < impresiones.size(); i++)
 		{
 			ImprimirAdm impresionTemp = impresiones.get(i);
 			String paraImpr = impresionTemp.getImprimir();
 			//Luego de realizada la impresión
-			Impresion.main(paraImpr);
+			Impresion.main(paraImpr, impresionTemp.getImpresora());
 			
 			try
 			{
@@ -93,7 +93,13 @@ public class ServicioImpresion {
 			
 	      System.out.println("My Service Started "
 	                         + new java.util.Date());
-	      //Recuperamos los parámetros con los cuales se ejecutaron
+	      try
+			{
+	  		  Thread.sleep(30000);
+			}catch(Exception e)
+			{
+				System.out.println("Durmiendo el proceso para dar un poco de gabela que inicie");
+			}	
 	      
 	      int segundosEje;
 	      //En este punto deberemos de recuperar el número de minutos en el cual se ejecutará el proceso

@@ -29,7 +29,7 @@ public class EmpleadoTemporalDiaDAO {
 		String select  = "select a.*, b.nombre_largo  from empleado_temporal_dia a, usuario b where a.id = b.id and a.fecha_sistema >= '" + fechaAnterior + "' and a.fecha_sistema <= '" + fechaActual + "' and a.idempresa = " + idEmpresa + " order by a.fecha_sistema";
 		ArrayList<EmpleadoTemporalDia> empleadosTemp = new ArrayList();
 		Statement stm;
-		EmpleadoTemporalDia empRespuesta = new EmpleadoTemporalDia(0,"", "", "", "", "", 0);
+		EmpleadoTemporalDia empRespuesta = new EmpleadoTemporalDia(0,"", "", "", "", "", 0, "");
 		try
 		{
 			stm = con1.createStatement();
@@ -37,7 +37,7 @@ public class EmpleadoTemporalDiaDAO {
 			String evento = "";
 			int id;
 			String nombre, telefono, empresa, identificacion, usuario;
-			String horaIngreso, horaSalida, fecha;
+			String horaIngreso, horaSalida, fecha, observacion;
 			while(rs.next())
 			{
 				id = rs.getInt("id");
@@ -49,8 +49,67 @@ public class EmpleadoTemporalDiaDAO {
 				horaIngreso = rs.getString("horaingreso");
 				horaSalida = rs.getString("horasalida");
 				fecha = rs.getString("fecha_sistema");
+				observacion = rs.getString("observacion");
 				empRespuesta = new EmpleadoTemporalDia(id, identificacion, usuario + " " + nombre, telefono, empresa,
-					fecha, idEmpresa);
+					fecha, idEmpresa, observacion);
+				empRespuesta.setHoraIngreso(horaIngreso);
+				empRespuesta.setHoraSalida(horaSalida);
+				empleadosTemp.add(empRespuesta);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+	
+			
+		}
+		catch (Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+				
+			}catch(Exception e1)
+			{
+				
+			}
+			
+		}
+		//Realizamos las validaciones de lo que retornamos
+		
+		return(empleadosTemp);
+	}
+	
+	public static ArrayList<EmpleadoTemporalDia> obtenerEmpleadoTemporalFechaReproceso(String fechaActual, String fechaAnterior, int idEmpresa, String conexionTienda)
+	{
+		
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDTiendaRemota(conexionTienda);
+		String select  = "select a.*, b.nombre_largo  from empleado_temporal_dia a, usuario b where a.id = b.id and a.fecha_sistema >= '" + fechaAnterior + "' and a.fecha_sistema < '" + fechaActual + "' and a.idempresa = " + idEmpresa + " order by a.fecha_sistema";
+		ArrayList<EmpleadoTemporalDia> empleadosTemp = new ArrayList();
+		Statement stm;
+		EmpleadoTemporalDia empRespuesta = new EmpleadoTemporalDia(0,"", "", "", "", "", 0, "");
+		try
+		{
+			stm = con1.createStatement();
+			ResultSet rs = stm.executeQuery(select);
+			String evento = "";
+			int id;
+			String nombre, telefono, empresa, identificacion, usuario;
+			String horaIngreso, horaSalida, fecha, observacion;
+			while(rs.next())
+			{
+				id = rs.getInt("id");
+				usuario = rs.getString("nombre_largo");
+				nombre = rs.getString("nombre");
+				identificacion = rs.getString("identificacion");
+				telefono = rs.getString("telefono");
+				empresa = rs.getString("empresa");
+				horaIngreso = rs.getString("horaingreso");
+				horaSalida = rs.getString("horasalida");
+				fecha = rs.getString("fecha_sistema");
+				observacion = rs.getString("observacion");
+				empRespuesta = new EmpleadoTemporalDia(id, identificacion, usuario + " " + nombre, telefono, empresa,
+					fecha, idEmpresa, observacion);
 				empRespuesta.setHoraIngreso(horaIngreso);
 				empRespuesta.setHoraSalida(horaSalida);
 				empleadosTemp.add(empRespuesta);

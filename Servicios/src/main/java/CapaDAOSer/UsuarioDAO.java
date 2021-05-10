@@ -33,7 +33,61 @@ public class UsuarioDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String consulta = "select * from empleado ";
+			String consulta = "select * from empleado where activo = 1";
+			ResultSet rs = stm.executeQuery(consulta);
+			int id;
+			String nombre, nombreLargo, administrador, tipoInicio, contrasena, claveRapida;
+			int tipoEmpleado, esEmpleado;
+			
+			
+			while(rs.next()){
+				id = rs.getInt("id");
+				nombre = rs.getString("nombre");
+				nombreLargo = rs.getString("nombre_largo");
+				administrador = rs.getString("administrador");
+				tipoInicio = rs.getString("tipoinicio");
+				tipoEmpleado = rs.getInt("idtipoempleado");
+				contrasena = rs.getString("password");
+				try {
+					esEmpleado = rs.getInt("es_empleado");
+				}catch(Exception e){
+					esEmpleado = 0;
+				}
+				claveRapida = rs.getString("claverapida");
+				Usuario usuarioTemp = new Usuario(id, nombre, contrasena, nombreLargo, tipoEmpleado,
+			tipoInicio, administrador);
+				usuarioTemp.setEsEmpleado(esEmpleado);
+				usuarioTemp.setClaveRapida(claveRapida);
+				empleados.add(usuarioTemp);
+				
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+		}
+		return(empleados);
+		
+	}
+	
+	public static ArrayList<Usuario> obtenerEmpleadosInactivosGeneral()
+	{
+		
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDGeneralLocal();
+		ArrayList<Usuario> empleados = new ArrayList();
+		
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "select * from empleado where activo = 0";
 			ResultSet rs = stm.executeQuery(consulta);
 			int id;
 			String nombre, nombreLargo, administrador, tipoInicio, contrasena, claveRapida;
@@ -91,7 +145,7 @@ public class UsuarioDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String consulta = "select * from empleado_biometria";
+			String consulta = "select a.* from empleado_biometria a, empleado b where a.id = b.id and b.activo = 1";
 			ResultSet rs = stm.executeQuery(consulta);
 			int id;
 			byte datosHuella[];
@@ -329,6 +383,33 @@ public class UsuarioDAO {
 		{
 			Statement stm = con1.createStatement();
 			String update = "update usuario set nombre = '" + usuario.getNombreUsuario() + "' , password  = '" + usuario.getContrasena() + "' ,  nombre_largo = '" + usuario.getNombreLargo() + "' , administrador = '" + usuario.getAdministrador() + "' , idtipoempleado = " + usuario.getIdTipoEmpleado() + " , tipoinicio = '" + usuario.getTipoInicio() +"' , es_empleado = " + usuario.getEsEmpleado() + " , claverapida = '" + usuario.getClaveRapida() + "' where id = " + usuario.getIdUsuario(); 
+			stm.executeUpdate(update);
+			stm.close();
+			con1.close();
+			respuesta = true;
+		}
+		catch (Exception e){
+			try
+			{
+				System.out.println(e.toString());
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+			
+		}
+		return(respuesta);
+	}
+	
+	public static boolean eliminarUsuarioLocal(int idUsuarioEli, String hostBD)
+	{
+		boolean respuesta = false;
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+		try
+		{
+			Statement stm = con1.createStatement();
+			String update = "delete from usuario where id = " + idUsuarioEli; 
 			stm.executeUpdate(update);
 			stm.close();
 			con1.close();

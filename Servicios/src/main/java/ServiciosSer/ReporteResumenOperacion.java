@@ -17,6 +17,7 @@ import CapaDAOSer.TiempoPedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import CapaDAOSer.UsuarioDAO;
 import ModeloSer.Correo;
+import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
 import ModeloSer.Pedido;
 import ModeloSer.TiempoPedido;
@@ -83,11 +84,43 @@ public class ReporteResumenOperacion {
 		int cantPedHoraDom = 0;
 		int cantPedHoraNoDom = 0;
 		String cantMinutos = "";
+		String strPedidosProg = "";
 		for(Tienda tien : tiendas)
 		{
-			
+			strPedidosProg = "(";
 			if(!tien.getHostBD().equals(new String("")))
 			{
+				//Vamos a agregar los pedidos programados
+				respuesta = respuesta + "<table border='2'><tr><td colspan='4'>" + tien.getNombreTienda() + "</td></tr>";
+				respuesta = respuesta + "<tr>"
+						+  "<td><strong>PEDIDO</strong></td>"
+						+  "<td><strong>FACTURA TIENDA</strong></td>"
+						+  "<td><strong>VALOR PEDIDO</strong></td>"
+						+  "<td><strong>HORA PROGRAMADO</strong></td>"
+						+  "</tr>";
+				ArrayList pedidosProgramados = PedidoDAO.obtenerPedidosProgramadosTienda(tien.getIdTienda());
+				for(int i = 0; i < pedidosProgramados.size(); i++)
+				{
+					String[] pedTemp = (String[]) pedidosProgramados.get(i);
+					respuesta = respuesta + "<tr>"
+					+  "<td>" + pedTemp[0] + "</td>"
+					+  "<td>" + pedTemp[1] + "</td>"
+					+  "<td>" + formatea.format(Double.parseDouble(pedTemp[2]))  + "</td>"
+					+  "<td>" + pedTemp[3] + "</td>"
+					+  "</tr>";
+					if(i == 0)
+					{
+						strPedidosProg = strPedidosProg + pedTemp[0];
+					}else
+					{
+						strPedidosProg = strPedidosProg + " , " + pedTemp[0];
+					}
+					
+				}
+				strPedidosProg = strPedidosProg + ")";
+				System.out.println(strPedidosProg);
+				respuesta = respuesta + "</table> <br/>";
+				
 				respuesta = respuesta + "<table border='2'><tr><td colspan='4'>" + tien.getNombreTienda() + "</td></tr>";
 				respuesta = respuesta + "<tr>"
 						+  "<td><strong>Ped Pend Salir Tienda</strong></td>"
@@ -106,7 +139,7 @@ public class ReporteResumenOperacion {
 				//Cantidad de pedidos de la última hora Domicilio
 				cantPedHoraNoDom = PedidoDAO.obtenerCantidadPedidoDespuesHoraNoDomicilio(fechaActual, fechaActualMenosHora, tien.getHostBD(),tipoPedidoDomicilio );
 				//Tiempo del último pedimo por salir
-				cantMinutos = PedidoDAO.obtenerTiempoUltimoPedidoEstado(fechaActual, pedidoEmpacado, tien.getHostBD());
+				cantMinutos = PedidoDAO.obtenerTiempoUltimoPedidoEstado(fechaActual, pedidoEmpacado, strPedidosProg,  tien.getHostBD());
 				//Luego de obtenidos los datos pintamos el html
 				respuesta = respuesta + "<tr>"
 						+  "<td>" + cantPedEmp + "</td>"
@@ -136,9 +169,24 @@ public class ReporteResumenOperacion {
 						+  "<td>" + cantDomExt + "</td>"
 						+  "</tr>";
 				respuesta = respuesta + "</table> <br/>";
+							
 				if(cantPedPen > 0)
 				{
 					indicadorCorreo = true;
+				}
+				//Incluimos una validación de diferencias de los pedidos para tener que corregir antes de descuadres
+				int cantPedDescuadrados = pedCtrl.obtenerCantidadPedidosDescuadrados(fechaActual, tien.getHostBD());
+				if(cantPedDescuadrados > 0 )
+				{
+					ArrayList correos = GeneralDAO.obtenerCorreosParametro("ERRORREPLICAINV");
+					Correo correo = new Correo();
+					correo.setAsunto("OJO DESCUADRE FORMA PAGO " + fechaActual);
+					CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+					correo.setContrasena(infoCorreo.getClaveCorreo());
+					correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+					correo.setMensaje("Ojo en la tienda: \n" + tien.getNombreTienda() + " tiene descuadre en " + cantPedDescuadrados + " descuadrados.");
+					ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+					contro.enviarCorreoHTML();
 				}
 			}
 		}
@@ -152,9 +200,10 @@ public class ReporteResumenOperacion {
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPRESUMENOPERACION");
 			Date fecha = new Date();
 			Correo correo = new Correo();
+			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setAsunto("OPERACION GENERAL " + fecha.toString());
-			correo.setContrasena("Pizzaamericana2017");
-			correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+			correo.setContrasena(infoCorreo.getClaveCorreo());
+			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 			correo.setMensaje("A continuación el detalle de la operación de Pizza Americana: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();

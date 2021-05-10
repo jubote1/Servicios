@@ -29,10 +29,12 @@ public class ImprimirAdmDAO {
 			ResultSet rs = stm.executeQuery(consulta);
 			int idImpresion;
 			String imprimir;
+			String impresora;
 			while(rs.next()){
 				idImpresion = rs.getInt("idimpresion");
 				imprimir = rs.getString("imprimir");
-				ImprimirAdm colaImp = new ImprimirAdm(idImpresion,imprimir);
+				impresora = rs.getString("impresora");
+				ImprimirAdm colaImp = new ImprimirAdm(idImpresion,imprimir,impresora);
 				impresiones.add(colaImp);
 				
 			}

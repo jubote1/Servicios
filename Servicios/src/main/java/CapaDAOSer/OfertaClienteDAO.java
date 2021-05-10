@@ -127,5 +127,43 @@ public class OfertaClienteDAO {
 		return(ofertas);
 		
 	}
+	
+	public static ArrayList consultarCodigosPromocionalesEnviados(String fecha)
+	{
+		ArrayList<String[]> codigosEnviados = new ArrayList();
+		String consulta = "";
+		consulta = "SELECT c.nombre,COUNT(*)  FROM oferta_cliente a, cliente b, tienda c WHERE a.idcliente = b.idcliente and b.idtienda = c.idtienda and a.ingreso_oferta >= '" + fecha +" 00:00:00' AND " + 
+				"a.ingreso_oferta <= '" + fecha + " 23:59:00' group by c.nombre";
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		//Llamamos metodo de conexión asumiendo que corremos en el servidor de aplicaciones de manera local
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			ResultSet rs = stm.executeQuery(consulta);
+
+			while(rs.next())
+			{
+				String[] filaTemp = new String[2];
+				filaTemp[0] = rs.getString(1);
+				filaTemp[1] = Integer.toString(rs.getInt(2));
+				codigosEnviados.add(filaTemp);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+
+		}catch(Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+			
+		}
+		return(codigosEnviados);
+	}
 
 }

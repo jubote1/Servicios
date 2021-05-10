@@ -8,7 +8,10 @@ import java.util.Date;
 
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
+import CapaDAOSer.PedidoDAO;
+import CapaDAOSer.TiendaDAO;
 import ModeloSer.Correo;
+import ModeloSer.CorreoElectronico;
 import capaModeloCC.Tienda;
 import utilidadesSer.ControladorEnvioCorreo;
 
@@ -33,7 +36,7 @@ public class ReporteConciliacionWompi {
 		{
 			//OJO
 			fechaActual = dateFormat.format(calendarioActual.getTime());
-			//fechaActual = "2019-05-13";
+			//fechaActual = "2020-07-26";
 		}catch(Exception exc)
 		{
 			System.out.println(exc.toString());
@@ -178,8 +181,16 @@ public class ReporteConciliacionWompi {
 			for(int k = 0; k < pedVirtualTienda.size(); k++)
 			{
 				pedTemp = pedVirtualTienda.get(k);
-				comision = (pedTemp.getTotal_neto()*(comisionWompi/100)) + adicionComisionWompi;
-				ivaComision = (comision*(ivaComisionWompi/100));
+				//Se hace necesario realizar una diferenciación con el pago de Bancolombia que cobra menos
+				if(pedTemp.getTipoPago().equals(new String("BANCOLOMBIA_TRANSFER")))
+				{
+					comision = (pedTemp.getTotal_neto()*((1.5)/100)) + 500;
+					ivaComision = (comision*(ivaComisionWompi/100));
+				}else
+				{
+					comision = (pedTemp.getTotal_neto()*(comisionWompi/100)) + adicionComisionWompi;
+					ivaComision = (comision*(ivaComisionWompi/100));
+				}
 				if(pedTemp.getTipoPago().equals(new String("CARD")))
 				{
 					retencionFuente = pedTemp.getTotal_neto()*(retencionFuenteWompi/100);
@@ -224,14 +235,34 @@ public class ReporteConciliacionWompi {
 			
 		}
 		
+		//Extraemos una información para sacar resumen de los pagos por tarjeta
+		ArrayList<ModeloSer.Tienda> tiendasLocal = TiendaDAO.obtenerTiendasLocal();
+		respuesta = respuesta + "<table border='2'> <tr> <td colspan='2'> TOTAL POR TIENDA EN FORMA DE PAGO TARJETA EN SEMANA QUE CIERRA</td></tr>";
+		respuesta = respuesta + "<tr>"
+				+  "<td><strong>Nombre Tienda</strong></td>"
+				+  "<td><strong>Valor Dinero</strong></td>"
+				+  "</tr>";
+		double ventaTotalTarjeta = 0;
+		for(ModeloSer.Tienda tien : tiendasLocal)
+		{
+			if(!tien.getHostBD().equals(new String("")))
+			{
+				//Realizamos la acumulación despues de cada iteración
+				ventaTotalTarjeta = PedidoDAO.obtenerTotalesPedidosSemanaTarjeta(fechaAnterior, fechaActual, tien.getHostBD());
+				respuesta = respuesta + "<tr><td>" + tien.getNombreTienda()+  "</td><td>" + formatea.format(ventaTotalTarjeta) + "</td></tr>";
+			}
+		}
+		respuesta = respuesta + "</table><br/>";
+		
 		
 		//Al final el envío del correo
 		//Procedemos al envío del correo
 		Correo correo = new Correo();
-		correo.setAsunto("CONCILIACIÓN SEMANAL PAGOS VIRTUALES DESDE " + fechaAnterior + " HASTA "  + fechaActual);
-		correo.setContrasena("Pizzaamericana2017");
+		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+		correo.setAsunto("CONCILIACIÓN SEMANAL PAGOS VIRTUALES - PAGOS CON TARJETA DESDE " + fechaAnterior + " HASTA "  + fechaActual);
+		correo.setContrasena(infoCorreo.getClaveCorreo());
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTECONCILIACIONWOMPI");
-		correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 		correo.setMensaje("A continuación el detalle y resumen de los pedidos con forma de pago virtual entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();

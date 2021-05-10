@@ -1,8 +1,8 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
-archivesBaseName = 'ReportePedidosPendientes'
-mainClassName = 'ReportePedidosPendientes'
+archivesBaseName = 'ServicioReplicaUsuarios'
+mainClassName = 'ServicioReplicaUsuarios'
 
 sourceSets.main.java.srcDirs = ['src/main/java']
 
@@ -16,7 +16,7 @@ task fatJar(type: Jar) {
 	manifest {
         attributes 'Implementation-Title': 'Servicios Varios',
         	'Class-Path': '.', 
-        	'Main-Class': 'ServiciosSer.ReportePedidosPendientes'
+        	'Main-Class': 'ServiciosSer.ServicioReplicaUsuarios'
     }
     baseName = archivesBaseName
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
@@ -45,7 +45,10 @@ dependencies {
    compile fileTree(dir: 'libs', include: '*.jar')
    
    // https://mvnrepository.com/artifact/javax.mail/mail
-   compile group: 'javax.mail', name: 'mail', version: '1.4.7'
+   //compile group: 'javax.mail', name: 'mail', version: '1.4.7'
+   // https://mvnrepository.com/artifact/javax.mail/javax.mail-api
+	implementation group: 'javax.mail', name: 'javax.mail-api', version: '1.6.2'
+   
    
    // https://mvnrepository.com/artifact/org.apache.poi/poi
    compile group: 'org.apache.poi', name: 'poi', version: '4.0.0'

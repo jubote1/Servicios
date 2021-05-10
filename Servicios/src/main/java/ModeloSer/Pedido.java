@@ -35,9 +35,23 @@ public class Pedido {
 	private String motivoDescuento;
 	private int memcode;
 	private String idLink;
+	private String horaProgramado;
+	private String origen;
 	
 	
 	
+	public String getOrigen() {
+		return origen;
+	}
+	public void setOrigen(String origen) {
+		this.origen = origen;
+	}
+	public String getHoraProgramado() {
+		return horaProgramado;
+	}
+	public void setHoraProgramado(String horaProgramado) {
+		this.horaProgramado = horaProgramado;
+	}
 	public String getIdLink() {
 		return idLink;
 	}

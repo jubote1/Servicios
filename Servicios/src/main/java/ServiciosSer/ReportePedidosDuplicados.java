@@ -32,6 +32,7 @@ import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import ControladorSer.PedidoCtrl;
 import ModeloSer.Correo;
+import ModeloSer.CorreoElectronico;
 import ModeloSer.Pedido;
 import ModeloSer.Tienda;
 import utilidadesSer.ControladorEnvioCorreo;
@@ -54,43 +55,22 @@ public class ReportePedidosDuplicados {
 		//Con la fecha actual vamos a realizar la consulta de los pedidos
 		//En este punto ya tenemos las dos fechas de interés por el momento nos interesará retornar las ofertas dadas
 		// y las ofertas redimidas en estos rango de tiempo
-		ArrayList<Pedido> pedidosPendientes = PedidoDAO.ConsultarPedidosPendientes(fechaActual);
-		//Intentamos realizar el envío de los pedidos pendientes
-		//Parametro de la URL Server
-		String urlServerContact = "";
+		ArrayList pedidosDuplicados = PedidoDAO.ConsultarPosiblesPedidosDuplicados(fechaActual);
 		//Se crea la variable que se encargará de la respuesta
 		String respuesta = "";
 		boolean indicadorCorreo = false;
 		//ESPACIO PARA EXTRAER LAS OFERTAS NUEVAS
-		respuesta = respuesta + "<table border='2'> <tr> INFORMATIVO PEDIDOS PENDIENTES QUE SE INTENTARON ENVIAR " + " </tr>";
+		respuesta = respuesta + "<table border='2'> <tr><td colspan = '4'> INFORMATIVO CLIENTES CON POSIBLES PEDIDOS DUPLICADOS " + "</td> </tr>";
 		respuesta = respuesta + "<tr>"
-				+  "<td><strong>Id Pedido</strong></td>"
-				+  "<td><strong>Tienda</strong></td>"
-				+  "<td><strong>Nombre Cliente</strong></td>"
+				+  "<td><strong>Cantidad Pedidos</strong></td>"
+				+  "<td><strong>Teléfono Cliente</strong></td>"
+				+  "<td><strong>Id Cliente</strong></td>"
 				+  "<td><strong>Fecha Pedido</strong></td>"
-				+  "<td><strong>Usuario</strong></td>"
-				+  "<td><strong>Intento Reenvio</strong></td>"
 				+  "</tr>";
-		for(int j = 0; j < pedidosPendientes.size(); j++)
+		for(int j = 0; j < pedidosDuplicados.size(); j++)
 		{
-			Pedido pedido = pedidosPendientes.get(j);
-			//Controlamos que solo se ejecute una vez el retorno de la URL del contact center
-			if(!indicadorCorreo)
-			{
-				urlServerContact = ParametrosDAO.retornarValorAlfanumericoLocal("URLCONTACTCENTER");
-			}
-			//La idea es que en este punto se va a intentar reenviar el pedido y se notificará el resultado en el correo
-			PedidoCtrl pedCtrl = new PedidoCtrl();
-			boolean respReenvio = pedCtrl.reenviarPedidoJava(pedido, urlServerContact);
-			String strRespReenvio = "";
-			if(respReenvio)
-			{
-				strRespReenvio = "Se reenvió y OK";
-			}else
-			{
-				strRespReenvio = "Se reenvió y NOK";
-			}
-			respuesta = respuesta + "<tr><td>" +  pedido.getIdpedido() + "</td><td>" +  pedido.getNombretienda() + "</td><td>" + pedido.getNombrecliente() + "</td><td>" + pedido.getFechainsercion() + "</td><td>" + pedido.getUsuariopedido() + "</td><td>" + strRespReenvio + "</td></tr>";
+			String[] duplicado = (String[])pedidosDuplicados.get(j);
+			respuesta = respuesta + "<tr><td>" +  duplicado[0] + "</td><td>" +  duplicado[1] + "</td><td>" + duplicado[2] + "</td><td>" + fechaActual + "</td></tr>";
 			indicadorCorreo = true;
 		}	
 		respuesta = respuesta + "</table> <br/>";
@@ -98,60 +78,18 @@ public class ReportePedidosDuplicados {
 		if(indicadorCorreo)
 		{
 			//Recuperar la lista de distribución para este correo
-			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDOPENDIENTE");
+			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDODUPLICADO");
 			Date fecha = new Date();
 			Correo correo = new Correo();
-			correo.setAsunto("INFORMATIVO PEDIDOS PENDIENTES ENVIADOS " + fecha.toString());
-			correo.setContrasena("Pizzaamericana2017");
-			correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
-			correo.setMensaje("Existían pedidos pendientes, los cuales se intentaron reenviar con los siguientes detalles y resultados: \n" + respuesta);
+			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+			correo.setAsunto("POSIBLE PEDIDO DUPLICADO " + fecha.toString());
+			correo.setContrasena(infoCorreo.getClaveCorreo());
+			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+			correo.setMensaje("Mucho cuidado, para el día en cuestión hay varios pedidos para un mismo cliente, revisar si son duplicados: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}
-		
-		
-		respuesta = "";
-		//Obtenemos el valor de control para saber cuantas veces se alerta un pedido
-		int maxAlertasPendientes  = ParametrosDAO.retornarValorNumericoLocal("CANTVECESPENDIENTE");
-		pedidosPendientes = PedidoDAO.ConsultarPedidosPendientes(fechaActual);
-		//Parametro de la URL Server
-		indicadorCorreo = false;
-		//ESPACIO PARA EXTRAER LAS OFERTAS NUEVAS
-		respuesta = respuesta + "<table border='2'> <tr> URGENTE EXISTEN PEDIDOS PENDIENTES " + " </tr>";
-		respuesta = respuesta + "<tr>"
-				+  "<td><strong>Id Pedido</strong></td>"
-				+  "<td><strong>Tienda</strong></td>"
-				+  "<td><strong>Nombre Cliente</strong></td>"
-				+  "<td><strong>Fecha Pedido</strong></td>"
-				+  "<td><strong>Usuario</strong></td>"
-				+  "</tr>";
-		for(int i = 0; i < pedidosPendientes.size(); i++)
-		{
-			Pedido pedido = pedidosPendientes.get(i);
-			if(PedidoDAO.seDebeReportar(pedido.getIdpedido(), "F", maxAlertasPendientes))
-			{
-				respuesta = respuesta + "<tr><td>" +  pedido.getIdpedido() + "</td><td>" +  pedido.getNombretienda() + "</td><td>" + pedido.getNombrecliente() + "</td><td>" + pedido.getFechainsercion() + "</td><td>" + pedido.getUsuariopedido() + "</td></tr>";
-				indicadorCorreo = true;
-			}
-		}
-		
-		respuesta = respuesta + "</table> <br/>";
-		
-		if(indicadorCorreo)
-		{
-			//Recuperar la lista de distribución para este correo
-			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDOPENDIENTE");
-			Date fecha = new Date();
-			Correo correo = new Correo();
-			correo.setAsunto("URGENTE PEDIDOS PENDIENTES CONTACT CENTER " + fecha.toString());
-			correo.setContrasena("Pizzaamericana2017");
-			correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
-			correo.setMensaje("Urgente existen pedidos pendientes por ser enviado a las tiendas: \n" + respuesta);
-			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-			contro.enviarCorreoHTML();
-		}
-		
-		
+			
 	}
 	
 		

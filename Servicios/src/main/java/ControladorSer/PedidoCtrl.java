@@ -2,6 +2,7 @@ package ControladorSer;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,10 +26,38 @@ public class PedidoCtrl {
 	
 	public PedidoCtrl()
 	{
-		
+
 	}
 	
-	public boolean reenviarPedidoJava(Pedido pedidoReenviar, String urlContactCenter)
+	public boolean notificarPedidoTienda(String idLink, String tipoPago, int idTienda)
+	{
+		HttpClient client = HttpClientBuilder.create().build();
+		boolean respuestaProceso = false;
+		Tienda tienda = TiendaDAO.obtenerTienda(idTienda);
+		String rutaURLTienda = tienda.getUrl() + "NotificarPagoVirtual?idlink=" + idLink + "&tipopago=" + tipoPago;
+		HttpGet servicioGet = new HttpGet(rutaURLTienda);
+        try {
+        	StringBuffer retornoTienda = new StringBuffer();
+            HttpResponse responseFinPedTienda = client.execute(servicioGet);
+            BufferedReader rdTienda = new BufferedReader(new InputStreamReader(
+            		responseFinPedTienda.getEntity().getContent()));
+            String lineTienda = "";
+            while ((lineTienda = rdTienda.readLine()) != null) {
+            	retornoTienda.append(lineTienda);
+            }
+            //En este punto ya tendríamos la respuesta de la inserción de la tienda y tendríamos que finalizar
+            if(retornoTienda.toString().trim().equals(new String("OK")))
+            {
+            	respuestaProceso = true;
+            }
+        }catch(Exception e)
+        {
+        	
+        }
+		return(respuestaProceso);
+	}
+	
+	public boolean reenviarPedidoJava(Pedido pedidoReenviar, String urlContactCenter, String tiendaKuno)
 	{
 		//Realizamos la invocación mediante el uso de HTTPCLIENT
 		HttpClient client = HttpClientBuilder.create().build();
@@ -44,7 +73,7 @@ public class PedidoCtrl {
 		{
 			insertado = 1;
 		}
-		String rutaURL = urlContactCenter + "FinalizarPedido?idpedido=" + pedidoReenviar.getIdpedido() + "&idformapago=" + pedidoReenviar.getIdformapago() + "&valortotal=" + pedidoReenviar.getTotal_neto() + "&valorformapago=" + pedidoReenviar.getValorFormaPago() + "&idcliente=" + pedidoReenviar.getIdcliente() + "&insertado=" + insertado + "&tiempopedido=" + pedidoReenviar.getTiempopedido() +"&validadir=" + "S" + "&descuento=" + pedidoReenviar.getDescuento() + "&motivodescuento=" + pedidoReenviar.getMotivoDescuento();
+		String rutaURL = urlContactCenter + "FinalizarPedido?idpedido=" + pedidoReenviar.getIdpedido() + "&idformapago=" + pedidoReenviar.getIdformapago() + "&valortotal=" + pedidoReenviar.getTotal_neto() + "&valorformapago=" + pedidoReenviar.getValorFormaPago() + "&idcliente=" + pedidoReenviar.getIdcliente() + "&insertado=" + insertado + "&tiempopedido=" + pedidoReenviar.getTiempopedido() +"&validadir=" + "S" + "&descuento=" + pedidoReenviar.getDescuento() + "&motivodescuento=" + pedidoReenviar.getMotivoDescuento()+"&programado=" + pedidoReenviar.getHoraProgramado() + "&tiendakuno=" + tiendaKuno;
 		HttpGet request = new HttpGet(rutaURL);
 		try
 		{

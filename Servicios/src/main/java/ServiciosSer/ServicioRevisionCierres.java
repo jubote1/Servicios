@@ -40,6 +40,7 @@ import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import CapaDAOSer.UsuarioDAO;
 import ModeloSer.Correo;
+import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
 import ModeloSer.Insumo;
 import ModeloSer.Tienda;
@@ -79,7 +80,7 @@ public void generarRevisionCierres()
 	//Con lo anterior ya tenemos las variables para el proceso
 	
 	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo.
-	String exitoso = "", noExitoso = "";
+	String noExitoso = "";
 	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 	//Retornamos los objetos de empleados y la biometria, primero debemos retornar
 	for(Tienda tien : tiendas)
@@ -96,10 +97,7 @@ public void generarRevisionCierres()
 				//Recuperaremos el valor de la fecha del sistema para compararla	
 				String fechaApertura = TiendaDAO.retornarFechaTiendaRemota(tien.getHostBD());
 				//Hacemos la comparación de las fechas
-				if(fechaApertura.trim().equals(new String(indicadorCierre.trim())))
-				{
-					exitoso = exitoso + " <p>" + tien.getNombreTienda() + " se encuentra OK Cerrado." + "</p>";
-				}else if(fechaApertura.trim().equals(new String(strFechaAnterior.trim())))
+				if(fechaApertura.trim().equals(new String(strFechaAnterior.trim())))
 				{
 					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema está abierto al día anterior." + "</p>";
 				}else if(fechaApertura.trim().equals(new String(strFechaActual.trim())))
@@ -112,23 +110,22 @@ public void generarRevisionCierres()
 			}
 		}
 	}
-	
-	//Realizamos el envío del correo electrónico con los archivos
-	Correo correo = new Correo();
-	correo.setAsunto("REVISIÓN CIERRE DIARIO TIENDAS " + fechaAnterior.toString());
-	correo.setContrasena("Pizzaamericana2017");
-	//Tendremos que definir los destinatarios de este correo
-	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REVISIONCIERRE");
-	correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
-	String mensaje = "A continuación informamos el estado de los cierres de las tiendas  " + exitoso ;
-	if(noExitoso.trim().length() > 0)
+	if(!noExitoso.equals(new String("")))
 	{
-		mensaje = mensaje + " , y las tiendas"
-				+ " con problemas fueron " + noExitoso;
+		//Realizamos el envío del correo electrónico con los archivos
+		Correo correo = new Correo();
+		correo.setAsunto("PROBLEMA REVISIÓN CIERRE DIARIO TIENDAS " + fechaAnterior.toString());
+		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+		correo.setContrasena(infoCorreo.getClaveCorreo());
+		//Tendremos que definir los destinatarios de este correo
+		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REVISIONCIERRE");
+		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+		String mensaje = "A continuación informamos las tiendas que presentan problemas con la revisión del cierre  " + noExitoso ;
+		correo.setMensaje(mensaje);
+		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+		contro.enviarCorreoHTML();
 	}
-	correo.setMensaje(mensaje);
-	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-	contro.enviarCorreoHTML();
+	
 }
 
 

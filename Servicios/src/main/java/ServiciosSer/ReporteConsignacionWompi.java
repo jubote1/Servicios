@@ -9,6 +9,7 @@ import java.util.Date;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
 import ModeloSer.Correo;
+import ModeloSer.CorreoElectronico;
 import capaModeloCC.Tienda;
 import utilidadesSer.ControladorEnvioCorreo;
 
@@ -135,8 +136,16 @@ public class ReporteConsignacionWompi {
 		for(int k = 0; k < pedVirtualTienda.size(); k++)
 		{
 			pedTemp = pedVirtualTienda.get(k);
-			comision = (pedTemp.getTotal_neto()*(comisionWompi/100)) + adicionComisionWompi;
-			ivaComision = (comision*(ivaComisionWompi/100));
+			//Se hace necesario realizar una diferenciación con el pago de Bancolombia que cobra menos
+			if(pedTemp.getTipoPago().equals(new String("BANCOLOMBIA_TRANSFER")))
+			{
+				comision = (pedTemp.getTotal_neto()*((1.5)/100)) + 500;
+				ivaComision = (comision*(ivaComisionWompi/100));
+			}else
+			{
+				comision = (pedTemp.getTotal_neto()*(comisionWompi/100)) + adicionComisionWompi;
+				ivaComision = (comision*(ivaComisionWompi/100));
+			}
 			if(pedTemp.getTipoPago().equals(new String("CARD")))
 			{
 				retencionFuente = pedTemp.getTotal_neto()*(retencionFuenteWompi/100);
@@ -168,9 +177,10 @@ public class ReporteConsignacionWompi {
 		//Procedemos al envío del correo
 		Correo correo = new Correo();
 		correo.setAsunto("CONSIGNACION SEMANAL PAGOS VIRTUALES DESDE " + fechaAnterior + " HASTA "  + fechaActual);
-		correo.setContrasena("Pizzaamericana2017");
+		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+		correo.setContrasena(infoCorreo.getClaveCorreo());
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTECONSIGNACIONWOMPI");
-		correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 		correo.setMensaje("A continuación el detalle DE LA CONSIGNACIÓN QUE REALIZARÁ WOMPI por los pedidos con forma de pago virtual entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();

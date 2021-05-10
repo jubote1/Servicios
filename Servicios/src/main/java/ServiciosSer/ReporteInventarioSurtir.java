@@ -13,6 +13,7 @@ import java.util.GregorianCalendar;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import ModeloSer.CorreoElectronico;
 import capaDAOINV.GeneralDAO;
 import capaDAOINV.InsumoDAO;
 import capaDAOINV.InsumoDespachoTiendaDAO;
@@ -950,14 +951,15 @@ public class ReporteInventarioSurtir {
 		}
 		
 		//Realizamos el envío del correo electrónico con los archivo		
-		Correo correo = new Correo();
+		ModeloSer.Correo correo = new ModeloSer.Correo();
+		ModeloSer.CorreoElectronico infoCorreo = utilidadesSer.ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto("INVENTARIOS A SURTIR TIENDAS PIZZA AMERICANA");
-		correo.setContrasena("Pizzaamericana2017");
+		correo.setContrasena(infoCorreo.getClaveCorreo());
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTESURTIR");
-		correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 		correo.setMensaje("A continuación todos los inventarios de las tiendas de pizza americana");
 		correo.setRutasArchivos(rutasArchivos);
-		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+		utilidadesSer.ControladorEnvioCorreo contro = new utilidadesSer.ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreo();
 	}
 
@@ -1487,10 +1489,11 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
 		rutasArchivos[0] = rutaArchivoGenerado;
 		//Luego de cerrado el archivo, realizamos el envío al correo del archivo
 		Correo correo = new Correo();
+		ModeloSer.CorreoElectronico infoCorreo = utilidadesSer.ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto(nombreTienda + "-" + fecha + "ARCHIVO INVENTARIO DESPACHADO");
-		correo.setContrasena("Pizzaamericana2017");
+		correo.setContrasena("infoCorreo.getClaveCorreo()");
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEDESPACHO");
-		correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+		correo.setUsuarioCorreo("infoCorreo.getCuentaCorreo()");
 		correo.setMensaje("A continuación la información ingresada para despacho a la tienda "  +nombreTienda + " en la fecha " + fecha);
 		correo.setRutasArchivos(rutasArchivos);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);

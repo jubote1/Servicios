@@ -11,9 +11,16 @@ public class EmpleadoTemporalDia {
 	private String horaIngreso;
 	private String horaSalida;
 	private int idEmpresa;
+	private String observacion;
 	
 	
 	
+	public String getObservacion() {
+		return observacion;
+	}
+	public void setObservacion(String observacion) {
+		this.observacion = observacion;
+	}
 	public int getIdEmpresa() {
 		return idEmpresa;
 	}
@@ -69,7 +76,7 @@ public class EmpleadoTemporalDia {
 		this.fechaSistema = fechaSistema;
 	}
 	public EmpleadoTemporalDia(int id, String identificacion, String nombre, String telefono, String empresa,
-			String fechaSistema, int idEmpresa) {
+			String fechaSistema, int idEmpresa, String observacion) {
 		super();
 		this.id = id;
 		this.identificacion = identificacion;
@@ -78,6 +85,7 @@ public class EmpleadoTemporalDia {
 		this.empresa = empresa;
 		this.fechaSistema = fechaSistema;
 		this.idEmpresa = idEmpresa;
+		this.observacion = observacion;
 	}
 	
 	

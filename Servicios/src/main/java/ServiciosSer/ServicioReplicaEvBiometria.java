@@ -41,6 +41,7 @@ import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import CapaDAOSer.UsuarioDAO;
 import ModeloSer.Correo;
+import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
 import ModeloSer.EmpleadoEvento;
 import ModeloSer.Insumo;
@@ -159,11 +160,12 @@ public void generarReplicaEvBiometria()
 	if(!contingencia.trim().equals(new String("")))
 	{
 		Correo correo = new Correo();
+		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto("HAY ACTIVADA CONTINGENCIA BIOMETRIA " + fechaActual.toString());
-		correo.setContrasena("Pizzaamericana2017");
+		correo.setContrasena(infoCorreo.getClaveCorreo());
 		//Tendremos que definir los destinatarios de este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
-		correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 		correo.setMensaje("A continuación informamos las tiendas que tienen actividad contingencia "
 				+ contingencia);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);

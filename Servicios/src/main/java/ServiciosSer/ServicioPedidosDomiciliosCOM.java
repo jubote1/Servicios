@@ -15,10 +15,10 @@ import CapaDAOSer.PedidoPOSPMDAO;
 import CapaDAOSer.PedidoPixelDAO;
 import CapaDAOSer.TiendaDAO;
 import ConexionSer.ConexionBaseDatos;
-import ModeloSer.MarcacionAnulacionPedido;
-import ModeloSer.MarcacionCambioPedido;
 import ModeloSer.Pedido;
 import ModeloSer.PedidoPixel;
+import capaModeloCC.MarcacionAnulacionPedido;
+import capaModeloCC.MarcacionCambioPedido;
 
 public class ServicioPedidosDomiciliosCOM {
 	

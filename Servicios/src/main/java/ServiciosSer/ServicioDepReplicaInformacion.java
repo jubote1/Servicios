@@ -106,7 +106,7 @@ public class ServicioDepReplicaInformacion {
 				//Cantidad de pedidos de la última hora
 				cantPedHora = PedidoDAO.obtenerCantidadPedidoDespuesHoraDomicilio(fechaActual, fechaActualMenosHora, tien.getHostBD(),0);
 				//Tiempo del último pedimo por salir
-				cantMinutos = PedidoDAO.obtenerTiempoUltimoPedidoEstado(fechaActual, pedidoEmpacado, tien.getHostBD());
+				cantMinutos = PedidoDAO.obtenerTiempoUltimoPedidoEstado(fechaActual, pedidoEmpacado, tien.getHostBD(),"");
 				//Luego de obtenidos los datos pintamos el html
 				respuesta = respuesta + "<tr>"
 						+  "<td>" + cantPedEmp + "</td>"

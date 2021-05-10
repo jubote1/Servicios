@@ -30,9 +30,10 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
-import CapaDAOSer.RazonSocialDAO;
 import ModeloSer.Correo;
-import ModeloSer.RazonSocial;
+import ModeloSer.CorreoElectronico;
+import capaDAOCC.RazonSocialDAO;
+import capaModeloCC.RazonSocial;
 import utilidadesSer.ControladorEnvioCorreo;
 
 public class ReporteSemanalONLINE {
@@ -153,10 +154,11 @@ public class ReporteSemanalONLINE {
 			respuesta = respuesta + "</table> <br/>";
 			//Procedemos al envío del correo
 			Correo correo = new Correo();
+			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setAsunto("DOMICILIOS.COM REPORTE SEMANAL PAGOS ON LINE " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion() + " " + fechaActual);
-			correo.setContrasena("Pizzaamericana2017");
+			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTESEMONLINEDOMICILIOS");
-			correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
+			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 			correo.setMensaje("A continuación el reporte SEMANAL de PAGOS ONLINE para domicilios.com separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
