@@ -7,7 +7,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.apache.log4j.Logger;
+
 import ConexionSer.ConexionBaseDatos;
+import ModeloSer.ClienteZapier;
 import ModeloSer.OfertaCliente;
 
 
@@ -164,6 +167,46 @@ public class OfertaClienteDAO {
 			
 		}
 		return(codigosEnviados);
+	}
+	
+	public static ArrayList<ClienteZapier> obtenerClientesNotificacionZapier(int idOferta, String fechaActual)
+	{
+		Logger logger = Logger.getLogger("log_file");
+		ArrayList<ClienteZapier> clientesZapier = new ArrayList<>();
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "SELECT a.codigo_promocion AS codigo, b.nombre & ' ' & b.apellido AS nombre, b.telefono AS telefono FROM oferta_cliente a, cliente b WHERE a.idcliente = b.idcliente and idoferta = " + idOferta + " AND fecha_caducidad > '" + fechaActual +"' AND utilizada = 'N' AND TIMESTAMPDIFF(DAY, '" + fechaActual + "', fecha_caducidad) <= 3;";
+			logger.info(consulta);
+			ResultSet rs = stm.executeQuery(consulta);
+			String telefono;
+			String nombre;
+			String codigo;
+			int PQRS = 0;
+			ClienteZapier clienteTemp = new ClienteZapier("","", "");
+			while(rs.next()){
+				telefono = rs.getString("telefono");
+				nombre = rs.getString("nombre");
+				codigo = rs.getString("codigo");
+				clienteTemp = new ClienteZapier(telefono, nombre, codigo);
+				clientesZapier.add(clienteTemp);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			logger.error(e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+		}
+		return(clientesZapier);
+		
 	}
 
 }

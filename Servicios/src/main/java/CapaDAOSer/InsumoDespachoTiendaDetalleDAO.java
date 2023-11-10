@@ -31,7 +31,7 @@ public class InsumoDespachoTiendaDetalleDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String consulta = "select * from  insumo_despacho_tienda_detalle where iddespacho = " + idDespacho;
+			String consulta = "select max(iddespacho_detalle) AS iddespacho_detalle,idinsumo, sum(cantidad) AS cantidad from  insumo_despacho_tienda_detalle where iddespacho = " + idDespacho + " GROUP BY idinsumo";
 			ResultSet rs = stm.executeQuery(consulta);
 			//Variables para capturar cada despacho
 			int idDespachoDetalle;

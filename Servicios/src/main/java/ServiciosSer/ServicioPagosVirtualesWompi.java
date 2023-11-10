@@ -1,5 +1,7 @@
 package ServiciosSer;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -9,6 +11,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
@@ -24,8 +34,15 @@ import ModeloSer.Pedido;
 import ModeloSer.TiempoPedido;
 import ModeloSer.Tienda;
 import ModeloSer.Usuario;
+import capaDAOCC.ClienteDAO;
+import capaDAOCC.IntegracionCRMDAO;
 import capaDAOCC.PedidoPagoVirtualConsolidadoDAO;
+import capaModeloCC.Cliente;
+import capaModeloCC.IntegracionCRM;
 import capaModeloCC.PedidoPagoVirtualConsolidado;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import utilidadesSer.ControladorEnvioCorreo;
 
 
@@ -35,6 +52,9 @@ public class ServicioPagosVirtualesWompi {
 		
 	public static void main( String[] args )  
 	{
+		//Prueba
+		//notificarWhatsApp("Juan Botero", 435653, 275623, "probando");
+		
 		//Requerimos primero que todo obtener el rango de fechas con el fin de tener dicho rango para las consultas
 		//Definimos el formato como manejaremos las fechas
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -100,9 +120,28 @@ public class ServicioPagosVirtualesWompi {
 			Pedido pedido = pedidosVirtualesRealizados.get(i);
 			//La idea es que en este punto se va a intentar reenviar el pedido y se notificará el resultado en el correo
 			PedidoCtrl pedCtrl = new PedidoCtrl();
-			if(pedido.getOrigen().equals(new String("TK")))
+			if((pedido.getOrigen().equals(new String("TK"))) || (pedido.getOrigen().equals(new String("APP"))) || (pedido.getOrigen().equals(new String("CRM"))))
 			{
 				tiendaKuno = "S";
+				//Se hace una diferenciación de los pedidos en tienda virtual, aqui haremos una validación de que la hora
+				//de ingreso del pedido vs la hora actual tenga más de 10 minutos para enviarlo.
+				Date datefechaInsercion = new Date();
+				try
+				{
+					datefechaInsercion = dateFormatHora.parse(pedido.getFechainsercion());
+				}catch(Exception e)
+				{	
+				}
+				
+				//Hacemos la diferencia de las fechas en minutos
+				//Calcularemos el tiempo Pedido
+				int difTiempo = Math.abs((int) (datFechaActual.getTime() - datefechaInsercion.getTime() ));
+				Math.abs(minutos = (int)TimeUnit.MILLISECONDS.toMinutes(difTiempo ));
+				double dMinutos = (double) minutos;
+				if(dMinutos < 10)
+				{
+					continue;
+				}
 			}else
 			{
 				tiendaKuno = "N";
@@ -152,9 +191,9 @@ public class ServicioPagosVirtualesWompi {
 				+  "<td><strong>IdLink</strong></td>"
 				+  "<td><strong>Usuario</strong></td>"
 				+  "</tr>";
-		//Posteriormente realizamos el reporte de los pagos virtuales que llevan más de 15 minutos y no se han pagado.
-		//Vamos a agregar un control para ejecutar todo este bloque en los minutos 6
-		if(minutos%6 == 0)
+		//Posteriormente realizamos el reporte de los pagos virtuales que llevan más de 20 minutos y no se han pagado.
+		//Vamos a agregar un control para ejecutar todo este bloque en los minutos 4 y minutos 8
+		if((minutos%4 == 0) || (minutos%8 == 0))
 		{
 			ArrayList<Pedido> pedidosVirtualesSinFin = PedidoDAO.ConsultarPagosVirtualSinPagar(fechaActual, 20);
 			for(int j = 0; j < pedidosVirtualesSinFin.size(); j++)
@@ -189,9 +228,22 @@ public class ServicioPagosVirtualesWompi {
 				ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 				contro.enviarCorreoHTML();
 			}
+			
+			//La idea en esta Franja también es ejecutar el envío del mensaje de WhatsApp si es el caso
+			ArrayList<Pedido> pedidosVirtualesNotWha = PedidoDAO.ConsultarPagosVirtualSinPagarRango(fechaActual, 20,30);
+			for(int j = 0; j < pedidosVirtualesNotWha.size(); j++)
+			{
+				Pedido pedidoSinPagar = pedidosVirtualesNotWha.get(j);
+				boolean reportarCliente = PedidoDAO.seDebeReportarPagoWhatsApp(pedidoSinPagar.getIdpedido());
+				if(reportarCliente)
+				{
+					notificarWhatsApp(pedidoSinPagar.getNombrecliente(), pedidoSinPagar.getIdpedido(), pedidoSinPagar.getIdcliente(), "https://checkout.wompi.co/l/" +pedidoSinPagar.getIdLink());
+				}
+			}
+			
 		}
 		//Realizamos proceso para cancelar pedidos que tienen más de 50 minutos y enviar notificación al cliente de esta situación
-		ArrayList<Pedido> pedidosVirtualesCancelar = PedidoDAO.ConsultarPagosVirtualSinPagar(fechaActual, 50);
+		ArrayList<Pedido> pedidosVirtualesCancelar = PedidoDAO.ConsultarPagosVirtualSinPagarEspecial(fechaActual, 50);
 		//Se crea la variable que se encargará de la respuesta
 		respuesta = "";
 		indicadorCorreo = false;
@@ -244,6 +296,7 @@ public class ServicioPagosVirtualesWompi {
 		
 		
 		//Realizamos otro control al proceso para controlar si hay pedido que tengan forma de pago virtual y tengan el idlink vacío.
+		capaControladorCC.PedidoCtrl pedCtrlSinLink = new capaControladorCC.PedidoCtrl();
 		ArrayList<Pedido> pedidosVirtualesSinLink = PedidoDAO.ConsultarPagosVirtualSinLink(fechaActual);
 		//Se crea la variable que se encargará de la respuesta
 		respuesta = "";
@@ -265,6 +318,8 @@ public class ServicioPagosVirtualesWompi {
 			Pedido pedido = pedidosVirtualesSinLink.get(i);
 			respuesta = respuesta + "<tr><td>" +  pedido.getIdpedido() + "</td><td>" +  pedido.getNombretienda() + "</td><td>" + pedido.getNombrecliente() + "</td><td>" + pedido.getFechainsercion() + "</td><td>" + pedido.getUsuariopedido() + "</td><td>" + pedido.getIdLink() + "</td></tr>";
 			indicadorCorreo = true;
+			//Realizar la creacion de un link y envío de información al cliente
+			pedCtrlSinLink.verificarEnvioLinkPagosProcesoWompi(pedido.getIdpedido(), pedido.getIdcliente(), pedido.getTotal_neto(), pedido.getIdtienda());
 		}
 		
 		respuesta = respuesta + "</table> <br/>";
@@ -304,5 +359,149 @@ public class ServicioPagosVirtualesWompi {
 	}
 		
 	
+	public static void notificarWhatsApp(String nombre, int idPedido, int idCliente, String linkPago)
+	{
+		String telefonoCelular = "";
+		String respuestaServicio = "";
+		Cliente clienteNotif = ClienteDAO.obtenerClienteporID(idCliente);
+		//Revisamos la lógica para obtener el telefono
+		if(clienteNotif.getTelefonoCelular()!= null)
+		{
+			if(!clienteNotif.getTelefonoCelular().equals(new String("")))
+			{
+				if(clienteNotif.getTelefonoCelular().length() == 10)
+				{
+					if(clienteNotif.getTelefonoCelular().substring(0,1).equals(new String("3")))
+					{
+						telefonoCelular = clienteNotif.getTelefonoCelular();
+					}
+				}
+			}
+		}
+		
+		if(telefonoCelular.equals(new String("")))
+		{
+			if(clienteNotif.getTelefono()!= null)
+			{
+				if(!clienteNotif.getTelefono().equals(new String("")))
+				{
+					if(clienteNotif.getTelefono().length() == 10)
+					{
+						if(clienteNotif.getTelefono().substring(0,1).equals(new String("3")))
+						{
+							telefonoCelular = clienteNotif.getTelefono();
+						}
+					}
+				}
+			}
+		}
+		
+		//Validaremos que el telefono celular si se hubiese podido tomar
+		if(!telefonoCelular.equals(new String("")))
+		{
+			//Envío de mensaje con ultramsg
+			OkHttpClient client = new OkHttpClient();
+			IntegracionCRM intWhat = IntegracionCRMDAO.obtenerInformacionIntegracion("ULTRAMSG");
+			okhttp3.MediaType mediaType = okhttp3.MediaType.parse("application/x-www-form-urlencoded");
+			String mensajeEvidencia = "token=" + intWhat.getAccessToken() + "&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Ingresa y realiza el proceso de pago. Una vez efectudado el pago,iniciaremos la elaboración de tu pedido. ¡Que lo disfrutes! &priority=1&referenceId=";
+			RequestBody body = RequestBody.create(mediaType, "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +" ya han pasado más de 20 minutos y no hemos registrado tu pago, este es tu link de pago " + linkPago + " . Ingresa y realiza el proceso de pago. Una vez efectudado el pago,iniciaremos la elaboración de tu pedido. ¡Que lo disfrutes! &priority=1&referenceId=");
+			Request request = new Request.Builder()
+			  .url("https://api.ultramsg.com/" + intWhat.getClientID() + "/messages/chat")
+			  .post(body)
+			  .addHeader("content-type", "application/x-www-form-urlencoded")
+			  .build();
+			try
+			{
+				okhttp3.Response response = client.newCall(request).execute();
+			}catch(Exception e)
+			{
+				System.out.println("ERROR " + e.toString());
+				//Recuperar la lista de distribución para este correo
+				ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEVIRTUALSINPAGO");
+				Date fecha = new Date();
+				Correo correo = new Correo();
+				CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+				correo.setAsunto("OJO ERROR EN SERVICIO DE WHATSAPP  " + fecha.toString());
+				correo.setContrasena(infoCorreo.getClaveCorreo());
+				correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+				correo.setMensaje("Se presenta error en servicio de API de WhatsApp. " + e.toString() + mensajeEvidencia);
+				ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+				contro.enviarCorreo();
+			}
+		}	
+	}
+	
+	
+	public static void notificarWhatsAppUltramsg(String nombre, int idPedido, int idCliente, String linkPago)
+	{
+		String telefonoCelular = "";
+		String respuestaServicio = "";
+		Cliente clienteNotif = ClienteDAO.obtenerClienteporID(idCliente);
+		//Revisamos la lógica para obtener el telefono
+		if(clienteNotif.getTelefonoCelular()!= null)
+		{
+			if(!clienteNotif.getTelefonoCelular().equals(new String("")))
+			{
+				if(clienteNotif.getTelefonoCelular().length() == 10)
+				{
+					if(clienteNotif.getTelefonoCelular().substring(0,1).equals(new String("3")))
+					{
+						telefonoCelular = clienteNotif.getTelefonoCelular();
+					}
+				}
+			}
+		}
+		
+		if(telefonoCelular.equals(new String("")))
+		{
+			if(clienteNotif.getTelefono()!= null)
+			{
+				if(!clienteNotif.getTelefono().equals(new String("")))
+				{
+					if(clienteNotif.getTelefono().length() == 10)
+					{
+						if(clienteNotif.getTelefono().substring(0,1).equals(new String("3")))
+						{
+							telefonoCelular = clienteNotif.getTelefono();
+						}
+					}
+				}
+			}
+		}
+		
+		//Validaremos que el telefono celular si se hubiese podido tomar
+		if(!telefonoCelular.equals(new String("")))
+		{
+			OkHttpClient client = new OkHttpClient();
+			IntegracionCRM intWhat = IntegracionCRMDAO.obtenerInformacionIntegracion("ULTRAMSG");
+			okhttp3.MediaType mediaType = okhttp3.MediaType.parse("application/x-www-form-urlencoded");
+			String mensajeEvidencia = "token=" + intWhat.getAccessToken() + "&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Pizza Americana te recuerda realizar el proceso de pago. Una vez efectudado el pago, iniciaremos la elaboración de tu pedido. ¡Que lo disfrutes! &priority=1&referenceId=";
+			RequestBody body = RequestBody.create(mediaType, "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Pizza Americana te recuerda realizar el proceso de pago. Una vez efectudado el pago, iniciaremos la elaboración de tu pedido. ¡Que lo disfrutes! &priority=1&referenceId=");
+			Request request = new Request.Builder()
+			  .url("https://api.ultramsg.com/"+ intWhat.getClientID() +"/messages/chat")
+			  .post(body)
+			  .addHeader("content-type", "application/x-www-form-urlencoded")
+			  .build();
+			try
+			{
+				okhttp3.Response response = client.newCall(request).execute();
+			}catch(Exception e)
+			{
+				System.out.println("ERROR " + e.toString());
+				//Recuperar la lista de distribución para este correo
+				ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEVIRTUALSINPAGO");
+				Date fecha = new Date();
+				Correo correo = new Correo();
+				CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+				correo.setAsunto("OJO ERROR EN SERVICIO DE WHATSAPP  " + fecha.toString() + mensajeEvidencia);
+				correo.setContrasena(infoCorreo.getClaveCorreo());
+				correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+				correo.setMensaje("Se presenta error en servicio de API de WhatsApp." +  e.toString() + "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Pizza Americana te recuerda realizar el proceso de pago. Una vez efectudado el pago, iniciaremos la elaboración de tu pedido. ¡Que lo disfrutes! &priority=1&referenceId=");
+				ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+				contro.enviarCorreo();
+			}
+		}	
+	}
+
 }
 

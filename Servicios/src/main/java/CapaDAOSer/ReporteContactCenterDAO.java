@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import com.mysql.cj.jdbc.result.ResultSetMetaData;
 
 import ConexionSer.ConexionBaseDatos;
+import ModeloSer.PedidoAPP;
 
 public class ReporteContactCenterDAO {
 	
@@ -20,6 +21,37 @@ public class ReporteContactCenterDAO {
 		{
 			Statement stm = con1.createStatement();
 			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido <= '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'C'";
+			ResultSet rs = stm.executeQuery(consulta);
+			System.out.println(consulta);
+			while(rs.next()){
+				cantidadPedidos = rs.getInt(1);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			cantidadPedidos = 0;
+			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+				System.out.println("falle cerrando la conexion");
+			}
+		}
+		return(cantidadPedidos);
+	}
+	
+	public static int obtenerCantidadPedidosMarcacion(String fechaAnterior, String fechaActual, int idMarcacion)
+	{
+		int cantidadPedidos = 0;
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "SELECT COUNT(*) FROM pedido a, marcacion_pedido b where a.idpedido = b.idpedido and  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido <= '" + fechaActual + "' and a.enviadopixel = 1 and b.idmarcacion = " + idMarcacion;
 			ResultSet rs = stm.executeQuery(consulta);
 			System.out.println(consulta);
 			while(rs.next()){
@@ -71,6 +103,104 @@ public class ReporteContactCenterDAO {
 			}
 		}
 		return(cantidadPedidos);
+	}
+	
+	public static int obtenerCantidadPedidosAPP(String fechaAnterior, String fechaActual)
+	{
+		int cantidadPedidos = 0;
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido < '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'APP'";
+			ResultSet rs = stm.executeQuery(consulta);
+			System.out.println(consulta);
+			while(rs.next()){
+				cantidadPedidos = rs.getInt(1);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			cantidadPedidos = 0;
+			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+				System.out.println("falle cerrando la conexion");
+			}
+		}
+		return(cantidadPedidos);
+	}
+	
+	public static int obtenerCantidadPedidosCRM(String fechaAnterior, String fechaActual)
+	{
+		int cantidadPedidos = 0;
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido < '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'CRM'";
+			ResultSet rs = stm.executeQuery(consulta);
+			System.out.println(consulta);
+			while(rs.next()){
+				cantidadPedidos = rs.getInt(1);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			cantidadPedidos = 0;
+			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+				System.out.println("falle cerrando la conexion");
+			}
+		}
+		return(cantidadPedidos);
+	}
+	
+	public static ArrayList<PedidoAPP> obtenerCantidadClientesPedidosAPP(String fechaAnterior, String fechaActual)
+	{
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		ArrayList<PedidoAPP> respuesta = new ArrayList();
+		PedidoAPP pedidoTemp;
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "SELECT  distinct(b.idcliente), (SELECT COUNT(*) FROM pedido c WHERE c.idcliente = b.idcliente AND c.origen = 'APP') AS cantidad FROM pedido a , cliente b WHERE a.idcliente = b.idcliente and  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido < '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'APP';";
+			ResultSet rs = stm.executeQuery(consulta);
+			System.out.println(consulta);
+			int idcliente;
+			int cantidad;
+			while(rs.next()){
+				idcliente  = rs.getInt(1);
+				cantidad = rs.getInt(2);
+				pedidoTemp = new PedidoAPP(idcliente, cantidad);
+				respuesta.add(pedidoTemp);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+				System.out.println("falle cerrando la conexion");
+			}
+		}
+		return(respuesta);
 	}
 	
 	public static int obtenerCantidadProductoContact(String fechaAnterior, String fechaActual, int idProducto)
@@ -212,6 +342,71 @@ public class ReporteContactCenterDAO {
 		{
 			Statement stm = con1.createStatement();
 			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido = '" + fecha + "' and a.enviadopixel = 1 and a.origen = 'TK' AND numposheader > 0";
+			ResultSet rs = stm.executeQuery(consulta);
+			System.out.println(consulta);
+			while(rs.next()){
+				cantidadPedidos = rs.getInt(1);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+				System.out.println("falle cerrando la conexion");
+			}
+		}
+		return(cantidadPedidos);
+	}
+	
+	/**
+	 * Método que extrae la cantidad de pedidos tomados con origen CRM en un día particular
+	 * @param fecha
+	 * @return
+	 */
+	public static int obtenerPedidosCRMAPITotalDia(String fecha)
+	{
+		int cantidadPedidos = 0;
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido = '" + fecha + "' and a.enviadopixel = 1 and a.origen = 'CRM' AND numposheader > 0";
+			ResultSet rs = stm.executeQuery(consulta);
+			System.out.println(consulta);
+			while(rs.next()){
+				cantidadPedidos = rs.getInt(1);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+				System.out.println("falle cerrando la conexion");
+			}
+		}
+		return(cantidadPedidos);
+	}
+	
+	public static int obtenerPedidosAPP(String fecha)
+	{
+		int cantidadPedidos = 0;
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido = '" + fecha + "' and a.enviadopixel = 1 and a.origen = 'APP' AND numposheader > 0";
 			ResultSet rs = stm.executeQuery(consulta);
 			System.out.println(consulta);
 			while(rs.next()){

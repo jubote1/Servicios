@@ -37,9 +37,16 @@ public class Pedido {
 	private String idLink;
 	private String horaProgramado;
 	private String origen;
+	private String fechaPagoVirtual;
 	
 	
 	
+	public String getFechaPagoVirtual() {
+		return fechaPagoVirtual;
+	}
+	public void setFechaPagoVirtual(String fechaPagoVirtual) {
+		this.fechaPagoVirtual = fechaPagoVirtual;
+	}
 	public String getOrigen() {
 		return origen;
 	}

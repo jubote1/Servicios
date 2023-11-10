@@ -39,33 +39,28 @@ import CapaDAOSer.ItemInventarioDAO;
 import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.ReporteContactCenterDAO;
-import CapaDAOSer.TiendaDAO;
 import CapaDAOSer.UsuarioDAO;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
 import ModeloSer.Insumo;
-import ModeloSer.Tienda;
 import ModeloSer.Usuario;
+import capaControladorPOS.PedidoCtrl;
+import capaModeloCC.Tienda;
+import capaModeloPOS.Desempeno;
 import utilidadesSer.ControladorEnvioCorreo;
 
 public class ReporteDesempenoContactCenter {
 	
-	
-	
-/**
- * Este programa se encargará de correr como un servicio todos los días a las 12:50 am, con el fin de revisar
- * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisión.
- * @param args
- */
+
 public static void main(String[] args)
 {
-	ReporteDesempenoContactCenter reporteRevisionCierres = new ReporteDesempenoContactCenter();
-	reporteRevisionCierres.generarRevisionCierres();
+	ReporteDesempenoContactCenter reporteDesempeno= new ReporteDesempenoContactCenter();
+	reporteDesempeno.generarReporte();
 	
 }
 
-public void generarRevisionCierres()
+public void generarReporte()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
 	System.out.println("EMPEZAMOS LA EJECUCIÓN");
@@ -120,13 +115,18 @@ public void generarRevisionCierres()
 	strFechaAnterior = dateFormat.format(fechaAnterior);
 	//Con lo anterior ya tenemos las variables para el proceso
 	String respuesta = "";
-	
 	//Cantidad de pedidos tomados en el día
 	int cantidadPedidos = ReporteContactCenterDAO.obtenerCantidadPedidos(strFechaActual, strFechaActual);
 	int cantidadPedidosVirtual = ReporteContactCenterDAO.obtenerPedidosVirtualTotalDia(strFechaActual);
 	int cantidadPedidosVirtualNueva = ReporteContactCenterDAO.obtenerPedidosVirtualNuevaTotalDia(strFechaActual);
+	int cantidadPedidosAPP = ReporteContactCenterDAO.obtenerPedidosAPP(strFechaActual);
 	double promedioTiendaVirtual = ReporteContactCenterDAO.obtenerPromedioVirtualTotalDia(strFechaActual);
-
+	int cantidadPedidosRappi = ReporteContactCenterDAO.obtenerCantidadPedidosMarcacion(strFechaActual, strFechaActual, 2);
+	int cantidadPedidosDIDI = ReporteContactCenterDAO.obtenerCantidadPedidosMarcacion(strFechaActual, strFechaActual, 1);
+	int cantidadPedidosBOTAPI = ReporteContactCenterDAO.obtenerPedidosCRMAPITotalDia(strFechaActual);
+	int cantidadPedidosBOT = ReporteContactCenterDAO.obtenerCantidadPedidosMarcacion(strFechaActual, strFechaActual, 3);
+	int cantidadPedidosMensualBOT = ReporteContactCenterDAO.obtenerCantidadPedidosMarcacion(strFechaActual, strFechaActual, 3);
+	
 	respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS TOMADOS EN CONTACT " + strFechaActual + "</TH> </tr>";
 	respuesta = respuesta + "<tr>"
 			+  "<td width='250' nowrap><strong>CANTIDAD</strong></td>"
@@ -134,26 +134,51 @@ public void generarRevisionCierres()
 	respuesta = respuesta + "<tr><td width='250' nowrap>" + cantidadPedidos + "</td></tr>";
 	respuesta = respuesta + "</table> <br/>";
 	
-	//Tienda virtual
-	respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS TIENDA VIRTUAL " + strFechaActual + "</TH> </tr>";
+	respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS POR LLAMADAS AL CONTACT" + strFechaActual + "</TH> </tr>";
 	respuesta = respuesta + "<tr>"
 			+  "<td width='250' nowrap><strong>CANTIDAD</strong></td>"
 			+  "</tr>";
-	respuesta = respuesta + "<tr><td width='250' nowrap>" + cantidadPedidosVirtual + "</td></tr>";
+	respuesta = respuesta + "<tr><td width='250' nowrap>" + (cantidadPedidos - cantidadPedidosBOT) + "</td></tr>";
+	respuesta = respuesta + "</table> <br/>";
+	
+	//Tienda virtual
+	respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> PLATAFORNAS DE DOMICILIOS " + strFechaActual + "</TH> </tr>";
 	respuesta = respuesta + "<tr>"
-			+  "<td width='250' nowrap><strong>PROMEDIO ATENCIÓN EN MINUTOS</strong></td>"
+			+  "<td width='250' nowrap><strong>RAPPI</strong></td>"
 			+  "</tr>";
-	respuesta = respuesta + "<tr><td width='250' nowrap>" + formatea.format(promedioTiendaVirtual) + "</td></tr>";
+	respuesta = respuesta + "<tr><td width='250' nowrap>" + cantidadPedidosRappi + "</td></tr>";
+	respuesta = respuesta + "<tr>"
+			+  "<td width='250' nowrap><strong>DIDI</strong></td>"
+			+  "</tr>";
+	respuesta = respuesta + "<tr><td width='250' nowrap>" + cantidadPedidosDIDI + "</td></tr>";
+	respuesta = respuesta + "</table> <br/>";
+	
+	//Promociones RAPPI
+	
+	//PedidosBOT
+	respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS INGRESADOS POR BOT CRM" + strFechaActual + "</TH> </tr>";
+	respuesta = respuesta + "<tr>"
+			+  "<td width='250' nowrap><strong>CANTIDAD</strong></td>"
+			+  "</tr>";
+	respuesta = respuesta + "<tr><td width='250' nowrap>" + (cantidadPedidosBOT + cantidadPedidosBOTAPI)  + "</td></tr>";
 	respuesta = respuesta + "</table> <br/>";
 	
 	//Tienda virtual Nueva
-	respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS TIENDA VIRTUAL NUEVA " + strFechaActual + "</TH> </tr>";
+	respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS TIENDA VIRTUAL " + strFechaActual + "</TH> </tr>";
 	respuesta = respuesta + "<tr>"
 			+  "<td width='250' nowrap><strong>CANTIDAD</strong></td>"
 			+  "</tr>";
 	respuesta = respuesta + "<tr><td width='250' nowrap>" + cantidadPedidosVirtualNueva + "</td></tr>";
 	respuesta = respuesta + "</table> <br/>";
 	
+	//APP
+	respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS APP " + strFechaActual + "</TH> </tr>";
+	respuesta = respuesta + "<tr>"
+			+  "<td width='250' nowrap><strong>CANTIDAD</strong></td>"
+			+  "</tr>";
+	respuesta = respuesta + "<tr><td width='250' nowrap>" + cantidadPedidosAPP + "</td></tr>";
+	respuesta = respuesta + "</table> <br/>";
+
 	//Cantidad de pedidos tomamos en lo que va de la semana
 	ArrayList cantPedPersona = ReporteContactCenterDAO.obtenerPedidosUsuario(strFechaAnterior, strFechaActual);
 	respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> PEDIDOS TOMADOS POR PERSONA EN LO QUE VA DE LA SEMANA "  + "</TH> </tr>";
@@ -185,7 +210,58 @@ public void generarRevisionCierres()
 		}
 		respuesta = respuesta + "</table> <br/>";
 
+	//Vamos a incluir la lógica para traer todas las tiendas y revisar las estadísticas de los domiciliarios en dicho día y
+	// de la cocina
+	capaControladorPOS.PedidoCtrl pedCtrl = new PedidoCtrl(false);
+	ArrayList<Tienda> tiendas = capaDAOCC.TiendaDAO.obtenerTiendas();
+	Tienda tiendaTemp;
+	for(int j = 0; j < tiendas.size(); j++)
+	{
+		tiendaTemp = tiendas.get(j);
+		if(!tiendaTemp.getHosbd().equals(new String("")))
+		{
+			//Realizamos la labor con cada una de las tiendas
+			respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='6'> DESEMPEÑO DOMICILIARIOS " + tiendaTemp.getNombreTienda()  + "</TH> </tr>";
+			respuesta = respuesta + "<tr>"
+					+  "<td width='190' nowrap><strong>NOMBRE DOMICILIARIO</strong></td>"
+					+  "<td width='60' nowrap><strong>PEDIDOS INCORRECTOS</strong></td>"
+					+  "<td width='60' nowrap><strong>MENOR TIEMPO</strong></td>"
+					+  "<td width='60' nowrap><strong>MAYOR TIEMPO</strong></td>"
+					+  "<td width='60' nowrap><strong>PEDIDOS</strong></td>"
+					+  "<td width='60' nowrap><strong>PROMEDIO</strong></td>"
+					+  "</tr>";
+			ArrayList<capaModeloPOS.Usuario>domiciliarios = pedCtrl.obtenerDomiciliariosFecha(strFechaActual, strFechaActual, tiendaTemp.getHosbd());
+			for(int z = 0; z < domiciliarios.size(); z++)
+			{
+				capaModeloPOS.Usuario domiTemp = domiciliarios.get(z);
+				Desempeno desempeno = pedCtrl.obtenerDesemDom(strFechaActual, strFechaActual, domiTemp.getIdUsuario(), tiendaTemp.getHosbd());
+				respuesta = respuesta + "<tr><td width='190' nowrap>" + domiTemp.getNombreLargo() + "</td><td width='60' nowrap> " + desempeno.getCantidadPedidosIncorrectos() + "</td><td width='60' nowrap> " + desempeno.getTiempoMenorPedido() + "</td><td width='60' nowrap> " + desempeno.getTiempoMayorPedido() + "</td><td width='60' nowrap> " + desempeno.getCantidadPedidos() + "</td><td width='60' nowrap> " + desempeno.getTiempoPromedioEntrega() +"</td></tr>";
+			}
+			respuesta = respuesta + "</table> <br/>";
+		}
+	}
 	
+	//Generamos el desempeño de las cocinas de las tiendas
+	for(int j = 0; j < tiendas.size(); j++)
+	{
+		tiendaTemp = tiendas.get(j);
+		if(!tiendaTemp.getHosbd().equals(new String("")))
+		{
+			//Realizamos la labor con cada una de las tiendas
+			respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='6'> DESEMPEÑO COCINA " + tiendaTemp.getNombreTienda()  + "</TH> </tr>";
+			respuesta = respuesta + "<tr>"
+					+  "<td width='190' nowrap><strong>TIENDA</strong></td>"
+					+  "<td width='60' nowrap><strong>PEDIDOS INCORRECTOS</strong></td>"
+					+  "<td width='60' nowrap><strong>MENOR TIEMPO</strong></td>"
+					+  "<td width='60' nowrap><strong>MAYOR TIEMPO</strong></td>"
+					+  "<td width='60' nowrap><strong>PEDIDOS</strong></td>"
+					+  "<td width='60' nowrap><strong>PROMEDIO</strong></td>"
+					+  "</tr>";
+			Desempeno desempeno = pedCtrl.obtenerDesemCocina(strFechaActual, strFechaActual,  tiendaTemp.getHosbd());
+			respuesta = respuesta + "<tr><td width='190' nowrap>" + tiendaTemp.getNombreTienda() + "</td><td width='60' nowrap> " + desempeno.getCantidadPedidosIncorrectos() + "</td><td width='60' nowrap> " + desempeno.getTiempoMenorPedido() + "</td><td width='60' nowrap> " + desempeno.getTiempoMayorPedido() + "</td><td width='60' nowrap> " + desempeno.getCantidadPedidos() + "</td><td width='60' nowrap> " + desempeno.getTiempoPromedioEntrega() +"</td></tr>";
+			respuesta = respuesta + "</table> <br/>";
+		}	
+	}
 	//Realizamos el envío del correo electrónico con los archivos
 	Correo correo = new Correo();
 	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");

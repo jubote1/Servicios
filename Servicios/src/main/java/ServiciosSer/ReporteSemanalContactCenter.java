@@ -114,19 +114,39 @@ public class ReporteSemanalContactCenter {
 		//Cantidad de Pedidos por Persona
 		int totalPedContact = ReporteContactCenterDAO.obtenerCantidadPedidosContact(fechaAnterior, fechaActual);
 		int totalPedVirtual = ReporteContactCenterDAO.obtenerCantidadPedidosVirtual(fechaAnterior, fechaActual);
+		int totalPedAPP = ReporteContactCenterDAO.obtenerCantidadPedidosAPP(fechaAnterior, fechaActual);
+		int totalPedCRM = ReporteContactCenterDAO.obtenerCantidadPedidosCRM(fechaAnterior, fechaActual);
 		int totalMaduritos =  ReporteContactCenterDAO.obtenerCantidadProductoContact(fechaAnterior, fechaActual, 297);
 		int totalDeditos =  ReporteContactCenterDAO.obtenerCantidadProductoContact(fechaAnterior, fechaActual, 4);
-		respuesta = respuesta + "<table WIDTH='350' border='2'> <TH COLSPAN='6'> PEDIDOS DE LA SEMANA "  + "</TH> </tr>";
+		respuesta = respuesta + "<table WIDTH='350' border='2'> <TH COLSPAN='7'> PEDIDOS DE LA SEMANA "  + "</TH> </tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td width='60' nowrap><strong>FECHA INI</strong></td>"
 				+  "<td width='60' nowrap><strong>FECHA FIN</strong></td>"
 				+  "<td width='70' nowrap><strong>TOTAL PED CONTACT</strong></td>"
 				+  "<td width='70' nowrap><strong>TOTAL PED VIRTUAL</strong></td>"
+				+  "<td width='70' nowrap><strong>TOTAL PED APP</strong></td>"
+				+  "<td width='70' nowrap><strong>TOTAL PED CRM</strong></td>"
 				+  "<td width='50' nowrap><strong>TOTAL DEDITOS</strong></td>"
 				+  "<td width='40' nowrap><strong>TOTAL MADURITOS</strong></td>"
 				+  "</tr>";
-		respuesta = respuesta + "<tr><td>" + fechaAnterior + "</td><td> " + fechaActual + "</td><td> " + totalPedContact + "</td><td> " + totalPedVirtual + "</td><td> " + totalDeditos + "</td><td> " + totalMaduritos  +"</td></tr>";
+		respuesta = respuesta + "<tr><td>" + fechaAnterior + "</td><td> " + fechaActual + "</td><td> " + totalPedContact + "</td><td> " + totalPedVirtual + "</td><td> " + totalPedAPP + "</td><td> "+ totalPedCRM +"</td><td> " + totalDeditos + "</td><td> " + totalMaduritos  +"</td></tr>";
 		respuesta = respuesta + "</table> <br/>";
+		
+		//Vamos a agregar la lógica para el tema de tickets promedio
+		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
+		ArrayList<capaModeloPOS.TicketPromedio> ticketsSemana;
+		for(Tienda tien : tiendas)
+		{
+			if(!tien.getHostBD().equals(new String("")))
+			{
+				ticketsSemana = capaDAOPOS.TicketPromedioDAO.consultarTicketPromedio(fechaAnterior, fechaActual, tien.getHostBD(), false);
+				for(capaModeloPOS.TicketPromedio ticketTemp: ticketsSemana )
+				{
+					ModeloSer.TicketPromedio ticketTienda = new ModeloSer.TicketPromedio(ticketTemp.getFecha(), tien.getIdTienda(), ticketTemp.getValor(), ticketTemp.getCantidadPedidos());
+					CapaDAOSer.TicketPromedioDAO.insertarTicketPromedio(ticketTienda, false);
+				}
+			}
+		}
 		
 		try
 		{

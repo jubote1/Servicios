@@ -1,8 +1,11 @@
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'application'
-archivesBaseName = 'ServicioReplicaUsuarios'
-mainClassName = 'ServicioReplicaUsuarios'
+plugins {
+    id 'application'
+	id 'java'
+	id 'eclipse'
+}
+
+archivesBaseName = 'ReporteCierreInventarioReprocesoCtrl'
+mainClassName = 'ReporteCierreInventarioReprocesoCtrl'
 
 sourceSets.main.java.srcDirs = ['src/main/java']
 
@@ -16,10 +19,12 @@ task fatJar(type: Jar) {
 	manifest {
         attributes 'Implementation-Title': 'Servicios Varios',
         	'Class-Path': '.', 
-        	'Main-Class': 'ServiciosSer.ServicioReplicaUsuarios'
+        	'Main-Class': 'ServiciosSer.ReporteCierreInventarioReprocesoCtrl'
+        	
+        	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
-    baseName = archivesBaseName
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    //baseName = archivesBaseName
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
     
     exclude "META-INF/*.SF"
@@ -40,33 +45,36 @@ task fatJar(type: Jar) {
 }
 
 dependencies {
-   compile  'log4j:log4j:1.2.16'
-   
-   compile fileTree(dir: 'libs', include: '*.jar')
+   implementation  'log4j:log4j:1.2.16'
+   implementation fileTree(dir: 'libs', include: '*.jar')
    
    // https://mvnrepository.com/artifact/javax.mail/mail
    //compile group: 'javax.mail', name: 'mail', version: '1.4.7'
    // https://mvnrepository.com/artifact/javax.mail/javax.mail-api
-	implementation group: 'javax.mail', name: 'javax.mail-api', version: '1.6.2'
+   implementation group: 'javax.mail', name: 'javax.mail-api', version: '1.6.2'
    
    
    // https://mvnrepository.com/artifact/org.apache.poi/poi
-   compile group: 'org.apache.poi', name: 'poi', version: '4.0.0'
+   implementation group: 'org.apache.poi', name: 'poi', version: '4.0.0'
    
    // https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
-   compile group: 'org.apache.poi', name: 'poi-ooxml', version: '4.0.0'
+   implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '4.0.0'
    
    // https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml-schemas
-   compile group: 'org.apache.poi', name: 'poi-ooxml-schemas', version: '4.0.0'
+   implementation group: 'org.apache.poi', name: 'poi-ooxml-schemas', version: '4.0.0'
    
    //Incluyendo el proyecto de Inventario Americana para el tema de control de inventarios
    //compile project(':ProyectoTiendaAmericanaCliente')
    //implementation project(path:':ProyectoTiendaAmericanaCliente', configuration: 'default')
    
    // https://mvnrepository.com/artifact/mysql/mysql-connector-java
-   compile group: 'mysql', name: 'mysql-connector-java', version: '8.0.19'
+   implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.19'
    
    // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
-   compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.10'
+   implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.10'
+   // Para llamado de servicio de ULTRAMSG
+   implementation 'com.squareup.okhttp3:okhttp:3.14.6'
+   
+   implementation("org.slf4j:slf4j-api:1.7.25")
      
 }

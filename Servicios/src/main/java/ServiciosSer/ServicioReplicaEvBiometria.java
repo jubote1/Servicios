@@ -10,29 +10,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.hssf.util.HSSFRegionUtil;
-import org.apache.poi.ss.usermodel.BorderStyle;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.ClientAnchor;
-import org.apache.poi.ss.usermodel.CreationHelper;
-import org.apache.poi.ss.usermodel.Drawing;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Picture;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.util.IOUtils;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFRichTextString;
-
+import CapaDAOSer.EmpleadoEncuestaDAO;
+import CapaDAOSer.EmpleadoEncuestaDetalleDAO;
 import CapaDAOSer.EmpleadoEventoDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ItemInventarioDAO;
@@ -43,6 +22,8 @@ import CapaDAOSer.UsuarioDAO;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
+import ModeloSer.EmpleadoEncuesta;
+import ModeloSer.EmpleadoEncuestaDetalle;
 import ModeloSer.EmpleadoEvento;
 import ModeloSer.Insumo;
 import ModeloSer.Tienda;
@@ -138,6 +119,28 @@ public void generarReplicaEvBiometria()
 					EmpleadoEventoDAO.actualizarEventoRegistroEmpleadoLocal(evenTemp, tien.getHostBD());
 				}
 			}
+			
+			//Obtenemos el encabezado de las encuestas para tienda en cuestion
+			ArrayList<EmpleadoEncuesta> empleadosEncuesta = EmpleadoEncuestaDAO.obtenerEmpleadoEncuesta(tien.getHostBD());
+			for(EmpleadoEncuesta empEncTemp : empleadosEncuesta)
+			{
+				//Realizamos la inserción del encabezado de la encuesta
+				int idEmpleadoEncuesta = EmpleadoEncuestaDAO.insertarEmpleadoEncuesta(empEncTemp);
+				//Recuperamos el detalle de la encuesta empleado
+				ArrayList<EmpleadoEncuestaDetalle> empleadoEncuestaDetalle = EmpleadoEncuestaDetalleDAO.obtenerEmpleadoEncuesta(tien.getHostBD(), empEncTemp.getIdEmpleadoEncuesta());
+				//Realizamos la inserción de los detalles anteponiendo el nuevo idEmpleadoEncuesta según el nuevo encabezado
+				for(EmpleadoEncuestaDetalle empEncDetTemp: empleadoEncuestaDetalle)
+				{
+					empEncDetTemp.setIdEmpleadoEncuesta(idEmpleadoEncuesta);
+					//Procedemos a la inserción de los deatlles
+					EmpleadoEncuestaDetalleDAO.insertarEmpleadoEncuestaDetalle(empEncDetTemp);
+				}
+				//Procedemos a borrar los detalles de la encuesta empleado
+				EmpleadoEncuestaDetalleDAO.borrarEmpleadoEncuestaDetalle(empEncTemp.getIdEmpleadoEncuesta(), tien.getHostBD());
+				//Procedemos a borrar el encabezado de la encuesta empleado
+				EmpleadoEncuestaDAO.borrarEmpleadoEncuesta(empEncTemp.getIdEmpleadoEncuesta(), tien.getHostBD());
+			}
+			
 		}
 	}
 	

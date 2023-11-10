@@ -10,11 +10,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.log4j.Logger;
+
 import com.mysql.cj.jdbc.result.ResultSetMetaData;
 
 import CapaDAOSer.TiendaDAO;
 import ConexionSer.ConexionBaseDatos;
 import ModeloSer.ClienteCampana;
+import ModeloSer.ClienteFiel;
 import ModeloSer.Pedido;
 import ModeloSer.Tienda;
 
@@ -285,7 +288,7 @@ public class PedidoDAO {
 		int idtienda = 0;
 		String consulta = "";
 		//consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.origen from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.idestadopedido = 2 and a.origen IN ('C','TK') and a.enviadopixel = 0 AND TIMESTAMPDIFF(MINUTE, a.fechainsercion, NOW()) > 5 and b.alertarpedidos = 1";
-		consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.origen from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.idestadopedido = 2 and a.origen = 'C' and a.enviadopixel = 0 AND TIMESTAMPDIFF(MINUTE, a.fechainsercion, NOW()) > 5 and b.alertarpedidos = 1";
+		consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.hora_programado, a.origen from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.idestadopedido = 2 and a.origen = 'C' and a.enviadopixel = 0 AND TIMESTAMPDIFF(MINUTE, a.fechainsercion, NOW()) > 5 and b.alertarpedidos = 1";
 		ConexionBaseDatos con = new ConexionBaseDatos();
 		//Llamamos metodo de conexión asumiendo que corremos en el servidor de aplicaciones de manera local
 		Connection con1 = con.obtenerConexionBDContactLocal();
@@ -319,6 +322,7 @@ public class PedidoDAO {
 			int memcode;
 			int idTienda;
 			String origen = "";
+			String horaProgramado = "";
 			while(rs.next())
 			{
 				idpedido = rs.getInt("idpedido");
@@ -347,10 +351,106 @@ public class PedidoDAO {
 				memcode = rs.getInt("memcode");
 				idTienda = rs.getInt("idtienda");
 				origen = rs.getString("origen");
+				horaProgramado = rs.getString("hora_programado");
 				Pedido cadaPedido = new Pedido(idpedido,  nombreTienda,totalBruto, impuesto, totalNeto,
 						estadoPedido, fechaPedido, nombreCliente, idcliente, enviadopixel,numposheader, null, stringpixel, fechainsercion, usuariopedido, direccion, telefono, formapago, idformapago, tiempopedido,valorFormaPago, descuento, motivoDescuento, memcode);
 				cadaPedido.setIdtienda(idTienda);
 				cadaPedido.setOrigen(origen);
+				cadaPedido.setHoraProgramado(horaProgramado);
+				consultaPedidos.add(cadaPedido);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+
+		}catch(Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+			
+		}
+		return(consultaPedidos);
+	}
+	
+	public static ArrayList<Pedido> ConsultarPedidosPendientesRAPPI(String fechaPed)
+	{
+		ArrayList <Pedido> consultaPedidos = new ArrayList();
+		int idtienda = 0;
+		String consulta = "";
+		//consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.origen from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.idestadopedido = 2 and a.origen IN ('C','TK') and a.enviadopixel = 0 AND TIMESTAMPDIFF(MINUTE, a.fechainsercion, NOW()) > 5 and b.alertarpedidos = 1";
+		consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.hora_programado, a.origen from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.idestadopedido = 2 and a.origen = 'RAP' and a.enviadopixel = 0 AND TIMESTAMPDIFF(MINUTE, a.fechainsercion, NOW()) > 2";
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		//Llamamos metodo de conexión asumiendo que corremos en el servidor de aplicaciones de manera local
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			ResultSet rs = stm.executeQuery(consulta);
+			int idpedido;
+			String nombreTienda;
+			double totalBruto;
+			double impuesto;
+			double totalNeto;
+			String nombreCliente;
+			String estadoPedido;
+			String fechaPedido;
+			int idcliente;
+			int enviadopixel;
+			int numposheader;
+			String url;
+			String stringpixel;
+			String fechainsercion;
+			String usuariopedido;
+			String telefono;
+			String direccion;
+			String formapago;
+			int idformapago;
+			double tiempopedido;
+			double valorFormaPago;
+			double descuento;
+			String motivoDescuento;
+			int memcode;
+			int idTienda;
+			String origen = "";
+			String horaProgramado = "";
+			while(rs.next())
+			{
+				idpedido = rs.getInt("idpedido");
+				nombreTienda = rs.getString("nombre");
+				totalBruto = rs.getDouble("total_bruto");
+				impuesto = rs.getDouble("impuesto");
+				totalNeto = rs.getDouble("total_neto");
+				nombreCliente = rs.getString("nombrecliente");
+				estadoPedido = rs.getString("descripcion");
+				fechaPedido = rs.getString("fechapedido");
+				idcliente = rs.getInt("idcliente");
+				enviadopixel = rs.getInt("enviadopixel");
+				numposheader = rs.getInt("numposheader");
+				stringpixel = rs.getString("stringpixel");
+				fechainsercion = rs.getString("fechainsercion");
+				usuariopedido = rs.getString("usuariopedido");
+				direccion = rs.getString("direccion");
+				telefono = rs.getString("telefono");
+				url = rs.getString("url");
+				formapago = rs.getString("formapago");
+				idformapago = rs.getInt("idforma_pago");
+				tiempopedido = rs.getDouble("tiempopedido");
+				valorFormaPago = rs.getDouble("valorformapago");
+				descuento = rs.getDouble("descuento");
+				motivoDescuento = "";
+				memcode = rs.getInt("memcode");
+				idTienda = rs.getInt("idtienda");
+				origen = rs.getString("origen");
+				horaProgramado = rs.getString("hora_programado");
+				Pedido cadaPedido = new Pedido(idpedido,  nombreTienda,totalBruto, impuesto, totalNeto,
+						estadoPedido, fechaPedido, nombreCliente, idcliente, enviadopixel,numposheader, null, stringpixel, fechainsercion, usuariopedido, direccion, telefono, formapago, idformapago, tiempopedido,valorFormaPago, descuento, motivoDescuento, memcode);
+				cadaPedido.setIdtienda(idTienda);
+				cadaPedido.setOrigen(origen);
+				cadaPedido.setHoraProgramado(horaProgramado);
 				consultaPedidos.add(cadaPedido);
 			}
 			rs.close();
@@ -621,6 +721,188 @@ public class PedidoDAO {
 		int idtienda = 0;
 		String consulta = "";
 		consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.idlink from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.idestadopedido = 2 and a.enviadopixel = 2 AND TIMESTAMPDIFF(MINUTE, a.fechainsercion, NOW()) >= " + minutos + " and a.fechapagovirtual IS NULL";
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		//Llamamos metodo de conexión asumiendo que corremos en el servidor de aplicaciones de manera local
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			ResultSet rs = stm.executeQuery(consulta);
+			int idpedido;
+			String nombreTienda;
+			double totalBruto;
+			double impuesto;
+			double totalNeto;
+			String nombreCliente;
+			String estadoPedido;
+			String fechaPedido;
+			int idcliente;
+			int enviadopixel;
+			int numposheader;
+			String url;
+			String stringpixel;
+			String fechainsercion;
+			String usuariopedido;
+			String telefono;
+			String direccion;
+			String formapago;
+			int idformapago;
+			double tiempopedido;
+			double valorFormaPago;
+			double descuento;
+			String motivoDescuento;
+			int memcode;
+			int idTienda;
+			String idLink;
+			while(rs.next())
+			{
+				idpedido = rs.getInt("idpedido");
+				nombreTienda = rs.getString("nombre");
+				totalBruto = rs.getDouble("total_bruto");
+				impuesto = rs.getDouble("impuesto");
+				totalNeto = rs.getDouble("total_neto");
+				nombreCliente = rs.getString("nombrecliente");
+				estadoPedido = rs.getString("descripcion");
+				fechaPedido = rs.getString("fechapedido");
+				idcliente = rs.getInt("idcliente");
+				enviadopixel = rs.getInt("enviadopixel");
+				numposheader = rs.getInt("numposheader");
+				stringpixel = rs.getString("stringpixel");
+				fechainsercion = rs.getString("fechainsercion");
+				usuariopedido = rs.getString("usuariopedido");
+				direccion = rs.getString("direccion");
+				telefono = rs.getString("telefono");
+				url = rs.getString("url");
+				formapago = rs.getString("formapago");
+				idformapago = rs.getInt("idforma_pago");
+				tiempopedido = rs.getDouble("tiempopedido");
+				valorFormaPago = rs.getDouble("valorformapago");
+				descuento = rs.getDouble("descuento");
+				motivoDescuento = "";
+				memcode = rs.getInt("memcode");
+				idTienda = rs.getInt("idtienda");
+				idLink = rs.getString("idlink");
+				Pedido cadaPedido = new Pedido(idpedido,  nombreTienda,totalBruto, impuesto, totalNeto,
+						estadoPedido, fechaPedido, nombreCliente, idcliente, enviadopixel,numposheader, null, stringpixel, fechainsercion, usuariopedido, direccion, telefono, formapago, idformapago, tiempopedido,valorFormaPago, descuento, motivoDescuento, memcode);
+				cadaPedido.setIdtienda(idTienda);
+				cadaPedido.setIdLink(idLink);
+				consultaPedidos.add(cadaPedido);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+
+		}catch(Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+			
+		}
+		return(consultaPedidos);
+	}
+	
+	public static ArrayList<Pedido> ConsultarPagosVirtualSinPagarEspecial(String fechaPed, int minutos)
+	{
+		ArrayList <Pedido> consultaPedidos = new ArrayList();
+		int idtienda = 0;
+		String consulta = "";
+		consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.idlink from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.idestadopedido = 2 and a.enviadopixel = 2 AND TIMESTAMPDIFF(MINUTE, a.fechainsercion, NOW()) >= " + minutos + " and a.fechapagovirtual IS NULL and a.origen NOT IN ('APP','TK') and a.programado != 'S'";
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		//Llamamos metodo de conexión asumiendo que corremos en el servidor de aplicaciones de manera local
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			ResultSet rs = stm.executeQuery(consulta);
+			int idpedido;
+			String nombreTienda;
+			double totalBruto;
+			double impuesto;
+			double totalNeto;
+			String nombreCliente;
+			String estadoPedido;
+			String fechaPedido;
+			int idcliente;
+			int enviadopixel;
+			int numposheader;
+			String url;
+			String stringpixel;
+			String fechainsercion;
+			String usuariopedido;
+			String telefono;
+			String direccion;
+			String formapago;
+			int idformapago;
+			double tiempopedido;
+			double valorFormaPago;
+			double descuento;
+			String motivoDescuento;
+			int memcode;
+			int idTienda;
+			String idLink;
+			while(rs.next())
+			{
+				idpedido = rs.getInt("idpedido");
+				nombreTienda = rs.getString("nombre");
+				totalBruto = rs.getDouble("total_bruto");
+				impuesto = rs.getDouble("impuesto");
+				totalNeto = rs.getDouble("total_neto");
+				nombreCliente = rs.getString("nombrecliente");
+				estadoPedido = rs.getString("descripcion");
+				fechaPedido = rs.getString("fechapedido");
+				idcliente = rs.getInt("idcliente");
+				enviadopixel = rs.getInt("enviadopixel");
+				numposheader = rs.getInt("numposheader");
+				stringpixel = rs.getString("stringpixel");
+				fechainsercion = rs.getString("fechainsercion");
+				usuariopedido = rs.getString("usuariopedido");
+				direccion = rs.getString("direccion");
+				telefono = rs.getString("telefono");
+				url = rs.getString("url");
+				formapago = rs.getString("formapago");
+				idformapago = rs.getInt("idforma_pago");
+				tiempopedido = rs.getDouble("tiempopedido");
+				valorFormaPago = rs.getDouble("valorformapago");
+				descuento = rs.getDouble("descuento");
+				motivoDescuento = "";
+				memcode = rs.getInt("memcode");
+				idTienda = rs.getInt("idtienda");
+				idLink = rs.getString("idlink");
+				Pedido cadaPedido = new Pedido(idpedido,  nombreTienda,totalBruto, impuesto, totalNeto,
+						estadoPedido, fechaPedido, nombreCliente, idcliente, enviadopixel,numposheader, null, stringpixel, fechainsercion, usuariopedido, direccion, telefono, formapago, idformapago, tiempopedido,valorFormaPago, descuento, motivoDescuento, memcode);
+				cadaPedido.setIdtienda(idTienda);
+				cadaPedido.setIdLink(idLink);
+				consultaPedidos.add(cadaPedido);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+
+		}catch(Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+			
+		}
+		return(consultaPedidos);
+	}
+	
+	
+	
+	public static ArrayList<Pedido> ConsultarPagosVirtualSinPagarRango(String fechaPed, int minutos, int minutosSuperior)
+	{
+		ArrayList <Pedido> consultaPedidos = new ArrayList();
+		int idtienda = 0;
+		String consulta = "";
+		consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.idlink from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.idestadopedido = 2 and a.enviadopixel = 2 AND TIMESTAMPDIFF(MINUTE, a.fechainsercion, NOW()) >= " + minutos + " AND TIMESTAMPDIFF(MINUTE, a.fechainsercion, NOW()) <=" + minutosSuperior + " and a.fechapagovirtual IS NULL";
 		ConexionBaseDatos con = new ConexionBaseDatos();
 		//Llamamos metodo de conexión asumiendo que corremos en el servidor de aplicaciones de manera local
 		Connection con1 = con.obtenerConexionBDContactLocal();
@@ -987,6 +1269,47 @@ public class PedidoDAO {
 		return(seDebeReportar);
 	}
 	
+	public static boolean seDebeReportarPagoWhatsApp(int idpedido)
+	{
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		boolean seDebeReportar = false;
+		try
+		{
+			Statement stm = con1.createStatement();
+			Statement stm1 = con1.createStatement();
+			// Actualizamos la tabla pedido con el numero pedido pixel y le ponemos estado al pedido = 1, indicando que ya fue enviado a la tienda.
+			String select = "select * from pedidos_pendiente_whatsapp where idpedido =" + idpedido;
+			ResultSet rs = stm.executeQuery(select);
+			boolean reportado = false;
+			while(rs.next())
+			{
+				reportado = true;
+				break;	
+			}
+			if(!reportado)
+			{
+				seDebeReportar = true;
+				String insert = "insert pedidos_pendiente_whatsapp (idpedido) values(" + idpedido + ")";
+				System.out.println("insert " + insert);
+				stm1.executeUpdate(insert);
+			}
+			stm.close();
+			con1.close();
+		}
+		catch (Exception e){
+			System.out.println(e.getMessage());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+			return(false);
+		}
+		return(seDebeReportar);
+	}
+	
 	//Método que retona totales por tamaño de pizzas en un día determinado
 	public static ArrayList obtenerTotalPizzasFechas(String fechaInicial, String fechaFinal, String url)
 	{
@@ -1038,7 +1361,7 @@ public class PedidoDAO {
 			{
 				Statement stm = con1.createStatement();
 				//En esta consulta incluimos los pedidos anulados como se puede ver no tiene la condición idmotivoanulacion IS NULL
-				String consulta = "SELECT c.descripcion, COUNT(*) FROM pedido a, detalle_pedido b , producto c WHERE a.idpedidotienda = b.idpedidotienda AND b.idproducto = c.idproducto AND b.iddetalle_pedido_master = 0 and c.tamano IN ('MD', 'GD', 'XL', 'PZ') AND a.fechapedido >= '" + fechaInicial + "' and a.fechapedido <= '" + fechaFinal +"' GROUP BY c.descripcion";
+				String consulta = "SELECT c.descripcion, COUNT(*) cantidad, SUM(b.valortotal) total, c.tamano FROM pedido a, detalle_pedido b , producto c WHERE a.idpedidotienda = b.idpedidotienda AND b.idproducto = c.idproducto AND b.iddetalle_pedido_master = 0 and c.tamano IN ('MD', 'GD', 'XL', 'PZ','LASAG MIXTA', 'NUGGETS', 'DEDITOS','MADURITO') AND a.fechapedido >= '" + fechaInicial + "' and a.fechapedido <= '" + fechaFinal +"' GROUP BY c.descripcion, c.tamano";
 				System.out.println(consulta);
 				ResultSet rs = stm.executeQuery(consulta);
 				ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
@@ -1075,7 +1398,7 @@ public class PedidoDAO {
 			try
 			{
 				Statement stm = con1.createStatement();
-				String consulta = "select sum(total_neto) from pedido where fechapedido >= '" + fechaAnterior + "' and fechapedido <=  '" + fechaPosterior + "'  and idmotivoanulacion IS NULL"; 
+				String consulta = "select SUM(d.total_neto) - (select IFNULL(SUM(b.valortotal),0) AS  total_neto FROM pedido a, detalle_pedido b, producto c WHERE a.idpedidotienda = b.idpedidotienda AND b.idproducto = c.idproducto AND a.fechapedido >= '"+ fechaAnterior +"' AND a.fechapedido <=  '" + fechaPosterior + "'  AND a.idmotivoanulacion IS NULL AND c.no_venta = 1) AS total_neto FROM pedido d WHERE d.fechapedido >= '" + fechaAnterior + "' AND d.fechapedido <=  '" + fechaPosterior +"'  AND d.idmotivoanulacion IS NULL"; 
 				ResultSet rs = stm.executeQuery(consulta);
 				while(rs.next()){
 					totalVenta = rs.getDouble(1);
@@ -1098,6 +1421,37 @@ public class PedidoDAO {
 			return(totalVenta);
 		}
 		
+		public static int obtenerCantFacturas(String fechaAnterior, String fechaPosterior , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			int cantidad = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select count(*) from pedido where fechapedido >= '" + fechaAnterior + "' and fechapedido <=  '" + fechaPosterior + "'  and idmotivoanulacion IS NULL"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					cantidad  = rs.getInt(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(cantidad);
+		}
+		
 		//Comenzamos a generar una consulta por cada promoción
 		
 		/**
@@ -1116,13 +1470,13 @@ public class PedidoDAO {
 			{
 				Statement stm = con1.createStatement();
 				String consulta = "SELECT \r\n" + 
-						"(SELECT SUM(dp.valorunitario) /14950\r\n" + 
+						"(SELECT SUM(dp.valorunitario) /17495\r\n" + 
 						"FROM detalle_pedido dp, producto pr , pedido pe\r\n" + 
 						"WHERE pr.idproducto = dp.idproducto\r\n" + 
 						"AND pe.idpedidotienda = dp.idpedidotienda\r\n" + 
 						"AND pe.fechapedido = tabla.dia\r\n" + 
 						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE\r\n" + 
-						"pr.descripcion like '%Mediana 50%')) AS MdDobleOnline\r\n" + 
+						"pr.descripcion like '%Combo 2 Medianas%')) AS MdDobleOnline\r\n" + 
 						"FROM\r\n" + 
 						"(\r\n" + 
 						"SELECT pe.fechapedido as dia\r\n" + 
@@ -1203,7 +1557,13 @@ public class PedidoDAO {
 			return(total);
 		}
 		
-		public static double obtenerTotalesPromoMediana12(String fecha , String url)
+		/**
+		 * Cantidad de promociones para el Mejor Combo 19900
+		 * @param fecha
+		 * @param url
+		 * @return
+		 */
+		public static double obtenerTotalesPromoMDPizzaton(String fecha , String url)
 		{
 			ConexionBaseDatos con = new ConexionBaseDatos();
 			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
@@ -1212,13 +1572,190 @@ public class PedidoDAO {
 			{
 				Statement stm = con1.createStatement();
 				String consulta = "SELECT \r\n" + 
-						"(SELECT SUM(dp.valorunitario) /11990\r\n" + 
+						"(SELECT SUM(dp.valorunitario) /21990\r\n" + 
 						"FROM detalle_pedido dp, producto pr , pedido pe\r\n" + 
 						"WHERE pr.idproducto = dp.idproducto\r\n" + 
 						"AND pe.idpedidotienda = dp.idpedidotienda\r\n" + 
 						"AND pe.fechapedido = tabla.dia\r\n" + 
 						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE\r\n" + 
-						"pr.descripcion like '%MD Un Ingrediente%')) AS MdDobleOnline\r\n" + 
+						"pr.descripcion like '%Promo mediana plus%')) AS MdDobleOnline\r\n" + 
+						"FROM\r\n" + 
+						"(\r\n" + 
+						"SELECT pe.fechapedido as dia\r\n" + 
+						"FROM pedido pe\r\n" + 
+						"WHERE pe.fechapedido = '" + fecha + "'\r\n" + 
+						"GROUP BY pe.fechapedido) as tabla"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(total);
+		}
+		
+
+		public static double obtenerTotalesPromoMejorCombo(String fecha , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			double total = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT \r\n" + 
+						"(SELECT SUM(dp.valorunitario) /31990\r\n" + 
+						"FROM detalle_pedido dp, producto pr , pedido pe\r\n" + 
+						"WHERE pr.idproducto = dp.idproducto\r\n" + 
+						"AND pe.idpedidotienda = dp.idpedidotienda\r\n" + 
+						"AND pe.fechapedido = tabla.dia\r\n" + 
+						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE\r\n" + 
+						"pr.descripcion like '%Combo Deli Grande%')) AS MdDobleOnline\r\n" + 
+						"FROM\r\n" + 
+						"(\r\n" + 
+						"SELECT pe.fechapedido as dia\r\n" + 
+						"FROM pedido pe\r\n" + 
+						"WHERE pe.fechapedido = '" + fecha + "'\r\n" + 
+						"GROUP BY pe.fechapedido) as tabla"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(total);
+		}
+		
+		public static double obtenerTotalesEstofada(String fecha , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			double total = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT \r\n" + 
+						"(SELECT count(*)\r\n" + 
+						"FROM detalle_pedido dp, producto pr , pedido pe\r\n" + 
+						"WHERE pr.idproducto = dp.idproducto\r\n" + 
+						"AND pe.idpedidotienda = dp.idpedidotienda\r\n" + 
+						"AND pe.fechapedido = tabla.dia\r\n" + 
+						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE\r\n" + 
+						"pr.descripcion like '%Estofada%')) AS MdDobleOnline\r\n" + 
+						"FROM\r\n" + 
+						"(\r\n" + 
+						"SELECT pe.fechapedido as dia\r\n" + 
+						"FROM pedido pe\r\n" + 
+						"WHERE pe.fechapedido = '" + fecha + "'\r\n" + 
+						"GROUP BY pe.fechapedido) as tabla"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(total);
+		}
+		
+		public static double obtenerTotalesCodigoFlash(String fecha , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			double total = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT \r\n" + 
+						"(SELECT SUM(dp.valorunitario) /9900\r\n" + 
+						"FROM detalle_pedido dp, producto pr , pedido pe\r\n" + 
+						"WHERE pr.idproducto = dp.idproducto\r\n" + 
+						"AND pe.idpedidotienda = dp.idpedidotienda\r\n" + 
+						"AND pe.fechapedido = tabla.dia\r\n" + 
+						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE\r\n" + 
+						"pr.descripcion like '%GD código flash%')) AS MdDobleOnline\r\n" + 
+						"FROM\r\n" + 
+						"(\r\n" + 
+						"SELECT pe.fechapedido as dia\r\n" + 
+						"FROM pedido pe\r\n" + 
+						"WHERE pe.fechapedido = '" + fecha + "'\r\n" + 
+						"GROUP BY pe.fechapedido) as tabla"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(total);
+		}
+		
+		public static double obtenerTotalesPromoMediana19(String fecha , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			double total = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT \r\n" + 
+						"(SELECT SUM(dp.valorunitario) /19900\r\n" + 
+						"FROM detalle_pedido dp, producto pr , pedido pe\r\n" + 
+						"WHERE pr.idproducto = dp.idproducto\r\n" + 
+						"AND pe.idpedidotienda = dp.idpedidotienda\r\n" + 
+						"AND pe.fechapedido = tabla.dia\r\n" + 
+						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE\r\n" + 
+						"pr.descripcion like '%Mediana Al Mejor Precio%')) AS MdDobleOnline\r\n" + 
 						"FROM\r\n" + 
 						"(\r\n" + 
 						"SELECT pe.fechapedido as dia\r\n" + 
@@ -1257,13 +1794,13 @@ public class PedidoDAO {
 			{
 				Statement stm = con1.createStatement();
 				String consulta = "SELECT \r\n" + 
-						"(SELECT SUM(dp.valorunitario) /7500\r\n" + 
+						"(SELECT SUM(dp.valorunitario) /9995\r\n" + 
 						"FROM detalle_pedido dp, producto pr , pedido pe\r\n" + 
 						"WHERE pr.idproducto = dp.idproducto\r\n" + 
 						"AND pe.idpedidotienda = dp.idpedidotienda\r\n" + 
 						"AND pe.fechapedido = tabla.dia\r\n" + 
 						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE\r\n" + 
-						"pr.descripcion like '%PZ 2 X 1%')) AS MdDobleOnline\r\n" + 
+						"pr.descripcion like '%PZ 2 x19.990%')) AS MdDobleOnline\r\n" + 
 						"FROM\r\n" + 
 						"(\r\n" + 
 						"SELECT pe.fechapedido as dia\r\n" + 
@@ -1316,7 +1853,58 @@ public class PedidoDAO {
 						"AND pe.idpedidotienda = dp.idpedidotienda " + 
 						"AND pe.fechapedido = tabla.dia " + 
 						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE " + 
-						"pr.descripcion like '%volante%')) AS pizzavolante " + 
+						"pr.descripcion like '%Prom mediana Vol 2ING%')) AS pizzavolante " + 
+						"FROM " + 
+						"( " + 
+						"SELECT pe.fechapedido as dia " + 
+						"FROM pedido pe " + 
+						"WHERE pe.fechapedido = '" + fecha + "' " + 
+						"GROUP BY pe.fechapedido) as tabla"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(total);
+		}
+		
+		/**
+		 * Método que nos trae la cantidad de promociones vendida para una fecha en específica con base en la fecha y el 
+		 * String de conexión de la tienda
+		 * @param fecha
+		 * @param url
+		 * @return
+		 */
+		public static double obtenerTotalesPromoRappi(String fecha , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			double total = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT " + 
+						"(SELECT COUNT(*) " + 
+						"FROM detalle_pedido dp, producto pr , pedido pe " + 
+						"WHERE pr.idproducto = dp.idproducto " + 
+						"AND pe.idpedidotienda = dp.idpedidotienda " + 
+						"AND pe.fechapedido = tabla.dia " + 
+						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE " + 
+						"pr.descripcion like '%Rappi%')) AS pizzavolante " + 
 						"FROM " + 
 						"( " + 
 						"SELECT pe.fechapedido as dia " + 
@@ -1369,6 +1957,91 @@ public class PedidoDAO {
 					{
 						total = total / 2;
 					}
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(total);
+		}
+		
+		public static double obtenerTotalesPromoTienda(String fecha, int idExcepcion, String origen, int idTienda)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDContactLocal();
+			double total = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT COUNT(*) FROM pedido a, detalle_pedido b WHERE a.idpedido = b.idpedido AND " + 
+						" a.origen = '" + origen + "' AND fechapedido = '" + fecha +"' AND b.idexcepcion = " + idExcepcion + " AND a.idtienda = " + idTienda; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+					if(idExcepcion == 20 || idExcepcion == 26)
+					{
+						total = total / 2;
+					}
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(total);
+		}
+		
+		/**
+		 * Método que retorna la cantidad de productos vendido por canal para un determinado producto
+		 * @param fecha
+		 * @param idProducto
+		 * @param origen
+		 * @param idTienda
+		 * @return
+		 */
+		public static double obtenerTotalesProductoTienda(String fecha, int idProducto1,int idProducto2, String origen, int idTienda)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDContactLocal();
+			double total = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "";
+				if(idProducto1 > 0 && idProducto2 == 0)
+				{
+					consulta = "SELECT COUNT(*) FROM pedido a, detalle_pedido b WHERE a.idpedido = b.idpedido AND " + 
+							" a.origen = '" + origen + "' AND fechapedido = '" + fecha +"' AND b.idproducto = " + idProducto1 + " AND a.idtienda = " + idTienda;
+				}
+				else
+				{
+					consulta = "SELECT COUNT(*) FROM pedido a, detalle_pedido b WHERE a.idpedido = b.idpedido AND " + 
+							" a.origen = '" + origen + "' AND fechapedido = '" + fecha +"' AND b.idproducto IN ( " + idProducto1 + "," + idProducto2 + ") AND a.idtienda = " + idTienda;
+				}
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
 					break;
 				}
 				rs.close();
@@ -1499,13 +2172,57 @@ public class PedidoDAO {
 			{
 				Statement stm = con1.createStatement();
 				String consulta = "SELECT \r\n" + 
-						"(SELECT SUM(dp.valorunitario)/39900\r\n" + 
+						"(SELECT SUM(dp.valorunitario)/49990\r\n" + 
 						"FROM detalle_pedido dp, producto pr , pedido pe\r\n" + 
 						"WHERE pr.idproducto = dp.idproducto\r\n" + 
 						"AND pe.idpedidotienda = dp.idpedidotienda\r\n" + 
 						"AND pe.fechapedido = tabla.dia\r\n" + 
 						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE\r\n" + 
-						"pr.descripcion like '%XL Combo Familiar%')) AS XLPromoDeditos\r\n" + 
+						"pr.descripcion like '%XL Combo para todos%')) AS XLPromoDeditos\r\n" + 
+						"FROM\r\n" + 
+						"(\r\n" + 
+						"SELECT pe.fechapedido as dia\r\n" + 
+						"FROM pedido pe\r\n" + 
+						"WHERE pe.fechapedido = '" + fecha + "'\r\n " + 
+						"GROUP BY pe.fechapedido) as tabla"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(total);
+		}
+		
+		public static double obtenerTotales40K(String fecha , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			double total = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT \r\n" + 
+						"(SELECT SUM(dp.valorunitario)/49990\r\n" + 
+						"FROM detalle_pedido dp, producto pr , pedido pe\r\n" + 
+						"WHERE pr.idproducto = dp.idproducto\r\n" + 
+						"AND pe.idpedidotienda = dp.idpedidotienda\r\n" + 
+						"AND pe.fechapedido = tabla.dia\r\n" + 
+						"AND dp.idproducto IN(SELECT pr.idproducto FROM producto pr WHERE\r\n" + 
+						"pr.descripcion like '%XL Combo salva una vida%')) AS XLPromoDeditos\r\n" + 
 						"FROM\r\n" + 
 						"(\r\n" + 
 						"SELECT pe.fechapedido as dia\r\n" + 
@@ -1781,6 +2498,36 @@ public class PedidoDAO {
 				return(0);
 			}
 			return(cantPedidos);
+		}
+		
+		public static int obtenerCantidadPedidoCocina(String fechaSistema, String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			int cantPedidoEnEspera = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select count(*) from pedido a, estado b where a.fechapedido  = '" + fechaSistema  + "'  and a.idmotivoanulacion IS NULL and a.idestado = b.idestado and b.estado_cocina = 1 ";
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					 cantPedidoEnEspera = rs.getInt(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(cantPedidoEnEspera);
 		}
 		
 		/**
@@ -2081,5 +2828,474 @@ public class PedidoDAO {
 			return(clientesCampana);
 		}
 		
+		/**
+		 * Método que retorna los domicilios que llevo un domiciliario determinado en un rango de fechas
+		 * @param fechaInicial
+		 * @param fechaFinal
+		 * @param idDomiciliario
+		 * @param BDRemota
+		 * @return
+		 */
+		public static int obtenerPedidosEntregados(String fechaInicial, String fechaFinal, int idDomiciliario, String BDRemota)
+		{
+			ArrayList pedidosProgramados = new ArrayList();
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(BDRemota);
+			int cantPedidos = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT COUNT(*) FROM pedido a WHERE a.fechainsercion >= '" + fechaInicial + "' AND " + 
+						"a.fechainsercion <= '" + fechaFinal + "' AND a.iddomiciliario = " + idDomiciliario;
+				ResultSet rs = stm.executeQuery(consulta);
+				String[] resTemp = new String[9];
+				while(rs.next()){
+					cantPedidos = rs.getInt(1);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e){
+				System.out.println("falle lanzando la consulta de cantidad de pedidos de un domiciliario temporal");
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+					System.out.println("falle cerrando la conexion");
+				}
+			}
+			return(cantPedidos);
+		}
+		
+
+		public static ArrayList<ClienteFiel> obtenerClientesFielesPedido(int diasPedido, int cantidadPedidos)
+		{
+			Logger logger = Logger.getLogger("log_file");
+			ArrayList<ClienteFiel> clientesFieles = new ArrayList<>();
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDContactLocal();
+			Date fechaTemporal = new Date();
+			DateFormat formatoFinal = new SimpleDateFormat("yyyy-MM-dd");
+			Calendar calendar = Calendar.getInstance();
+			calendar.setTime(fechaTemporal);
+			calendar.add(Calendar.DAY_OF_YEAR, (-1* diasPedido));
+			fechaTemporal = calendar.getTime();
+			String fecha="";
+			try
+			{
+				fecha = formatoFinal.format(fechaTemporal);
+				
+			}catch(Exception e){
+				System.out.println("Problema transformando la fecha actual " + e.toString());
+			}
+			int idCliente;
+			String nombreCliente;
+			int numeroPedidos;
+			String fechaMaxima;
+			String fechaMinima;
+			String telefono;
+			String nombreTienda;
+			int ofertas;
+			int ofertasvigentes;
+			ClienteFiel clienteInf = new ClienteFiel(0, "", 0, "", "", "", "",0,0);
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select b.idcliente, CONCAT(b.nombre ,'-',b.apellido,'-',b.nombrecompania) as nombre , b.telefono, c.nombre nombretienda, count(*) numeropedidos, max(a.fechapedido) fechamaxima, min(a.fechapedido) fechaminima,"
+						+ "(select count(1) from oferta_cliente d where d.idcliente = b.idcliente ) as ofertas ," 
+						+ "(select count(1) from oferta_cliente d where d.idcliente = b.idcliente and d.utilizada = 'N' ) as ofertasvigentes "
+						+ " from pedido a, cliente b, tienda c where a.total_neto > 0 and a.idcliente = b.idcliente and b.idtienda = c.idtienda and fechapedido >= '" + fecha + "' " + 
+						" group by b.idcliente, b.nombre, b.telefono, c.nombre " +
+						 " having count(*) > " + cantidadPedidos;
+				
+				logger.info(consulta);
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					idCliente = rs.getInt("idcliente");
+					nombreCliente = rs.getString("nombre");
+					numeroPedidos = rs.getInt("numeropedidos");
+					fechaMaxima = rs.getString("fechamaxima");
+					fechaMinima = rs.getString("fechaminima");
+					telefono = rs.getString("telefono");
+					nombreTienda = rs.getString("nombretienda");
+					ofertas = rs.getInt("ofertas");
+					ofertasvigentes = rs.getInt("ofertasvigentes");
+					clienteInf = new ClienteFiel(idCliente, nombreCliente, numeroPedidos, fechaMaxima, fechaMinima, telefono, nombreTienda,ofertas, ofertasvigentes);
+					clientesFieles.add(clienteInf);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e){
+				logger.info(e.toString());
+				System.out.println("falle consultando tiendas");
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+					logger.info(e1.toString());
+					System.out.println("falle consultando tiendas");
+				}
+			}
+			return(clientesFieles);
+			
+		}
+		
+		
+		public static ArrayList<ClienteFiel> obtenerClientesNoFieles(int diasNoPedido, int diasNoPedidoInferior)
+		{
+			Logger logger = Logger.getLogger("log_file");
+			ArrayList<ClienteFiel> clientesFieles = new ArrayList<>();
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDContactLocal();
+			Date fechaTemporal = new Date();
+			DateFormat formatoFinal = new SimpleDateFormat("yyyy-MM-dd");
+			Calendar calendar = Calendar.getInstance();
+			Calendar calendar2 = Calendar.getInstance();
+			calendar.setTime(fechaTemporal);
+			calendar2.setTime(fechaTemporal);
+			calendar.add(Calendar.DAY_OF_YEAR, (-1* diasNoPedido));
+			calendar2.add(Calendar.DAY_OF_YEAR, (-1* diasNoPedidoInferior));
+			fechaTemporal = calendar.getTime();
+			String fecha="";
+			String fechaInferior = "";
+			try
+			{
+				fecha = formatoFinal.format(fechaTemporal);
+				
+			}catch(Exception e){
+				System.out.println("Problema transformando la fecha final de la consulta " + e.toString());
+			}
+			fechaTemporal = calendar2.getTime();
+			try
+			{
+				fechaInferior = formatoFinal.format(fechaTemporal);
+				
+			}catch(Exception e){
+				System.out.println("Problema transformando la fecha Inferior de la consulta " + e.toString());
+			}
+			int idCliente;
+			String nombreCliente;
+			int numeroPedidos;
+			String fechaMaxima;
+			String fechaMinima;
+			String telefono;
+			String nombreTienda;
+			int ofertas;
+			int ofertasvigentes;
+			ClienteFiel clienteInf = new ClienteFiel(0, "", 0, "", "", "", "",0,0);
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select b.idcliente, CONCAT(b.nombre ,'-',b.apellido,'-',b.nombrecompania) as nombre , b.telefono, c.nombre nombretienda, count(*) numeropedidos, max(a.fechapedido) fechamaxima, min(a.fechapedido) fechaminima, "
+						+ "(select count(1) from oferta_cliente d where d.idcliente = b.idcliente ) as ofertas ," 
+						+ "(select count(1) from oferta_cliente d where d.idcliente = b.idcliente and d.utilizada = 'N' ) as ofertasvigentes "
+						+ " from pedido a, cliente b, tienda c where a.idcliente = b.idcliente and b.idtienda = c.idtienda and fechapedido < '" + fecha +"' and fechapedido > '" + fechaInferior + "' " +
+						" group by b.idcliente, b.nombre, b.telefono, c.nombre " +
+						 " having max(fechapedido) < '" + fecha +"' and max(fechapedido) > '" + fechaInferior + "'";
+				
+				logger.info(consulta);
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					idCliente = rs.getInt("idcliente");
+					nombreCliente = rs.getString("nombre");
+					numeroPedidos = rs.getInt("numeropedidos");
+					fechaMaxima = rs.getString("fechamaxima");
+					fechaMinima = rs.getString("fechaminima");
+					telefono = rs.getString("telefono");
+					nombreTienda = rs.getString("nombretienda");
+					ofertas = rs.getInt("ofertas");
+					ofertasvigentes = rs.getInt("ofertasvigentes");
+					clienteInf = new ClienteFiel(idCliente, nombreCliente, numeroPedidos, fechaMaxima, fechaMinima, telefono, nombreTienda,ofertas, ofertasvigentes);
+					clientesFieles.add(clienteInf);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e){
+				logger.info(e.toString());
+				System.out.println("falle consultando tiendas");
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+					logger.info(e1.toString());
+					System.out.println("falle consultando tiendas");
+				}
+			}
+			return(clientesFieles);
+			
+		}
+		
+		
+		public static boolean actualizarPedidosPayu(String fechaInicial)
+		{
+			boolean respuesta = false;
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDContactLocal();
+			try
+			{
+				Statement stm = con1.createStatement();
+				String update = "UPDATE pedido SET tipopago = 'CARD' WHERE idpedido IN ( SELECT * from(SELECT a.idpedido FROM pedido a, pedido_forma_pago b  WHERE a.idpedido = b.idpedido AND b.idforma_pago = 6 AND a.fechapedido >= '" + fechaInicial +"')tbltemp);";
+				stm.executeUpdate(update);
+				respuesta = true;
+				stm.close();
+				con1.close();
+			}catch (Exception e){
+				System.out.println("Actualización de pagos con PAYU");
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+					System.out.println("falle cerrando la conexion");
+				}
+			}
+			return(respuesta);
+		}
+		
+		
+		public static ArrayList<Pedido> ConsultarPedidosProgramados(String fechaPed)
+		{
+			ArrayList <Pedido> consultaPedidos = new ArrayList();
+			int idtienda = 0;
+			String consulta = "";
+			consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.hora_programado, a.fechapagovirtual from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.programado = 'S'";
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			//Llamamos metodo de conexión asumiendo que corremos en el servidor de aplicaciones de manera local
+			Connection con1 = con.obtenerConexionBDContactLocal();
+			try
+			{
+				Statement stm = con1.createStatement();
+				ResultSet rs = stm.executeQuery(consulta);
+				int idpedido;
+				String nombreTienda;
+				double totalBruto;
+				double impuesto;
+				double totalNeto;
+				String nombreCliente;
+				String estadoPedido;
+				String fechaPedido;
+				int idcliente;
+				int enviadopixel;
+				int numposheader;
+				String url;
+				String stringpixel;
+				String fechainsercion;
+				String usuariopedido;
+				String telefono;
+				String direccion;
+				String formapago;
+				int idformapago;
+				double tiempopedido;
+				double valorFormaPago;
+				double descuento;
+				String motivoDescuento;
+				int memcode;
+				int idTienda;
+				String horaProgramado;
+				String fechaPagoVirtual;
+				while(rs.next())
+				{
+					idpedido = rs.getInt("idpedido");
+					nombreTienda = rs.getString("nombre");
+					totalBruto = rs.getDouble("total_bruto");
+					impuesto = rs.getDouble("impuesto");
+					totalNeto = rs.getDouble("total_neto");
+					nombreCliente = rs.getString("nombrecliente");
+					estadoPedido = rs.getString("descripcion");
+					fechaPedido = rs.getString("fechapedido");
+					idcliente = rs.getInt("idcliente");
+					enviadopixel = rs.getInt("enviadopixel");
+					numposheader = rs.getInt("numposheader");
+					stringpixel = rs.getString("stringpixel");
+					fechainsercion = rs.getString("fechainsercion");
+					usuariopedido = rs.getString("usuariopedido");
+					direccion = rs.getString("direccion");
+					telefono = rs.getString("telefono");
+					url = rs.getString("url");
+					formapago = rs.getString("formapago");
+					idformapago = rs.getInt("idforma_pago");
+					tiempopedido = rs.getDouble("tiempopedido");
+					valorFormaPago = rs.getDouble("valorformapago");
+					descuento = rs.getDouble("descuento");
+					motivoDescuento = "";
+					memcode = rs.getInt("memcode");
+					idTienda = rs.getInt("idtienda");
+					horaProgramado = rs.getString("hora_programado");
+					fechaPagoVirtual = rs.getString("fechapagovirtual");
+					Pedido cadaPedido = new Pedido(idpedido,  nombreTienda,totalBruto, impuesto, totalNeto,
+							estadoPedido, fechaPedido, nombreCliente, idcliente, enviadopixel,numposheader, null, stringpixel, fechainsercion, usuariopedido, direccion, telefono, formapago, idformapago, tiempopedido,valorFormaPago, descuento, motivoDescuento, memcode);
+					cadaPedido.setIdtienda(idTienda);
+					cadaPedido.setHoraProgramado(horaProgramado);
+					cadaPedido.setFechaPagoVirtual(fechaPagoVirtual);
+					consultaPedidos.add(cadaPedido);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+
+			}catch(Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				
+			}
+			return(consultaPedidos);
+		}
+		
+		/**
+		 * Método que retorna la cantidad de pedidos cumplidos dentro del rango de fechas usando logística.
+		 * @param fechaAnterior
+		 * @param fechaPosterior
+		 * @param url
+		 * @return
+		 */
+		public static double obtenerTotalPedidosNoCumplidos(String fechaAnterior, String fechaPosterior , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			double noCumplidos = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT COUNT(*) FROM (SELECT  round(TIME_TO_SEC(TIMEDIFF((SELECT b.fechacambio FROM cambios_estado_pedido b WHERE b.idpedidotienda = a.idpedidotienda AND b.idestadoposterior = 8 ORDER BY idcambioestado DESC LIMIT 1), a.fechainsercion))/60) as tiempo_real, a.tiempopedido AS tiempo_dado FROM pedido a, usuario c WHERE a.iddomiciliario = c.id and a.fechapedido >= '"+ fechaAnterior +"' AND a.fechapedido <= '" + fechaPosterior +"' AND a.idtipopedido = 1 AND a.logistica = 1 AND  a.tiempopedido != 0) AS notiempo WHERE tiempo_real > tiempo_dado"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					noCumplidos = rs.getDouble(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(noCumplidos);
+		}
+		
+		/**
+		 * Método que retorna la cantidad de pedidos no cumplidos dentro del rango de fechas usando logística.
+		 * @param fechaAnterior
+		 * @param fechaPosterior
+		 * @param url
+		 * @return
+		 */
+		public static double obtenerTotalPedidosCumplidos(String fechaAnterior, String fechaPosterior , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			double cumplidos = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT COUNT(*) FROM (SELECT  round(TIME_TO_SEC(TIMEDIFF((SELECT b.fechacambio FROM cambios_estado_pedido b WHERE b.idpedidotienda = a.idpedidotienda AND b.idestadoposterior = 8 ORDER BY idcambioestado DESC LIMIT 1), a.fechainsercion))/60) as tiempo_real, a.tiempopedido AS tiempo_dado FROM pedido a, usuario c WHERE a.iddomiciliario = c.id and a.fechapedido >= '"+ fechaAnterior +"' AND a.fechapedido <= '" + fechaPosterior +"' AND a.idtipopedido = 1 AND a.logistica = 1 AND  a.tiempopedido != 0) AS notiempo WHERE tiempo_real <= tiempo_dado"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					cumplidos = rs.getDouble(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(cumplidos);
+		}
+		
+		public static double obtenerTotalesPromoDeditosLocos(String fecha , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			double total = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT count(*) FROM pedido a, detalle_pedido b WHERE a.idpedidotienda = b.idpedidotienda AND a.fechapedido = '"+ fecha +"' AND b.idproducto IN (480,481,482)"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				return(0);
+			}
+			return(total);
+		}
+		
+		
+		/**
+		 * Método que retorna el valor del descuento asumido por las plataformas.
+		 * @param fechaInicial
+		 * @param fechaFinal
+		 * @param idTienda
+		 * @return
+		 */
+		public static double obtenerTotalDescuentosReembolsables(String fechaInicial, String fechaFinal, int idTienda)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDContactLocal();
+			double totalDescuento = 0;
+			
+			try
+			{
+				Statement stm = con1.createStatement();
+				//En esta consulta incluimos los pedidos anulados como se puede ver no tiene la condición idmotivoanulacion IS NULL
+				String consulta = "SELECT SUM(b.descuento_plataforma) FROM pedido a, marcacion_pedido b WHERE a.idpedido = b.idpedido AND a.fechapedido>= '" + fechaInicial + "' AND a.fechapedido <= '" + fechaFinal + "' AND idtienda =" + idTienda;
+				System.out.println(consulta);
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					totalDescuento = rs.getDouble(1);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+			}
+			return(totalDescuento);
+			
+		}
 		
 }

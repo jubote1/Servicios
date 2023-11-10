@@ -12,6 +12,7 @@ public class Insumo {
 	private String categoria;
 	private boolean control_cantidad;
 	private double costoUnidad;
+	private double embalajeCosto;
 	
 	
 	
@@ -74,6 +75,12 @@ public class Insumo {
 	}
 	public void setPrecioUnidad(double precioUnidad) {
 		this.precioUnidad = precioUnidad;
+	}
+	public double getEmbalajeCosto() {
+		return embalajeCosto;
+	}
+	public void setEmbalajeCosto(double embalajeCosto) {
+		this.embalajeCosto = embalajeCosto;
 	}
 	public Insumo(int idinsumo, String nombre, String unidadMedida, String categoria, double costoUnidad) {
 		super();

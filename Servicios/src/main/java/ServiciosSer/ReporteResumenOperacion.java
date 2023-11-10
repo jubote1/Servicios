@@ -79,6 +79,7 @@ public class ReporteResumenOperacion {
 		int pedidoEnRuta = ParametrosDAO.retornarValorNumericoLocal("ENRUTADOMICILIO");
 		int tipoPedidoDomicilio = ParametrosDAO.retornarValorNumericoLocal("TIPOPEDIDODOMICILIO");
 		//Con los valores recuperados con anterioridad se realizará la consulta a cada una de las tiendas
+		int cantPedCoc = 0;
 		int cantPedEmp = 0;
 		int cantPedPen = 0;
 		int cantPedHoraDom = 0;
@@ -113,7 +114,7 @@ public class ReporteResumenOperacion {
 						strPedidosProg = strPedidosProg + pedTemp[0];
 					}else
 					{
-						strPedidosProg = strPedidosProg + " , " + pedTemp[0];
+						strPedidosProg = strPedidosProg + " , " + pedTemp[0]; 
 					}
 					
 				}
@@ -121,8 +122,9 @@ public class ReporteResumenOperacion {
 				System.out.println(strPedidosProg);
 				respuesta = respuesta + "</table> <br/>";
 				
-				respuesta = respuesta + "<table border='2'><tr><td colspan='4'>" + tien.getNombreTienda() + "</td></tr>";
+				respuesta = respuesta + "<table border='2'><tr><td colspan='5'>" + tien.getNombreTienda() + "</td></tr>";
 				respuesta = respuesta + "<tr>"
+						+  "<td><strong>Pedidos en COCINA</strong></td>"
 						+  "<td><strong>Ped Pend Salir Tienda</strong></td>"
 						+  "<td><strong>Cant de Ped Últ Hora Domicilio</strong></td>"
 						+  "<td><strong>Cant de Ped Últ Hora No Domicilio</strong></td>"
@@ -130,18 +132,21 @@ public class ReporteResumenOperacion {
 						+  "</tr>";
 				//Comenzamos a validar los parámetros de cada tienda 
 				// LA MEJOR ESTRATEGIA SERÍA TENER UN SOLO MÉTODO PARA MEJORAR EL PERFORMANCE
+				//Cantidad de pedidos en Cocina
+				cantPedCoc = capaDAOPOS.PedidoDAO.obtenerCantidadPedidoCocina(fechaActual, tien.getHostBD());
 				//Cantidad de pedidos pendientes por salir de la tienda
-				cantPedEmp = PedidoDAO.obtenerCantidadPedidoPorEstado(fechaActual, pedidoEmpacado, tien.getHostBD());
+				cantPedEmp = capaDAOPOS.PedidoDAO.obtenerCantidadPedidoPorEstado(fechaActual, pedidoEmpacado, tien.getHostBD());
 				//Cantidad de pedidos pendientes de la tienda
-				cantPedPen =  cantPedEmp + PedidoDAO.obtenerCantidadPedidoPorEstado(fechaActual, pedidoEnRuta, tien.getHostBD());
+				cantPedPen =  cantPedEmp + capaDAOPOS.PedidoDAO.obtenerCantidadPedidoPorEstado(fechaActual, pedidoEnRuta, tien.getHostBD());
 				//Cantidad de pedidos de la última hora Domicilio
-				cantPedHoraDom = PedidoDAO.obtenerCantidadPedidoDespuesHoraDomicilio(fechaActual, fechaActualMenosHora, tien.getHostBD(),tipoPedidoDomicilio );
+				cantPedHoraDom = capaDAOPOS.PedidoDAO.obtenerCantidadPedidoDespuesHoraDomicilio(fechaActual, fechaActualMenosHora, tien.getHostBD(),tipoPedidoDomicilio );
 				//Cantidad de pedidos de la última hora Domicilio
-				cantPedHoraNoDom = PedidoDAO.obtenerCantidadPedidoDespuesHoraNoDomicilio(fechaActual, fechaActualMenosHora, tien.getHostBD(),tipoPedidoDomicilio );
+				cantPedHoraNoDom = capaDAOPOS.PedidoDAO.obtenerCantidadPedidoDespuesHoraNoDomicilio(fechaActual, fechaActualMenosHora, tien.getHostBD(),tipoPedidoDomicilio );
 				//Tiempo del último pedimo por salir
-				cantMinutos = PedidoDAO.obtenerTiempoUltimoPedidoEstado(fechaActual, pedidoEmpacado, strPedidosProg,  tien.getHostBD());
+				cantMinutos = capaDAOPOS.PedidoDAO.obtenerTiempoUltimoPedidoEstado(fechaActual, pedidoEmpacado, strPedidosProg,  tien.getHostBD());
 				//Luego de obtenidos los datos pintamos el html
 				respuesta = respuesta + "<tr>"
+						+  "<td>" + cantPedCoc + "</td>"
 						+  "<td>" + cantPedEmp + "</td>"
 						+  "<td>" + cantPedHoraDom + "</td>"
 						+  "<td>" + cantPedHoraNoDom + "</td>"
@@ -210,6 +215,5 @@ public class ReporteResumenOperacion {
 		}
 	}
 		
-	
 }
 

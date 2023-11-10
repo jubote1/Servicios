@@ -351,5 +351,42 @@ public class EmpleadoEventoDAO {
 		return(eventosEmpleado);
 		
 	}
+	
+	
+	public static String obtenerCorreoElectronico(int idEmpleado)
+	{
+		ConexionSer.ConexionBaseDatos con = new ConexionSer.ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDGeneralLocal();
+		String consulta = "select email from empleado where id = " + idEmpleado;
+		Statement stm;
+		String email = "";
+		try
+		{
+			stm = con1.createStatement();
+			ResultSet rs = stm.executeQuery(consulta);
+			
+			while(rs.next()){
+				email = rs.getString(1);
+				break;
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}
+		catch (Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+				
+			}catch(Exception e1)
+			{
+				
+			}
+			
+		}
+		return(email);
+		
+	}
 
 }

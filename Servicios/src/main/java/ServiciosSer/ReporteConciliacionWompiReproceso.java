@@ -6,12 +6,14 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import CapaDAOSer.GastoSemanalDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
+import ModeloSer.GastoSemanal;
 import capaModeloCC.Tienda;
 import utilidadesSer.ControladorEnvioCorreo;
 
@@ -154,6 +156,7 @@ public class ReporteConciliacionWompiReproceso {
 		double impuestosTotal;
 		//Recuperamos todos los valores parametrizables para el proceso
 		double comisionWompi = ParametrosDAO.retornarValorNumericoLocalDouble("COMISIONWOMPI");
+		double comisionWompiBanc = ParametrosDAO.retornarValorNumericoLocalDouble("COMISIONWOMPIBANC");
 		double adicionComisionWompi = ParametrosDAO.retornarValorNumericoLocalDouble("ADICIONCOMISIONWOMPI");
 		double ivaComisionWompi = ParametrosDAO.retornarValorNumericoLocalDouble("IVACOMISIONWOMPI");
 		double retencionFuenteWompi = ParametrosDAO.retornarValorNumericoLocalDouble("RETENCIONFUENTEWOMPI");
@@ -183,9 +186,9 @@ public class ReporteConciliacionWompiReproceso {
 			{
 				pedTemp = pedVirtualTienda.get(k);
 				//Se hace necesario realizar una diferenciación con el pago de Bancolombia que cobra menos
-				if(pedTemp.getTipoPago().equals(new String("BANCOLOMBIA_TRANSFER")))
+				if(pedTemp.getTipoPago().equals(new String("BANCOLOMBIA_TRANSFER")) || pedTemp.getTipoPago().equals(new String("BANCOLOMBIA_QR")))
 				{
-					comision = (pedTemp.getTotal_neto()*((1.5)/100)) + 500;
+					comision = (pedTemp.getTotal_neto()*((comisionWompiBanc)/100)) + adicionComisionWompi;
 					ivaComision = (comision*(ivaComisionWompi/100));
 				}else
 				{
@@ -233,7 +236,9 @@ public class ReporteConciliacionWompiReproceso {
 					+  "<td><strong>"+ formatea.format(comisionTotal + ivaComisionTotal + retencionFuenteTotal + retencionIcaTotal) +"</strong></td>"
 					+  "</tr>";
 			respuesta = respuesta + "</table> <br/>";
-			
+			//En este punto tenemos el total de la tienda y lo insertaremos en la tabla correspondiente
+			GastoSemanal gastoSemanalTemp = new GastoSemanal(0,tiendaTemp.getIdTienda(),16,fechaActual,comisionTotal + ivaComisionTotal + retencionFuenteTotal + retencionIcaTotal,comisionTotal + ivaComisionTotal + retencionFuenteTotal + retencionIcaTotal);
+			GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
 		}
 		
 		//Extraemos una información para sacar resumen de los pagos por tarjeta
@@ -254,7 +259,45 @@ public class ReporteConciliacionWompiReproceso {
 			}
 		}
 		respuesta = respuesta + "</table><br/>";
+		//Incluiremos la información del QR Bancolombia
+		//valor de comisión QR Bancolombia
+		double comisionQR = ParametrosDAO.retornarValorNumericoLocalDouble("QRBANCOLOMBIA");
+		respuesta = respuesta + "<table border='2'> <tr> <td colspan='2'> TOTAL POR TIENDA EN FORMA DE PAGO QR BANCOLOMBIA</td></tr>";
+		respuesta = respuesta + "<tr>"
+				+  "<td><strong>Nombre Tienda</strong></td>"
+				+  "<td><strong>Valor Dinero</strong></td>"
+				+  "<td><strong>Valor Comisión</strong></td>"
+				+  "</tr>";
+		double ventaTotalQR = 0;
+		double totalComisionQR = 0;
+		for(ModeloSer.Tienda tien : tiendasLocal)
+		{
+			if(!tien.getHostBD().equals(new String("")))
+			{
+				//Realizamos la acumulación despues de cada iteración
+				ventaTotalQR = TiendaDAO.obtenerTotalFormaPagoEntreFechas(fechaAnterior, fechaActual, tien.getHostBD(), false);
+				totalComisionQR = (ventaTotalQR) * (comisionQR/100);
+				respuesta = respuesta + "<tr><td>" + tien.getNombreTienda()+  "</td><td>" + formatea.format(ventaTotalQR) +  "</td><td>" + formatea.format(totalComisionQR) + "</td></tr>";
+			}
+		}
+		respuesta = respuesta + "</table><br/>";
 		
+		//Incluiremos la información de pago de TARJETAS REGALO PIZZA AMERICANA
+		respuesta = respuesta + "<table border='2'> <tr> <td colspan='2'> TOTAL POR TIENDA EN FORMA DE PAGO TARJETA PIZZA AMERICANA </td></tr>";
+		respuesta = respuesta + "<tr>"
+				+  "<td><strong>Nombre Tienda</strong></td>"
+				+  "<td><strong>Valor Dinero</strong></td>"
+				+  "</tr>";
+		for(ModeloSer.Tienda tien : tiendasLocal)
+		{
+			if(!tien.getHostBD().equals(new String("")))
+			{
+				//Realizamos la acumulación despues de cada iteración
+				ventaTotalQR = TiendaDAO.obtenerTotalFormaPagoEntreFechasTarjetaPA(fechaAnterior, fechaActual, tien.getHostBD(), false);
+				respuesta = respuesta + "<tr><td>" + tien.getNombreTienda()+  "</td><td>" + formatea.format(ventaTotalQR) +  "</td></tr>";
+			}
+		}
+		respuesta = respuesta + "</table><br/>";
 		
 		//Al final el envío del correo
 		//Procedemos al envío del correo

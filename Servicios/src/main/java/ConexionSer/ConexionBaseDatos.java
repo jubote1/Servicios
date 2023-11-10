@@ -71,6 +71,10 @@ public class ConexionBaseDatos {
 		                  "jdbc:mysql://localhost/pizzaamericana?"
 		            + "user=root&password=4m32017&serverTimezone=UTC");
 			    
+//			    con = DriverManager.getConnection(
+//		                  "jdbc:mysql://172.19.0.25/pizzaamericana?"
+//		            + "user=root&password=4m32017&serverTimezone=UTC");
+			    
 
 
 		    // Otros y operaciones sobre la base de datos...
@@ -340,7 +344,7 @@ public class ConexionBaseDatos {
 		} catch (SQLException ex) {
 
 		    // Mantener el control sobre el tipo de error
-		    System.out.println("SQLException: " + ex.getMessage());
+		    System.out.println("SQLException: " + ex.getMessage() + " base de datos " +  url);
 
 		}
 		return(con);
@@ -375,6 +379,38 @@ public class ConexionBaseDatos {
 
 		}
 		return(con); 
+	}
+	
+	public Connection obtenerConexionBDDatamartLocal(){
+		try {
+		    Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
+		    
+
+		} catch (Exception e) {
+
+		    System.out.println(e.toString());
+
+		}
+		
+		Connection con = null;
+		//...
+
+		try {
+
+		
+			con = DriverManager.getConnection(
+		            "jdbc:mysql://localhost/datamart?"
+		            + "user=root&password=4m32017&serverTimezone=UTC");
+
+		    // Otros y operaciones sobre la base de datos...
+
+		} catch (SQLException ex) {
+
+		    // Mantener el control sobre el tipo de error
+		    System.out.println("SQLException: " + ex.getMessage());
+
+		}
+		return(con);
 	}
 	
 }

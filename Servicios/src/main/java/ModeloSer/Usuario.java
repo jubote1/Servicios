@@ -20,8 +20,44 @@ public class Usuario {
 	private int esEmpleado;
 	private int caducado;
 	private String claveRapida;
+	private int activo;
+	private int autorizoRedes;
+	private String email;
+	private int rotacion;
+	private double salario;
 	
 	
+	
+	public int getActivo() {
+		return activo;
+	}
+	public void setActivo(int activo) {
+		this.activo = activo;
+	}
+	public int getAutorizoRedes() {
+		return autorizoRedes;
+	}
+	public void setAutorizoRedes(int autorizoRedes) {
+		this.autorizoRedes = autorizoRedes;
+	}
+	public String getEmail() {
+		return email;
+	}
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	public int getRotacion() {
+		return rotacion;
+	}
+	public void setRotacion(int rotacion) {
+		this.rotacion = rotacion;
+	}
+	public double getSalario() {
+		return salario;
+	}
+	public void setSalario(double salario) {
+		this.salario = salario;
+	}
 	public String getClaveRapida() {
 		return claveRapida;
 	}
@@ -112,6 +148,23 @@ public class Usuario {
 	public void setAdministrador(String administrador) {
 		this.administrador = administrador;
 	}
+	public Usuario(int idUsuario, String nombreUsuario, String contrasena, String nombreLargo, int idTipoEmpleado,
+			String tipoInicio, String administrador, int activo, int autorizoRedes, String email, int rotacion, double salario) {
+		super();
+		this.idUsuario = idUsuario;
+		this.nombreUsuario = nombreUsuario;
+		this.contrasena = contrasena;
+		this.nombreLargo = nombreLargo;
+		this.idTipoEmpleado = idTipoEmpleado;
+		this.tipoInicio = tipoInicio;
+		this.administrador = administrador;
+		this.activo = activo;
+		this.autorizoRedes = autorizoRedes;
+		this.email = email;
+		this.rotacion = rotacion;
+		this.salario = salario;
+	}
+	
 	public Usuario(int idUsuario, String nombreUsuario, String contrasena, String nombreLargo, int idTipoEmpleado,
 			String tipoInicio, String administrador) {
 		super();

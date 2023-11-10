@@ -14,9 +14,14 @@ public class Tienda {
 	private String url;
 	private int pos;
 	private String hostBD;
-		
-	
-	
+	private double meta;
+
+	public double getMeta() {
+		return meta;
+	}
+	public void setMeta(double meta) {
+		this.meta = meta;
+	}
 	public String getHostBD() {
 		return hostBD;
 	}

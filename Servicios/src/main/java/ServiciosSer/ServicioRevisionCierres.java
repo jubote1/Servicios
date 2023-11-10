@@ -97,7 +97,10 @@ public void generarRevisionCierres()
 				//Recuperaremos el valor de la fecha del sistema para compararla	
 				String fechaApertura = TiendaDAO.retornarFechaTiendaRemota(tien.getHostBD());
 				//Hacemos la comparación de las fechas
-				if(fechaApertura.trim().equals(new String(strFechaAnterior.trim())))
+				if(fechaApertura.equals(new String(indicadorCierre)))
+				{
+					
+				}else if(fechaApertura.trim().equals(new String(strFechaAnterior.trim())))
 				{
 					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema está abierto al día anterior." + "</p>";
 				}else if(fechaApertura.trim().equals(new String(strFechaActual.trim())))

@@ -35,16 +35,19 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
 import CapaDAOSer.ConsumoInventarioDAO;
 import CapaDAOSer.ConsumoPorcionesDAO;
+import CapaDAOSer.EmpleadoEventoDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ItemInventarioDAO;
 import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
+import CapaDAOSer.ReporteHorariosDAO;
 import CapaDAOSer.TiendaDAO;
 import CapaDAOSer.UsuarioDAO;
 import ModeloSer.ConsumoInventario;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
+import ModeloSer.EmpleadoEvento;
 import ModeloSer.Insumo;
 import ModeloSer.Tienda;
 import ModeloSer.Usuario;
@@ -85,56 +88,110 @@ public void monitoreoUsuarios()
 	//Llevamos a un string la fecha anterior para el cálculo de la venta
 	fechaActual = calendarioActual.getTime();
 	strFechaActual = dateFormat.format(fechaActual);
-	
-	
-	
-	
-	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo.
-	String respuesta = "";
-	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
-	//Comenzamos a recorrer una a una las tiendas
-	ArrayList<ConsumoInventario> consumosInventario = new ArrayList();
-	for(Tienda tien : tiendas)
+	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo	
+	ArrayList<EmpleadoEvento>  repEntradasSalidas = ReporteHorariosDAO.obtenerEntradasSalidasEmpleadosEventos(strFechaActual,strFechaActual);
+	boolean entrada = false;
+	boolean salida = false;
+	EmpleadoEvento empEventoAnterior = new EmpleadoEvento(0, "", "", "", 0, "");
+	String resultado = "";
+	for(int i = 0; i < repEntradasSalidas.size(); i++)
 	{
-		
-		if(!tien.getHostBD().equals(new String("")))
+		EmpleadoEvento empEventoTemp = repEntradasSalidas.get(i);
+		//La idea es que esto pasará una única vez, o la primera vez
+		if(empEventoAnterior.getId() == 0)
 		{
-			try
-			{
-				//Una vez obtenidos los consumos inventarios del día en cuestión realizaremos la inserción en el sistema de Bodega
-				consumosInventario = ItemInventarioDAO.recuperarConsumosInventario(strFechaActual, tien.getHostBD());
-				for(ConsumoInventario consuTemp: consumosInventario)
-				{
-					ConsumoInventarioDAO.insertarConsumoInventario(strFechaActual, tien.getIdTienda(), consuTemp.getIdInsumo(), consuTemp.getCantidad());
-				}
-				if(consumosInventario.size() > 0)
-				{
-					respuesta = respuesta + " <p>" + tien.getNombreTienda() + " EXITOSO " +  " </p>";
-				}else
-				{
-					respuesta = respuesta + " <p>" + tien.getNombreTienda() + " CUIDADO SE REPLICÓ CERO " +  " </p>";
-				}
-				//Incluimos lógica para replicar el consumo de porciones 
-				int cantidad = ConsumoPorcionesDAO.recuperarCantidadPorciones(strFechaActual, tien.getHostBD());
-				ConsumoPorcionesDAO.insertarConsumoPorciones(strFechaActual, tien.getIdTienda(), cantidad);
-				
-			}catch(Exception e)
-			{
-				respuesta = respuesta + " <p>" + tien.getNombreTienda() + " ERROR " +  " </p>";
-			}
-			
+			empEventoAnterior = repEntradasSalidas.get(i);
 		}
+		if(empEventoAnterior.getId() == empEventoTemp.getId())
+		{
+			if(empEventoTemp.getTipoEvento().equals(new String("INGRESO")))
+			{
+				entrada = true;
+				salida = false;
+			}
+			else if(empEventoTemp.getTipoEvento().equals(new String("SALIDA")))
+			{
+				salida = true;
+			}
+			if(entrada && salida)
+			{
+				//Realizaremos un substring de la hora y si esa hora es despuesde las 17 de la noche, sospechar que las cosas no andan
+				//bien
+				String strHora = empEventoAnterior.getFechaHoraLog().substring(11,13);
+				int intHora = 0;
+				try
+				{
+					intHora = Integer.parseInt(strHora);
+				}catch(Exception e)
+				{
+					intHora = 0;
+				}
+				if(intHora >= 20)
+				{
+					resultado = resultado + " " + empEventoAnterior.getId()+ "-" + empEventoAnterior.getNombreEmpleado() + " INGRESO APARENTEMENTE TARDÍO " + empEventoAnterior.getFechaHoraLog();
+					String email = EmpleadoEventoDAO.obtenerCorreoElectronico(empEventoAnterior.getId());
+					//Enviamos correo notificando al empleado que tiene problemas con al biometría
+					Correo correo = new Correo();
+					correo.setAsunto("POSIBLE INCONVENIENTE BIOMETRIA EN DÍA " + fechaActual.toString());
+					CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+					correo.setContrasena(infoCorreo.getClaveCorreo());
+					//Tendremos que definir los destinatarios de este correo
+					ArrayList correos = new ArrayList();
+					correos.add(email);
+					correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+					String mensaje = "Señor Empleado el día de ayer tuvo problemas con el registro de su biometría, por favor revise apenas pueda y notifique la situación. Tuvo INGRESO AL PARECER TARDÍO " + empEventoAnterior.getFechaHoraLog();
+					correo.setMensaje(mensaje);
+					ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+					contro.enviarCorreoHTML();
+				}
+			}
+		}else
+		{
+			if(salida == false)
+			{
+				resultado = resultado + " " + empEventoAnterior.getId()+ "-" + empEventoAnterior.getNombreEmpleado() + " INGRESO " + empEventoAnterior.getFechaHoraLog() + " - SALIDA NO HAY";
+				String email = EmpleadoEventoDAO.obtenerCorreoElectronico(empEventoAnterior.getId());
+				//Enviamos correo notificando al empleado que tiene problemas con al biometría
+				Correo correo = new Correo();
+				correo.setAsunto("POSIBLE INCONVENIENTE BIOMETRIA EN DÍA " + fechaActual.toString());
+				CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+				correo.setContrasena(infoCorreo.getClaveCorreo());
+				//Tendremos que definir los destinatarios de este correo
+				ArrayList correos = new ArrayList();
+				correos.add(email);
+				correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+				String mensaje = "Señor Empleado el día de ayer tuvo problemas con el registro de su biometría, por favor revise apenas pueda y notifique la situación. Tuvo INGRESO " + empEventoAnterior.getFechaHoraLog()+ " - SALIDA NO HAY";
+				correo.setMensaje(mensaje);
+				ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+				contro.enviarCorreoHTML();
+			}
+			entrada = false;
+			salida = false;
+			empEventoAnterior = repEntradasSalidas.get(i);
+			if(empEventoTemp.getTipoEvento().equals(new String("INGRESO")))
+			{
+				entrada = true;
+				salida = false;
+			}
+			else if(empEventoTemp.getTipoEvento().equals(new String("SALIDA")))
+			{
+				salida = true;
+			}
+		}
+		
+		
 	}
+	
 	
 	//Realizamos el envío del correo electrónico con los archivos
 	Correo correo = new Correo();
-	correo.setAsunto("REPLICA DE CONSUMOS DE TIENDAS " + fechaActual.toString());
+	correo.setAsunto("EMPLEADOS CON POSIBLES PROBLEMAS BIOMETRIA EN DÍA " + fechaActual.toString());
 	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 	correo.setContrasena(infoCorreo.getClaveCorreo());
 	//Tendremos que definir los destinatarios de este correo
-	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
+	ArrayList correos = GeneralDAO.obtenerCorreosParametro("ERRORBIOMETRIA");
 	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuación se información del proceso de replica de consumo de tiendas " + respuesta;
+	String mensaje = "A continuación la información de las personas que posiblemente tienen problemas con el acceso " + resultado;
 	correo.setMensaje(mensaje);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 	contro.enviarCorreoHTML();

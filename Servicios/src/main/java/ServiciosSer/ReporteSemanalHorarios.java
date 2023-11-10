@@ -251,11 +251,11 @@ public class ReporteSemanalHorarios {
 			   //Instanciamos la respuesta ArrayList
 				ArrayList<String[]> respuestaReporte = new ArrayList();
 				//Recuperamos el arreglo con los eventos deberemos reprocesarlos para tener la vista qeu requerimos
-				ArrayList<EmpleadoEvento>  repEntradasSalidas = ReporteHorariosDAO.obtenerEntradasSalidasEmpleadosEventos(fechaAnterior,fechaActual);
+				ArrayList<EmpleadoEvento>  repEntradasSalidas = ReporteHorariosDAO.obtenerEntradasSalidasEmpleadosInternosEventos(fechaAnterior,fechaActual);
 				//Variables necesarias para el recorrido
 				EmpleadoEvento eventoTemp;
 				//Arreglo donde iremos dejando cada fila
-				String[] filaTemp = new String[9];
+				String[] filaTemp = new String[10];
 				//Variables que nos permitiran saber si hubo error en la conversión de las fechas
 				boolean errorInicial = false;
 				boolean errorFinal = false;
@@ -276,22 +276,24 @@ public class ReporteSemanalHorarios {
 							filaTemp[4] = "0";
 							filaTemp[5] = "0";
 							respuestaReporte.add(filaTemp);
-							filaTemp = new String[9];
+							filaTemp = new String[10];
 							filaTemp[0] = eventoTemp.getNombreEmpleado();
 							filaTemp[1] = eventoTemp.getFecha();
 							filaTemp[2] = eventoTemp.getDia();
 							filaTemp[3] = eventoTemp.getFechaHoraLog();
 							filaTemp[6] = Integer.toString(eventoTemp.getIdTienda());
 							filaTemp[8] = Integer.toString(eventoTemp.getId());
+							filaTemp[9] = Double.toString(eventoTemp.getSalario());
 						}if(salida)
 						{
-							filaTemp = new String[9];
+							filaTemp = new String[10];
 							filaTemp[0] = eventoTemp.getNombreEmpleado();
 							filaTemp[1] = eventoTemp.getFecha();
 							filaTemp[2] = eventoTemp.getDia();
 							filaTemp[3] = eventoTemp.getFechaHoraLog();
 							filaTemp[6] = Integer.toString(eventoTemp.getIdTienda());
 							filaTemp[8] = Integer.toString(eventoTemp.getId());
+							filaTemp[9] = Double.toString(eventoTemp.getSalario());
 						}
 						ingreso = true;
 						salida = false;
@@ -353,10 +355,39 @@ public class ReporteSemanalHorarios {
 				        			  fechaFinal.setMinutes(0);
 				        		  }
 				        	  }
+				        	  //Realizamos validaciones de la hora inicial y solo es para tiendas
+				        	  int horaInicial = fechaInicial.getHours();
+				        	  if(eventoTemp.getIdTienda() != 12)
+				        	  {
+				        		  if((filaTemp[2].equals(new String("Lunes")))||(filaTemp[2].equals(new String("Martes")))||(filaTemp[2].equals(new String("Miercoles")))||(filaTemp[2].equals(new String("Jueves"))))
+					        	  {
+					        		  if(horaInicial == 15)
+					        		  {
+					        			  horaInicial = 16;
+					        			  fechaInicial.setHours(16);
+					        			  fechaInicial.setMinutes(0);
+					        		  }
+					        	  }else if((filaTemp[2].equals(new String("Sabado")))||(filaTemp[2].equals(new String("Domingo"))))
+					        	  {
+					        		  if(horaInicial == 11)
+					        		  {
+					        			  horaInicial = 12;
+					        			  fechaInicial.setHours(12);
+					        			  fechaInicial.setMinutes(0);
+					        		  }
+					        	  }else if((filaTemp[2].equals(new String("Viernes"))))
+					        	  {
+					        		  if(horaInicial == 14)
+					        		  {
+					        			  horaInicial = 15;
+					        			  fechaInicial.setHours(15);
+					        			  fechaInicial.setMinutes(0);
+					        		  }
+					        	  }
+				        	  }
 				        	  horas = ((fechaFinal.getTime()-fechaInicial.getTime())/1000);
 				        	  horas =(horas)/3600;
 				        	  //Realizamos modificaciones para llenar el valor de recargo nocturno
-				        	  int horaInicial = fechaInicial.getHours();
 				        	  recargoNocturno = 0;
 				        	  // Si la hora inicial es mayor a las 9 de la noche, pues entonces el comienzo no es las 21
 				        	  if(horaInicial >= 21)
@@ -407,6 +438,8 @@ public class ReporteSemanalHorarios {
 			//Comenzamos toda la lógica para recorrer el arreglo de empleados por fecha y pintar la inforación como lo requerimos
 			//Variables que nos permitirán almacenar el empleado anterior y revisar si está cambiando con el fin de ir mostrando un camboi
 			String empleadoAnterior = "";
+			double salarioEmpleadoAnterior = 0;
+			double salarioEmpleadoActual = 0;
 			int idEmpleadoAnterior = 0;
 			String empleadoActual = "";
 			int idEmpleadoActual = 0;
@@ -432,9 +465,11 @@ public class ReporteSemanalHorarios {
 				fila = (String[]) reporteHorarios.get(i);
 				empleadoActual = fila[0];
 				idEmpleadoActual = Integer.parseInt(fila[8]);
+				salarioEmpleadoActual = Double.parseDouble(fila[9]);
 				if(empleadoAnterior.equals(new String("")))
 				{
 					empleadoAnterior = fila[0];
+					salarioEmpleadoAnterior = Double.parseDouble(fila[9]);
 					idEmpleadoAnterior = Integer.parseInt(fila[8]);
 					respuesta = respuesta + "<table WIDTH='400' border='2'> <TH COLSPAN='7'> " + empleadoActual  + "</TH> </tr>";
 					respuesta = respuesta + "<tr>"
@@ -483,10 +518,24 @@ public class ReporteSemanalHorarios {
 					//En este punto realizamos los cálculos
 					if(tieneFestivo)
 					{
-						horasExtResiduales = acumuladoHoras - horasFestivas - 40;	 
+						if(salarioEmpleadoAnterior >= 1000000)
+						{
+							horasExtResiduales = acumuladoHoras - horasFestivas - 39;	
+						}else
+						{
+							horasExtResiduales = acumuladoHoras - horasFestivas - 19.5;	
+						}
+						 
 					}else
 					{
-						horasExtResiduales = acumuladoHoras - horasFestivas - 48;	
+						if(salarioEmpleadoAnterior >= 1000000)
+						{
+							horasExtResiduales = acumuladoHoras - horasFestivas - 47;	
+						}else
+						{
+							horasExtResiduales = acumuladoHoras - horasFestivas - 23.5;	
+						}
+							
 					}
 					//El tratamiento no es diferencial en esta parte
 					horasExtrasDominicales = horasTrabDomingos - 8;
@@ -655,16 +704,31 @@ public class ReporteSemanalHorarios {
 				filaActual++;
 				//Al final del procesamiento decimos que el empleadoAnterior es el actual
 				empleadoAnterior = empleadoActual;
+				salarioEmpleadoAnterior = salarioEmpleadoActual;
 				idEmpleadoAnterior = idEmpleadoActual;
 			}
 			respuesta = respuesta + "<tr> <td COLSPAN='6' width='400' nowrap><strong>TOTAL HORAS " + formatea.format(acumuladoHoras) + "</strong></td> </tr>";
 			//En este punto realizamos los cálculos
 			if(tieneFestivo)
 			{
-				horasExtResiduales = acumuladoHoras - horasFestivas - 40;	 
+				if(salarioEmpleadoAnterior >= 1000000)
+				{
+					horasExtResiduales = acumuladoHoras - horasFestivas - 39;	
+				}else
+				{
+					horasExtResiduales = acumuladoHoras - horasFestivas - 19.5;	
+				}
+				 
 			}else
 			{
-				horasExtResiduales = acumuladoHoras - horasFestivas - 48;	
+				if(salarioEmpleadoAnterior >= 1000000)
+				{
+					horasExtResiduales = acumuladoHoras - horasFestivas - 47;	
+				}else
+				{
+					horasExtResiduales = acumuladoHoras - horasFestivas - 23.5;	
+				}
+					
 			}
 			//El tratamiento no es diferencial en esta parte
 			horasExtrasDominicales = horasTrabDomingos - 8;
@@ -716,7 +780,7 @@ public class ReporteSemanalHorarios {
 			Date fecha = new Date();
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-			correo.setAsunto("GENERAL CUMPLIMIENTO DE HORARIOS SEMANAL DE " + fechaAnterior + " HASTA " + fechaActual);
+			correo.setAsunto("GENERAL CUMPLIMIENTO DE HORARIOS EMPLEADOS-INTERNOS SEMANAL DE " + fechaAnterior + " HASTA " + fechaActual);
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 			//Anexamos el archivo generado
@@ -761,7 +825,7 @@ public class ReporteSemanalHorarios {
 				}
 				respuesta = respuesta + "<tr><td width='150' nowrap>" + fila[0] + "</td><td width='50' nowrap> " + fila[1] + "</td><td width='50' nowrap> " + fila[2] + "</td><td width='50' nowrap> " + fila[3] + "</td><td width='50' nowrap> " + tienda +"</td></tr>";
 			}
-			correo.setAsunto("GENERAL PERSONAS Y MOMENTOS DE NO USO DEL HUELLERO DACTILAR DE " + fechaAnterior + " HASTA " + fechaActual);
+			correo.setAsunto("GENERAL PERSONAS EMPLEADOS Y MOMENTOS DE NO USO DEL HUELLERO DACTILAR DE " + fechaAnterior + " HASTA " + fechaActual);
 			correo.setMensaje("Resumen de momentos y empleados que no usaron el huellero: \n" + respuesta);
 			contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();

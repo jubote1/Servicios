@@ -9,7 +9,16 @@ public class EmpleadoEvento {
 	private String usoBiometria;
 	private String nombreEmpleado;
 	private String dia;
+	private double salario;
 	
+	
+	
+	public double getSalario() {
+		return salario;
+	}
+	public void setSalario(double salario) {
+		this.salario = salario;
+	}
 	public String getDia() {
 		return dia;
 	}

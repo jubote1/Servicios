@@ -38,8 +38,12 @@ public class UsuarioDAO {
 			int id;
 			String nombre, nombreLargo, administrador, tipoInicio, contrasena, claveRapida;
 			int tipoEmpleado, esEmpleado;
-			
-			
+			//Homologación general
+			int activo = 0;
+			int autorizoRedes = 0;
+			String email = "";
+			int rotacion = 0;
+			double salario = 0;
 			while(rs.next()){
 				id = rs.getInt("id");
 				nombre = rs.getString("nombre");
@@ -54,8 +58,13 @@ public class UsuarioDAO {
 					esEmpleado = 0;
 				}
 				claveRapida = rs.getString("claverapida");
+				activo = rs.getInt("activo");
+				autorizoRedes = rs.getInt("autorizo_redes");
+				email = rs.getString("email");
+				rotacion = rs.getInt("rotacion");
+				salario = rs.getDouble("salario");
 				Usuario usuarioTemp = new Usuario(id, nombre, contrasena, nombreLargo, tipoEmpleado,
-			tipoInicio, administrador);
+			tipoInicio, administrador, activo, autorizoRedes,email,rotacion,salario);
 				usuarioTemp.setEsEmpleado(esEmpleado);
 				usuarioTemp.setClaveRapida(claveRapida);
 				empleados.add(usuarioTemp);
@@ -92,7 +101,12 @@ public class UsuarioDAO {
 			int id;
 			String nombre, nombreLargo, administrador, tipoInicio, contrasena, claveRapida;
 			int tipoEmpleado, esEmpleado;
-			
+			//Homologación general
+			int activo = 0;
+			int autorizoRedes = 0;
+			String email = "";
+			int rotacion = 0;
+			double salario = 0;
 			
 			while(rs.next()){
 				id = rs.getInt("id");
@@ -108,8 +122,13 @@ public class UsuarioDAO {
 					esEmpleado = 0;
 				}
 				claveRapida = rs.getString("claverapida");
+				activo = rs.getInt("activo");
+				autorizoRedes = rs.getInt("autorizo_redes");
+				email = rs.getString("email");
+				rotacion = rs.getInt("rotacion");
+				salario = rs.getDouble("salario");
 				Usuario usuarioTemp = new Usuario(id, nombre, contrasena, nombreLargo, tipoEmpleado,
-			tipoInicio, administrador);
+						tipoInicio, administrador, activo, autorizoRedes,email,rotacion,salario);
 				usuarioTemp.setEsEmpleado(esEmpleado);
 				usuarioTemp.setClaveRapida(claveRapida);
 				empleados.add(usuarioTemp);
@@ -220,10 +239,21 @@ public class UsuarioDAO {
 		int idEmpleadoIns = 0;
 		ConexionBaseDatos con = new ConexionBaseDatos();
 		Connection con1 = con.obtenerConexionBDGeneralTienda(hostBD);
+		String insert = "";
 		try
 		{
 			Statement stm = con1.createStatement();
-			String insert = "insert into empleado (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio) values (" + empleado.getIdUsuario() + " ,'" + empleado.getNombreUsuario() + "' , '" + empleado.getContrasena() + "' , '" + empleado.getNombreLargo() + "' , '" + empleado.getAdministrador() + "', " + empleado.getidTipoEmpleado() + " , '" + empleado.getTipoInicio() + "')"; 
+			if(empleado.getClaveRapida() == null)
+			{
+				empleado.setClaveRapida("null");
+			}
+			if(empleado.getClaveRapida().equals(new String("null")))
+			{
+				insert = "insert into empleado (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, es_empleado, activo, autorizo_redes, email, rotacion, salario) values (" + empleado.getIdUsuario() + " ,'" + empleado.getNombreUsuario() + "' , '" + empleado.getContrasena() + "' , '" + empleado.getNombreLargo() + "' , '" + empleado.getAdministrador() + "', " + empleado.getidTipoEmpleado() + " , '" + empleado.getTipoInicio() + "' , " + empleado.getEsEmpleado() + " , " + empleado.getActivo() + " , " + empleado.getAutorizoRedes() + " , '" + empleado.getEmail() + "' , " + empleado.getRotacion() + " , " + empleado.getSalario() +")"; 
+			}else
+			{
+				insert = "insert into empleado (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, claverapida, es_empleado, activo, autorizo_redes, email, rotacion, salario) values (" + empleado.getIdUsuario() + " ,'" + empleado.getNombreUsuario() + "' , '" + empleado.getContrasena() + "' , '" + empleado.getNombreLargo() + "' , '" + empleado.getAdministrador() + "', " + empleado.getidTipoEmpleado() + " , '" + empleado.getTipoInicio() + "' , '" + empleado.getClaveRapida() + "' ," + empleado.getEsEmpleado() + " , " + empleado.getActivo() + " , " + empleado.getAutorizoRedes() + " , '" + empleado.getEmail() + "' , " + empleado.getRotacion() + " , " + empleado.getSalario() +")"; 
+			}
 			stm.executeUpdate(insert, Statement.RETURN_GENERATED_KEYS);
 			ResultSet rs = stm.getGeneratedKeys();
 			if (rs.next()){
@@ -242,6 +272,7 @@ public class UsuarioDAO {
 
 			try
 			{
+				System.out.println(insert);
 				System.out.println(e.toString());
 				con1.close();
 			}catch(Exception e1)
@@ -337,10 +368,11 @@ public class UsuarioDAO {
 		int idEmpleadoIns = 0;
 		ConexionBaseDatos con = new ConexionBaseDatos();
 		Connection con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+		String insert = "";
 		try
 		{
 			Statement stm = con1.createStatement();
-			String insert = "insert into usuario (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, es_empleado, claverapida) values (" + usuario.getIdUsuario() + " ,'" + usuario.getNombreUsuario() + "' , '" + usuario.getContrasena() + "' , '" + usuario.getNombreLargo() + "' , '" + usuario.getAdministrador() + "', " + usuario.getidTipoEmpleado() + " , '" + usuario.getTipoInicio() + "' ," + usuario.getEsEmpleado() + " , '" + usuario.getClaveRapida()  + "')"; 
+			insert = "insert into usuario (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, es_empleado, claverapida) values (" + usuario.getIdUsuario() + " ,'" + usuario.getNombreUsuario() + "' , '" + usuario.getContrasena() + "' , '" + usuario.getNombreLargo() + "' , '" + usuario.getAdministrador() + "', " + usuario.getidTipoEmpleado() + " , '" + usuario.getTipoInicio() + "' ," + usuario.getEsEmpleado() + " , '" + usuario.getClaveRapida()  + "')"; 
 			stm.executeUpdate(insert, Statement.RETURN_GENERATED_KEYS);
 			ResultSet rs = stm.getGeneratedKeys();
 			if (rs.next()){
@@ -359,6 +391,7 @@ public class UsuarioDAO {
 
 			try
 			{
+				System.out.println(insert);
 				System.out.println(e.toString());
 				con1.close();
 			}catch(Exception e1)
@@ -426,6 +459,61 @@ public class UsuarioDAO {
 			
 		}
 		return(respuesta);
+	}
+	
+	
+	public static ArrayList<Usuario> obtenerTrabajoDomiciliariosFecha(String fechaAnterior, String fechaPosterior)
+	{
+		
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDGeneralLocal();
+		ArrayList<Usuario> empleados = new ArrayList();
+		
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "SELECT a.* from empleado a WHERE a.activo = 1 AND a.idtipoempleado = 3 AND a.nombre_largo NOT LIKE 'Domiciliario%' and a.id IN(SELECT DISTINCT(b.id) FROM empleado_evento b, empleado c WHERE b.id = c.id AND b.fecha >= '" + fechaAnterior +"' AND b.fecha <= '" + fechaPosterior +"' AND c.idtipoempleado = 3);";
+			ResultSet rs = stm.executeQuery(consulta);
+			int id;
+			String nombre, nombreLargo, administrador, tipoInicio, contrasena, claveRapida;
+			int tipoEmpleado, esEmpleado;
+			
+			
+			while(rs.next()){
+				id = rs.getInt("id");
+				nombre = rs.getString("nombre");
+				nombreLargo = rs.getString("nombre_largo");
+				administrador = rs.getString("administrador");
+				tipoInicio = rs.getString("tipoinicio");
+				tipoEmpleado = rs.getInt("idtipoempleado");
+				contrasena = rs.getString("password");
+				try {
+					esEmpleado = rs.getInt("es_empleado");
+				}catch(Exception e){
+					esEmpleado = 0;
+				}
+				claveRapida = rs.getString("claverapida");
+				Usuario usuarioTemp = new Usuario(id, nombre, contrasena, nombreLargo, tipoEmpleado,
+			tipoInicio, administrador);
+				usuarioTemp.setEsEmpleado(esEmpleado);
+				usuarioTemp.setClaveRapida(claveRapida);
+				empleados.add(usuarioTemp);
+				
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+		}
+		return(empleados);
+		
 	}
 	
 }

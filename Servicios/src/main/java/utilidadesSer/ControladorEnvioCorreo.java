@@ -68,6 +68,11 @@ public boolean enviarCorreo()
 		//
 		MimeMessage mensaje = new MimeMessage(s);
 		mensaje.setFrom(new InternetAddress(c.getUsuarioCorreo()));
+		//Ponemos un control para cuando no hay destinatarios del correo y evitarse una demora en el envío
+		if(correos.size() == 0)
+		{
+			return(false);
+		}
 		for(int i = 0; i< correos.size(); i++)
 		{
 			mensaje.addRecipient(Message.RecipientType.TO, new InternetAddress((String)correos.get(i)));
@@ -111,6 +116,11 @@ public boolean enviarCorreoHTML()
 		m.addBodyPart(texto);
 		MimeMessage mensaje = new MimeMessage(s);
 		mensaje.setFrom(new InternetAddress(c.getUsuarioCorreo()));
+		//Ponemos un control para cuando no hay destinatarios del correo y evitarse una demora en el envío
+		if(correos.size() == 0)
+		{
+			return(false);
+		}
 		for(int i = 0; i< correos.size(); i++)
 		{
 			mensaje.addRecipient(Message.RecipientType.TO, new InternetAddress((String)correos.get(i)));
@@ -170,6 +180,11 @@ public boolean enviarCorreoHTMLAnexo()
 		}
 		MimeMessage mensaje = new MimeMessage(s);
 		mensaje.setFrom(new InternetAddress(c.getUsuarioCorreo()));
+		//Ponemos un control para cuando no hay destinatarios del correo y evitarse una demora en el envío
+		if(correos.size() == 0)
+		{
+			return(false);
+		}
 		for(int i = 0; i< correos.size(); i++)
 		{
 			mensaje.addRecipient(Message.RecipientType.TO, new InternetAddress((String)correos.get(i)));

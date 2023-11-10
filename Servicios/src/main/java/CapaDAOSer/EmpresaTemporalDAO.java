@@ -52,5 +52,43 @@ public class EmpresaTemporalDAO {
 		}
 		return(empresasTemporales);
 	}
+	
+	public static ArrayList<EmpresaTemporal> retornarEmpresaTemporal(int idEmpresa)
+	{
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDGeneralLocal();
+		ArrayList <EmpresaTemporal> empresasTemporales = new ArrayList();
+		
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "select *  from empresa_temporal where idempresa = " + idEmpresa;
+			ResultSet rs = stm.executeQuery(consulta);
+			EmpresaTemporal empTemp;
+			String nombreEmpresa;
+			double valorHoraNormal, valorHoraDominical;
+			while(rs.next()){
+				nombreEmpresa = rs.getString("nombre_empresa");
+				valorHoraNormal = rs.getDouble("valor_hora_normal");
+				valorHoraDominical = rs.getDouble("valor_hora_dominical");
+				empTemp = new EmpresaTemporal(idEmpresa, nombreEmpresa, valorHoraNormal, valorHoraDominical);
+				empresasTemporales.add(empTemp);
+				
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+		}
+		return(empresasTemporales);
+	}
+
+
 
 }

@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "rastreo-domiciliario",
+  "private_key_id": "5ef41dbf7aff85414fed6544053748705a5af1e8",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCyabuiD9bL9nzm\ncOfWIUaaAONfX/HLdAsrPCzBhXXAwuBSYeWKGLHRiBXygAIXJ2737tvW/67TjfVr\nKFYFNl8dfRycVOgxJ2V32CIYzh/cb2UmBDYwd9Q64Ja9ZZMcYWTj2ixtOtSpliB2\nrY02fY3YgfSCyxnqG/+pM6tbuwJlTdHxt7itrQaWYd/T9cGkbZd9YgedJPhBT9lq\nF6Dti8HqbMS+Me1DC5qoAFqhrM8dzW3sfg6OxtRahtQ+xsxkEtK1W+DvmTNU1n8E\n9s3r4m1xSZlqGqbFyaaGqujtM4w9P6z7hWfnqmECSvP8U6LfjkKP0hE2H6comLVr\nFhWg154vAgMBAAECggEAG9WcFNoUwEhpzwfhW4pgeelWj8wnrH6juXCPaPe52cNt\nfNzSE1vr7g0lo2ouKU+ZI+wrdxz3uQCmP7wQw4pqh2679nXWrciAL5TUKPuLg/gL\nF0XD8IbZYQAl9FFzBJP7SgMBOF9by0NlOC62X8Bxz0vjCj7GgbwxhEPP4aVI5+Xc\nAM+VlXXnBOLE/2FeYfGI6EATBGTg+MbBg54DRXvAuKkdJO4vFCkYL6rNc3CW395b\n+nBfnr957crmSPmP+cN16AVt7/UiVy3PP77M0oOy95thOLW4vznEVrEpWk0RXipH\nlqb7S6IqsxcdivI8FtSchOIHtUUcbVfADq7OW3nv+QKBgQDYsUqjObM3CWcLCt4d\n/P0JZzj9C6EL/v690XvOBXyadCdD/XmmPAHzWVzyrFbPwAxAUAZbPLGQ8BSDXAsL\nWDHBKvT7hmsGWsN+FkpJhokCM34TLzTqY16jQH6wjS4z6RtyZIK/2ZLHvast1Ygo\nfO8hXfZtoCHSjw0sTPWxrUm7VwKBgQDSxtPN7l+6X7qmQueymAfpsW7tiasl6t3D\ncNw/yKxv5hhKFNn6bY0RnI54sKshi0SEr4AGKwJOI0fWVAvWy9JBHPPvh2yjRekH\nh0dWWxiCNLwxYwwOtdtBjpHfepz1MqMaIUSVItMS+75RIqgZP8OJ3ad+zDczK0lG\neyIawi9E6QKBgGhfpTLP5RnaZo60El7hb8QquxFvm4fasDsf/wEyNV10G0Gtgv3m\nI45iednN1xbES2Ji6Vzi9Ch663aGTC+PsI95sHzCtyRdbZJ7DBc0PSQZR13YPCW1\n7Wy28Q77QcjxPC4yaaQdGY0qN5yhIK9X1hr9VmhhXEk+bDrtat7FOCGLAoGAKfRj\nsojxSxLE/1Uv82+pm42y69tMUubWL5HmdVfHYxqk2RIfdWaa/tdv0HwyBCJJiDO6\nwv+KnO0O3o2qMZ4ugsF1mMcXC8Tdpp75xymozjoa/6Wcf80ZEIqFZLtuRKxIpOnc\nUec1poCvmEzSsvvrOyUAsw+JKUlDc6EM39CpQgkCgYACyWZvama/0PAdHQixMF4z\nR/6BFkIARDoTzE1Gu0OEU13KVdNvfjEQ6Y/QVyeSmwaGfMCIb2oCqZ8p3oPEWEP1\nfgCoUvGCuncvSPGNuj8vRBXO41WoLDy+NP1y5nFjKgCrqp79+yhGGCkQsUwULKh6\n/r0lge2gLkO3Hy+DmaD2Tw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-5fs1x@rastreo-domiciliario.iam.gserviceaccount.com",
+  "client_id": "113103596602972301711",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-5fs1x%40rastreo-domiciliario.iam.gserviceaccount.com"
+}

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import CapaDAOSer.EstadisticaProductoDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
@@ -18,9 +19,11 @@ import CapaDAOSer.PedidoPOSPMDAO;
 import CapaDAOSer.PedidoPixelDAO;
 import CapaDAOSer.TiempoPedidoDAO;
 import CapaDAOSer.TiendaDAO;
+import CapaDAOSer.UbicacionDomiciliarioDAO;
 import ConexionSer.ConexionBaseDatos;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
+import ModeloSer.EstadisticaProducto;
 import ModeloSer.Pedido;
 import ModeloSer.PedidoFueraTiempo;
 import ModeloSer.PedidoPixel;
@@ -108,10 +111,12 @@ public class ServicioReporteEstadisticasSemanales {
 		DecimalFormat formatea = new DecimalFormat("###,###");
 		//En respuesta guardaremos el html que guardará todo lo que se desplegará en el correo.
 		String respuesta = "";
+		String respuestaProblema = "";
 	    //obtenenemos todas las tiendas
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		Tienda tienda;
-		double cantidadPizzasSemana = 0;
+		String fila[];
+		EstadisticaProducto estProducto = new EstadisticaProducto();
 		//Realizamos un recorrido de las tiendas
 		for(int i = 0; i < tiendas.size(); i++)
 		{
@@ -119,40 +124,35 @@ public class ServicioReporteEstadisticasSemanales {
 			String url = tienda.getHostBD();
 			if(!tienda.getHostBD().equals(new String("")))
 			{
-				//Adicionaremos a la respuesta y al informe diario unas estádisticas de total de pizzas vendidas y total especialidades
-				ArrayList resumenPizzasTamano = PedidoDAO.obtenerTotalPizzasFechas(fechaAnterior, fechaActual, url);
-				respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> RESUMEN POR TAMAÑOS DE PIZZA " + tienda.getNombreTienda() + "</TH> </tr>";
-				respuesta = respuesta + "<tr>"
-						+  "<td width='150' nowrap><strong>TAMAÑO</strong></td>"
-						+  "<td width='100' nowrap><strong>CANTIDAD</strong></td>"
-						+  "</tr>";
-				String[] fila;
-				for(int y = 0; y < resumenPizzasTamano.size();y++)
-				{
-					fila = (String[]) resumenPizzasTamano.get(y);
-					respuesta = respuesta + "<tr><td width='150' nowrap>" + fila[0] + "</td><td width='100' nowrap> " + fila[1]  +"</td></tr>";
-					cantidadPizzasSemana = cantidadPizzasSemana + Double.parseDouble(fila[1]);
-				}
-				
-				respuesta = respuesta + "</table> <br/>";
 				//Adicionaremos un total de pizzas por tipo 
 				ArrayList resumenPizzasTipo = PedidoDAO.obtenerTotalTipoFechas(fechaAnterior, fechaActual, url);
-				respuesta = respuesta + "<table WIDTH='250' border='2'> <tr> <TH COLSPAN='2'> RESUMEN TIPO DE PIZZA " + tienda.getNombreTienda() + " </TH> </tr>";
-				respuesta = respuesta + "<tr>"
-						+  "<td width='150' nowrap><strong>TIPO PIZZA</strong></td>"
-						+  "<td width='100' nowrap><strong>CANTIDAD</strong></td>"
-						+  "</tr>";
 				for(int y = 0; y < resumenPizzasTipo.size();y++)
 				{
 					fila = (String[]) resumenPizzasTipo.get(y);
-					respuesta = respuesta + "<tr><td width='150' nowrap>" + fila[0] + "</td><td width='100' nowrap> " + fila[1]  +"</td></tr>";
+					estProducto = new EstadisticaProducto();
+					estProducto.setIdTienda(tienda.getIdTienda());
+					estProducto.setFecha(fechaActual);
+					estProducto.setDescripcion(fila[0]);
+					estProducto.setCantidad(Double.parseDouble(fila[1]));
+					estProducto.setTotal(Double.parseDouble(fila[2]));
+					estProducto.setTamano(fila[3]);
+					EstadisticaProductoDAO.insertarEstadisticaProducto(estProducto);
 				}
-				respuesta = respuesta + "</table> <br/>";
+				if(resumenPizzasTipo.size()>0)
+				{
+					respuesta = respuesta + " " + tienda.getNombreTienda();
+				}else
+				{
+					respuestaProblema = respuestaProblema + " " + tienda.getNombreTienda();
+				}
+			}else
+			{
+				respuestaProblema = respuestaProblema + " " + tienda.getNombreTienda();
 			}
 		}
-		respuesta = respuesta + "<tr><td>" + "TOTAL DE PIZZAS DE LA SEMANA" + "</td><td> " + formatea.format(cantidadPizzasSemana)  +"</td></tr>";
+		//Realizamos la depuración de la tabla insertar ubicación domiciliario
+		UbicacionDomiciliarioDAO.depurarUbicacionDomiciliario();
 		
-	
 		//Recuperar la lista de distribución para este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPESTADISTICASSEMANAL");
 		Date fecha = new Date();
@@ -161,7 +161,7 @@ public class ServicioReporteEstadisticasSemanales {
 		correo.setAsunto("REPORTE ESTADÍSTICAS SEMANAL DE " + fechaAnterior + " HASTA " + fechaActual);
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("Estádistica Semanal de Pizzas vendidas: \n" + respuesta);
+		correo.setMensaje("La información de las estadísticas ha sido replicada de manera correcta en: \n" + respuesta + " y de manera incorrecta en " + respuestaProblema);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 

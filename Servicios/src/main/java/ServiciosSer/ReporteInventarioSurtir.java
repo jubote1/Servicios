@@ -319,6 +319,7 @@ public class ReporteInventarioSurtir {
 		// Creamos una instancia del calendario
 		GregorianCalendar cal = new GregorianCalendar();
 		int diasemana = 0;
+		boolean encontrado = false;
 		JSONArray listJSON = new JSONArray();
 		try
 		{
@@ -396,10 +397,12 @@ public class ReporteInventarioSurtir {
 					double cantidadLlevar = 0;
 					int cantidadxcanasta;
 					String manejacanastas;
+					encontrado = false;
 					for (InsumoTienda insTienda : insumosTienda)
 					{
 						if(insReqTienda.getIdinsumo() == insTienda.getIdinsumo())
 						{
+							encontrado = true;
 							filasInforme++;
 							data[fila][0]= new String( insTienda.getNombreInsumo());
 							cadaJSON.put("nombreinsumo", insTienda.getNombreInsumo());
@@ -481,14 +484,17 @@ public class ReporteInventarioSurtir {
 						
 						
 					}
-					cadaJSON.put("cantidadllevar", cantidadLlevar);
-					data[fila][2]= cantidadLlevar;
-					cadaJSON.put("nombrecontenedor", insReqTienda.getNombrecontenedor());
-					cadaJSON.put("cantidadxcanasta", insReqTienda.getCantidadxcanasta());
-					cadaJSON.put("manejacanastas", insReqTienda.getManejacanasta());
-					listJSON.add(cadaJSON);
-					//Aumentamos en uno el valor de la variable fila
-					fila++;
+					if(encontrado)
+					{
+						cadaJSON.put("cantidadllevar", cantidadLlevar);
+						data[fila][2]= cantidadLlevar;
+						cadaJSON.put("nombrecontenedor", insReqTienda.getNombrecontenedor());
+						cadaJSON.put("cantidadxcanasta", insReqTienda.getCantidadxcanasta());
+						cadaJSON.put("manejacanastas", insReqTienda.getManejacanasta());
+						listJSON.add(cadaJSON);
+						//Aumentamos en uno el valor de la variable fila
+						fila++;
+					}
 				}
 				
 				//Agregamos nombre del reporte
@@ -799,7 +805,7 @@ public class ReporteInventarioSurtir {
 	public String InsertarInsumoDespachoTienda(int idtienda, String fechasurtir, String observacion)
 	{
 		JSONArray listJSON = new JSONArray();
-		int iddespacho = InsumoDespachoTiendaDAO.InsertarInsumoDespachoTienda(idtienda, fechasurtir, observacion);
+		int iddespacho = InsumoDespachoTiendaDAO.InsertarInsumoDespachoTienda(idtienda, fechasurtir, observacion,"");
 		JSONObject Respuesta = new JSONObject();
 		Respuesta.put("iddespacho", iddespacho);
 		listJSON.add(Respuesta);
@@ -827,7 +833,7 @@ public class ReporteInventarioSurtir {
 	public String ActualizarDetalleInsumoDespachoTienda(int iddespacho,int idinsumo, double cantidad, String contenedor)
 	{
 		JSONArray listJSON = new JSONArray();
-		int iddespachodetalle = InsumoDespachoTiendaDetalleDAO.ActualizarDetalleInsumoDespachoTienda(iddespacho,idinsumo,cantidad,contenedor);
+		int iddespachodetalle = InsumoDespachoTiendaDetalleDAO.ActualizarDetalleInsumoDespachoTienda(iddespacho,idinsumo,cantidad,contenedor, "",0, 0);
 		JSONObject Respuesta = new JSONObject();
 		Respuesta.put("iddespachodetalle", iddespacho);
 		listJSON.add(Respuesta);

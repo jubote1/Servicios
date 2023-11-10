@@ -34,6 +34,7 @@ import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
+import CapaDAOSer.EstadisticaPromocionDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ItemInventarioDAO;
 import CapaDAOSer.OfertaClienteDAO;
@@ -45,6 +46,7 @@ import CapaDAOSer.UsuarioDAO;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
+import ModeloSer.EstadisticaPromocion;
 import ModeloSer.Insumo;
 import ModeloSer.Tienda;
 import ModeloSer.Usuario;
@@ -87,16 +89,19 @@ public void generarInfoPromociones()
 	DecimalFormat formatea = new DecimalFormat("###,###");
 	String respuesta = "";
 	int cantidadPedidosTiendaVirtualNueva = ReporteContactCenterDAO.obtenerPedidosVirtualNuevaTotalDia(strFechaActual);
-	
+	int cantidadPedidosAPP = ReporteContactCenterDAO.obtenerPedidosAPP(strFechaActual);
+	EstadisticaPromocion est = new EstadisticaPromocion("",0,0,0,0,0);
 	//PROMOCIÓN DE MEDIANAS
 	//Creamos el String temporal para las medianas
 	String respuestaMediana = "";
-	respuestaMediana = respuestaMediana + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  MEDIANAS 50%  " + fechaActual + " </tr>";
+	respuestaMediana = respuestaMediana + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  Combo 2 Medianas  " + fechaActual + " </tr>";
 	respuestaMediana = respuestaMediana + "<tr>"
 			+  "<td><strong>Tienda</strong></td>"
 			+  "<td><strong>Cant Pizzas</strong></td>"
 			+  "</tr>";
 	double totalPromoMediana = 0;
+	double totalPromoMedianaContact = 0;
+	double totalPromoMedianaTV = 0;
 	double totalFinalMediana = 0;
 	//Tendremos un indicador para saber si hubo venta de promoción de medianas
 	boolean indicadorMedianas = false;
@@ -105,10 +110,14 @@ public void generarInfoPromociones()
 		if(!tien.getHostBD().equals(new String("")))
 		{
 			totalPromoMediana  = PedidoDAO.obtenerTotalesPromoMediana(strFechaActual, tien.getHostBD());
+			totalPromoMedianaContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 20, "C", tien.getIdTienda());
+			totalPromoMedianaTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 20, "TK", tien.getIdTienda());
 			//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
 			if(totalPromoMediana > 0)
 			{
 				indicadorMedianas = true;
+				est = new EstadisticaPromocion(strFechaActual, tien.getIdTienda(),20,(int)totalPromoMedianaContact,(int)totalPromoMedianaTV,(int)totalPromoMediana);
+				EstadisticaPromocionDAO.insertarEstadisticaPromocion(est, false);
 			}
 			respuestaMediana = respuestaMediana + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoMediana) + "</td></tr>";
 			totalFinalMediana = totalFinalMediana + totalPromoMediana;
@@ -116,7 +125,9 @@ public void generarInfoPromociones()
 	}
 	respuestaMediana = respuestaMediana + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 20, "C")) + "</td></tr>";
 	respuestaMediana = respuestaMediana + "<tr><td> TOTAL TIENDA VIRTUAL PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 20, "T") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 20, "TK")) + "</td></tr>";
-	respuestaMediana = respuestaMediana + "<tr><td> TOTAL TIENDA VIRTUAL NUEVA</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuestaMediana = respuestaMediana + "<tr><td> TOTAL APP PROMO </td><td>" + PedidoDAO.obtenerTotalesPromo(strFechaActual, 20, "APP") + "</td></tr>";
+	respuestaMediana = respuestaMediana + "<tr><td> TOTAL TIENDA VIRTUAL</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuestaMediana = respuestaMediana + "<tr><td> TOTAL APP</td><td>" + formatea.format(cantidadPedidosAPP) + "</td></tr>";
 	respuestaMediana = respuestaMediana + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalMediana) + "</td></tr>";
 	respuestaMediana = respuestaMediana + "</table> <br/>";
 	
@@ -125,6 +136,145 @@ public void generarInfoPromociones()
 	{
 		respuesta = respuesta + respuestaMediana;
 	}
+	
+	//PROMOCIÓN DE EL MEJOR COMBO 19900
+	String respuestaMejorCombo = "";
+	respuestaMejorCombo = respuestaMejorCombo + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES COMBO DELI GRANDE   " + fechaActual + " </tr>";
+	respuestaMejorCombo = respuestaMejorCombo + "<tr>"
+			+  "<td><strong>Tienda</strong></td>"
+			+  "<td><strong>Cant Pizzas</strong></td>"
+			+  "</tr>";
+	double totalPromoMejorCombo = 0;
+	double totalPromoMejorComboContact = 0;
+	double totalPromoMejorComboTV = 0;
+	double totalFinalMejorCombo = 0;
+	//Tendremos un indicador para saber si hubo venta de promoción de medianas
+	boolean indicadorMejorCombo = false;
+	for(Tienda tien : tiendas)
+	{
+		if(!tien.getHostBD().equals(new String("")))
+		{
+			totalPromoMejorCombo  = PedidoDAO.obtenerTotalesPromoMejorCombo(strFechaActual, tien.getHostBD());
+			totalPromoMejorComboContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 24, "C", tien.getIdTienda());
+			totalPromoMejorComboTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 24, "TK", tien.getIdTienda());
+			//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
+			if(totalPromoMejorCombo > 0)
+			{
+				indicadorMejorCombo = true;
+				est = new EstadisticaPromocion(strFechaActual, tien.getIdTienda(),24,(int)totalPromoMejorComboContact,(int)totalPromoMejorComboTV,(int)totalPromoMejorCombo);
+				EstadisticaPromocionDAO.insertarEstadisticaPromocion(est, false);
+
+			}
+			respuestaMejorCombo = respuestaMejorCombo + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoMejorCombo) + "</td></tr>";
+			totalFinalMejorCombo = totalFinalMejorCombo + totalPromoMejorCombo;
+		}
+	}
+	respuestaMejorCombo = respuestaMejorCombo + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 24, "C")) + "</td></tr>";
+	respuestaMejorCombo = respuestaMejorCombo + "<tr><td> TOTAL TIENDA VIRTUAL PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 24, "T") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 24, "TK")) + "</td></tr>";
+	respuestaMejorCombo = respuestaMejorCombo + "<tr><td> TOTAL APP PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 24, "APP")) + "</td></tr>";
+	respuestaMejorCombo = respuestaMejorCombo + "<tr><td> TOTAL TIENDA VIRTUAL</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuestaMejorCombo = respuestaMejorCombo + "<tr><td> TOTAL APP</td><td>" + formatea.format(cantidadPedidosAPP) + "</td></tr>";
+	respuestaMejorCombo = respuestaMejorCombo + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalMejorCombo) + "</td></tr>";
+	respuestaMejorCombo = respuestaMejorCombo + "</table> <br/>";
+	
+	//Verificamos si el indicador esta prendido para agregar a la respuesta final
+	if(indicadorMejorCombo)
+	{
+		respuesta = respuesta + respuestaMejorCombo;
+	}
+	
+	
+		//PROMOCIÓN DE EL CODIGO FLASH
+		String respuestaCodigoFlash = "";
+		respuestaCodigoFlash = respuestaCodigoFlash + "<table border='2'> <tr> REPORTE DE VENTA DE CODIGO FLASH   " + fechaActual + " </tr>";
+		respuestaCodigoFlash = respuestaCodigoFlash + "<tr>"
+				+  "<td><strong>Tienda</strong></td>"
+				+  "<td><strong>Cant Pizzas</strong></td>"
+				+  "</tr>";
+		double totalPromoCodigoFlash = 0;
+		double totalPromoCodigoFlashContact = 0;
+		double totalPromoCodigoFlashTV = 0;
+		double totalFinalCodigoFlash = 0;
+		//Tendremos un indicador para saber si hubo venta de promoción de medianas
+		boolean indicadorCodigoFlash = false;
+		for(Tienda tien : tiendas)
+		{
+			if(!tien.getHostBD().equals(new String("")))
+			{
+				totalPromoCodigoFlash  = PedidoDAO.obtenerTotalesCodigoFlash(strFechaActual, tien.getHostBD());
+				totalPromoCodigoFlashContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 40, "C", tien.getIdTienda());
+				totalPromoCodigoFlashTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 40, "TK", tien.getIdTienda());
+				//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
+				if(totalPromoCodigoFlash > 0)
+				{
+					indicadorCodigoFlash = true;
+					est = new EstadisticaPromocion(strFechaActual, tien.getIdTienda(),40,(int)totalPromoCodigoFlashContact,(int)totalPromoCodigoFlashTV,(int)totalPromoCodigoFlash);
+					EstadisticaPromocionDAO.insertarEstadisticaPromocion(est, false);
+				}
+				respuestaCodigoFlash = respuestaCodigoFlash + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoCodigoFlash) + "</td></tr>";
+				totalFinalCodigoFlash = totalFinalCodigoFlash + totalPromoCodigoFlash;
+			}
+		}
+		respuestaCodigoFlash = respuestaCodigoFlash + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 40, "C")) + "</td></tr>";
+		respuestaCodigoFlash = respuestaCodigoFlash + "<tr><td> TOTAL TIENDA VIRTUAL PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 40, "T") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 40, "TK")) + "</td></tr>";
+		respuestaCodigoFlash = respuestaCodigoFlash + "<tr><td> TOTAL APP PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 40, "APP")) + "</td></tr>";
+		respuestaCodigoFlash = respuestaCodigoFlash + "<tr><td> TOTAL TIENDA VIRTUAL</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+		respuestaCodigoFlash = respuestaCodigoFlash + "<tr><td> TOTAL APP</td><td>" + formatea.format(cantidadPedidosAPP) + "</td></tr>";
+		respuestaCodigoFlash = respuestaCodigoFlash + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalCodigoFlash) + "</td></tr>";
+		respuestaCodigoFlash = respuestaCodigoFlash + "</table> <br/>";
+		
+		//Verificamos si el indicador esta prendido para agregar a la respuesta final
+		if(indicadorCodigoFlash)
+		{
+			respuesta = respuesta + respuestaCodigoFlash;
+		}
+	
+	
+	//PROMOCIÓN DE MD Promo mediana plus
+		String respuestaMDPizzaton = "";
+		respuestaMDPizzaton = respuestaMDPizzaton + "<table border='2'> <tr> REPORTE DE VENTA DE Promo mediana plus   " + fechaActual + " </tr>";
+		respuestaMDPizzaton = respuestaMDPizzaton + "<tr>"
+				+  "<td><strong>Tienda</strong></td>"
+				+  "<td><strong>Cant Pizzas</strong></td>"
+				+  "</tr>";
+		double totalPromoMDPizzaton = 0;
+		double totalPromoMDPizzatonContact = 0;
+		double totalPromoMDPizzatonTV = 0;
+		double totalFinalMDPizzaton = 0;
+		//Tendremos un indicador para saber si hubo venta de promoción de medianas
+		boolean indicadorMDPizzaton = false;
+		for(Tienda tien : tiendas)
+		{
+			if(!tien.getHostBD().equals(new String("")))
+			{
+				totalPromoMDPizzaton  = PedidoDAO.obtenerTotalesPromoMDPizzaton(strFechaActual, tien.getHostBD());
+				totalPromoMDPizzatonContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 41, "C", tien.getIdTienda());
+				totalPromoMDPizzatonTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 41, "TK", tien.getIdTienda());
+				//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
+				if(totalPromoMDPizzaton > 0)
+				{
+					indicadorMDPizzaton = true;
+					est = new EstadisticaPromocion(strFechaActual, tien.getIdTienda(),41,(int)totalPromoMDPizzatonContact,(int)totalPromoMDPizzatonTV,(int)totalPromoMDPizzaton);
+					EstadisticaPromocionDAO.insertarEstadisticaPromocion(est, false);
+				}
+				respuestaMDPizzaton = respuestaMDPizzaton + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoMDPizzaton) + "</td></tr>";
+				totalFinalMDPizzaton = totalFinalMDPizzaton + totalPromoMDPizzaton;
+			}
+		}
+		respuestaMDPizzaton = respuestaMDPizzaton + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 41, "C")) + "</td></tr>";
+		respuestaMDPizzaton = respuestaMDPizzaton + "<tr><td> TOTAL TIENDA VIRTUAL PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 41, "T") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 41, "TK")) + "</td></tr>";
+		respuestaMDPizzaton = respuestaMDPizzaton + "<tr><td> TOTAL APP PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 41, "APP")) + "</td></tr>";
+		respuestaMDPizzaton = respuestaMDPizzaton + "<tr><td> TOTAL TIENDA VIRTUAL</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+		respuestaMDPizzaton = respuestaMDPizzaton + "<tr><td> TOTAL APP</td><td>" + formatea.format(cantidadPedidosAPP) + "</td></tr>";
+		respuestaMDPizzaton = respuestaMDPizzaton + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalMDPizzaton) + "</td></tr>";
+		respuestaMDPizzaton = respuestaMDPizzaton + "</table> <br/>";
+		
+		//Verificamos si el indicador esta prendido para agregar a la respuesta final
+		if(indicadorMDPizzaton)
+		{
+			respuesta = respuesta + respuestaMDPizzaton;
+		}
+	
 	
 	//PROMOCIÓN DE MEDIANAS 19990
 	//Creamos el String temporal para las medianas
@@ -135,6 +285,8 @@ public void generarInfoPromociones()
 			+  "<td><strong>Cant Pizzas</strong></td>"
 			+  "</tr>";
 	double totalPromoMediana20 = 0;
+	double totalPromoMediana20Contact = 0;
+	double totalPromoMediana20TV = 0;
 	double totalFinalMediana20 = 0;
 	//Tendremos un indicador para saber si hubo venta de promoción de medianas
 	boolean indicadorMedianas20 = false;
@@ -143,10 +295,14 @@ public void generarInfoPromociones()
 		if(!tien.getHostBD().equals(new String("")))
 		{
 			totalPromoMediana20  = PedidoDAO.obtenerTotalesPromoMediana20(strFechaActual, tien.getHostBD());
+			totalPromoMediana20Contact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 27, "C", tien.getIdTienda());
+			totalPromoMediana20TV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 27, "TK", tien.getIdTienda());
 			//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
 			if(totalPromoMediana20 > 0)
 			{
 				indicadorMedianas20 = true;
+				est = new EstadisticaPromocion(strFechaActual, tien.getIdTienda(),27,(int)totalPromoMediana20Contact,(int)totalPromoMediana20TV,(int)totalPromoMediana20);
+				EstadisticaPromocionDAO.insertarEstadisticaPromocion(est, false);
 			}
 			respuestaMediana20 = respuestaMediana20 + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoMediana20) + "</td></tr>";
 			totalFinalMediana20 = totalFinalMediana20 + totalPromoMediana20;
@@ -154,7 +310,9 @@ public void generarInfoPromociones()
 	}
 	respuestaMediana20 = respuestaMediana20 + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 27, "C")) + "</td></tr>";
 	respuestaMediana20 = respuestaMediana20 + "<tr><td> TOTAL TIENDA VIRTUAL PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 27, "T") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 27, "TK")) + "</td></tr>";
-	respuestaMediana20 = respuestaMediana20 + "<tr><td> TOTAL TIENDA VIRTUAL NUEVA</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuestaMediana20 = respuestaMediana20 + "<tr><td> TOTAL APP PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 27, "APP")) + "</td></tr>";
+	respuestaMediana20 = respuestaMediana20 + "<tr><td> TOTAL TIENDA VIRTUAL</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuestaMediana20 = respuestaMediana20 + "<tr><td> TOTAL APP</td><td>" + formatea.format(cantidadPedidosAPP) + "</td></tr>";
 	respuestaMediana20 = respuestaMediana20 + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalMediana20) + "</td></tr>";
 	respuestaMediana20 = respuestaMediana20 + "</table> <br/>";
 	
@@ -164,51 +322,64 @@ public void generarInfoPromociones()
 		respuesta = respuesta + respuestaMediana20;
 	}
 	
-	//PROMOCIÓN DE MEDIANAS 11990
+	//PROMOCIÓN DE MEDIANAS 14900
 	//Creamos el String temporal para las medianas
-	String respuestaMediana12 = "";
-	respuestaMediana12 = respuestaMediana12 + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  MEDIANAx11990   " + fechaActual + " </tr>";
-	respuestaMediana12 = respuestaMediana12 + "<tr>"
+	String respuestaMediana14 = "";
+	respuestaMediana14 = respuestaMediana14 + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  MEDIANAx 19.900   " + fechaActual + " </tr>";
+	respuestaMediana14 = respuestaMediana14 + "<tr>"
 			+  "<td><strong>Tienda</strong></td>"
 			+  "<td><strong>Cant Pizzas</strong></td>"
 			+  "</tr>";
-	double totalPromoMediana12 = 0;
-	double totalFinalMediana12 = 0;
+	double totalPromoMediana14 = 0;
+	double totalPromoMediana14Contact = 0;
+	double totalPromoMediana14TV = 0;
+	double totalFinalMediana14 = 0;
 	//Tendremos un indicador para saber si hubo venta de promoción de medianas
-	boolean indicadorMedianas12 = false;
+	boolean indicadorMedianas14 = false;
 	for(Tienda tien : tiendas)
 	{
 		if(!tien.getHostBD().equals(new String("")))
 		{
-			totalPromoMediana12  = PedidoDAO.obtenerTotalesPromoMediana12(strFechaActual, tien.getHostBD());
+			totalPromoMediana14  = PedidoDAO.obtenerTotalesPromoMediana19(strFechaActual, tien.getHostBD());
+			totalPromoMediana14Contact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 11, "C", tien.getIdTienda());
+			totalPromoMediana14TV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 11, "TK", tien.getIdTienda());
 			//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
-			if(totalPromoMediana12 > 0)
+			if(totalPromoMediana14 > 0)
 			{
-				indicadorMedianas12 = true;
+				indicadorMedianas14 = true;
+				est = new EstadisticaPromocion(strFechaActual, tien.getIdTienda(),11,(int)totalPromoMediana14Contact,(int)totalPromoMediana14TV,(int)totalPromoMediana14);
+				EstadisticaPromocionDAO.insertarEstadisticaPromocion(est, false);
 			}
-			respuestaMediana12 = respuestaMediana12 + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoMediana12) + "</td></tr>";
-			totalFinalMediana12 = totalFinalMediana12 + totalPromoMediana12;
+			respuestaMediana14 = respuestaMediana14 + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoMediana14) + "</td></tr>";
+			totalFinalMediana14 = totalFinalMediana14 + totalPromoMediana14;
 		}
 	}
-	respuestaMediana12 = respuestaMediana12 + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalMediana12) + "</td></tr>";
-	respuestaMediana12 = respuestaMediana12 + "</table> <br/>";
+	respuestaMediana14 = respuestaMediana14 + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 11, "C")) + "</td></tr>";
+	respuestaMediana14 = respuestaMediana14 + "<tr><td> TOTAL TIENDA VIRTUAL PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 11, "T") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 11, "TK")) + "</td></tr>";
+	respuestaMediana14 = respuestaMediana14 + "<tr><td> TOTAL APP PROMO </td><td>" + formatea.format( PedidoDAO.obtenerTotalesPromo(strFechaActual, 11, "APP")) + "</td></tr>";
+	respuestaMediana14 = respuestaMediana14 + "<tr><td> TOTAL TIENDA VIRTUAL</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuestaMediana14 = respuestaMediana14 + "<tr><td> TOTAL APP</td><td>" + formatea.format(cantidadPedidosAPP) + "</td></tr>";
+	respuestaMediana14 = respuestaMediana14 + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalMediana14) + "</td></tr>";
+	respuestaMediana14 = respuestaMediana14 + "</table> <br/>";
 	
 	//Verificamos si el indicador esta prendido para agregar a la respuesta final
-	if(indicadorMedianas12)
+	if(indicadorMedianas14)
 	{
-		respuesta = respuesta + respuestaMediana12;
+		respuesta = respuesta + respuestaMediana14;
 	}
 	
 	
 	//PROMOCIÓN DE PIZZETAS
 	//Creamos el String temporal para las medianas
 	String respuestaPizzeta20 = "";
-	respuestaPizzeta20 = respuestaPizzeta20 + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  PIZZETAS 2X1   " + fechaActual + " </tr>";
+	respuestaPizzeta20 = respuestaPizzeta20 + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  PIZZETAS 2X19.990   " + fechaActual + " </tr>";
 	respuestaPizzeta20 = respuestaPizzeta20 + "<tr>"
 			+  "<td><strong>Tienda</strong></td>"
 			+  "<td><strong>Cant Pizzas</strong></td>"
 			+  "</tr>";
 	double totalPromoPizzeta20 = 0;
+	double totalPromoPizzeta20Contact = 0;
+	double totalPromoPizzeta20TV = 0;
 	double totalFinalPizzeta20 = 0;
 	//Tendremos un indicador para saber si hubo venta de promoción de medianas
 	boolean indicadorPizzeta20 = false;
@@ -217,10 +388,14 @@ public void generarInfoPromociones()
 		if(!tien.getHostBD().equals(new String("")))
 		{
 			totalPromoPizzeta20  = PedidoDAO.obtenerTotalesPromoPizzeta20(strFechaActual, tien.getHostBD());
+			totalPromoPizzeta20Contact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 26, "C", tien.getIdTienda());
+			totalPromoPizzeta20TV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 26, "TK", tien.getIdTienda());
 			//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
 			if(totalPromoPizzeta20 > 0)
 			{
 				indicadorPizzeta20 = true;
+				est = new EstadisticaPromocion(strFechaActual, tien.getIdTienda(),26,(int)totalPromoPizzeta20Contact,(int)totalPromoPizzeta20TV,(int)totalPromoPizzeta20);
+				EstadisticaPromocionDAO.insertarEstadisticaPromocion(est, false);
 			}
 			respuestaPizzeta20 = respuestaPizzeta20 + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoPizzeta20) + "</td></tr>";
 			totalFinalPizzeta20 = totalFinalPizzeta20 + totalPromoPizzeta20;
@@ -228,7 +403,9 @@ public void generarInfoPromociones()
 	}
 	respuestaPizzeta20 = respuestaPizzeta20 + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 26, "C")) + "</td></tr>";
 	respuestaPizzeta20 = respuestaPizzeta20 + "<tr><td> TOTAL TIENDA VIRTUAL PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 26, "T") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 26, "TK") ) + "</td></tr>";
-	respuestaPizzeta20 = respuestaPizzeta20 + "<tr><td> TOTAL TIENDA VIRTUAL NUEVA</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuestaPizzeta20 = respuestaPizzeta20 + "<tr><td> TOTAL APP PROMO </td><td>" + formatea.format( PedidoDAO.obtenerTotalesPromo(strFechaActual, 26, "APP") ) + "</td></tr>";
+	respuestaPizzeta20 = respuestaPizzeta20 + "<tr><td> TOTAL TIENDA VIRTUAL </td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuestaPizzeta20 = respuestaPizzeta20 + "<tr><td> TOTAL APP</td><td>" + formatea.format(cantidadPedidosAPP) + "</td></tr>";
 	respuestaPizzeta20 = respuestaPizzeta20 + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalPizzeta20) + "</td></tr>";
 	respuestaPizzeta20 = respuestaPizzeta20 + "</table> <br/>";
 	
@@ -238,92 +415,17 @@ public void generarInfoPromociones()
 		respuesta = respuesta + respuestaPizzeta20;
 	}
 	
-	
-	//PROMOCIÓN DE GRANDES
-	//Creamos el String temporal para las grandes
-	String respuestaGrande = "";
-	respuestaGrande =  respuestaGrande + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  GRANDE DOMICILIOS.COM  " + fechaActual + " </tr>";
-	respuestaGrande =  respuestaGrande + "<tr>"
-			+  "<td><strong>Tienda</strong></td>"
-			+  "<td><strong>Cant Pizzas</strong></td>"
-			+  "</tr>";
-	double totalPromoGrande = 0;
-	double totalFinalGrande = 0;
-	//Tendremos un indicador para saber si hubo venta de promoción de medianas
-	boolean indicadorGrandes = false;
-	for(Tienda tien : tiendas)
-	{
-		if(!tien.getHostBD().equals(new String("")))
-		{
-			totalPromoGrande  = PedidoDAO.obtenerTotalesPromoGrandeDomicilios(strFechaActual, tien.getHostBD());
-			//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
-			if(totalPromoGrande > 0)
-			{
-				indicadorGrandes = true;
-			}
-			respuestaGrande = respuestaGrande + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoGrande) + "</td></tr>";
-			totalFinalGrande = totalFinalGrande + totalPromoGrande;
-		} 
-	}
-	respuestaGrande = respuestaGrande + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalGrande) + "</td></tr>";
-	
-	respuestaGrande = respuestaGrande + "</table> <br/>";
-	
-	//Verificamos si el indicador esta prendido para agregar a la respuesta final
-	if(indicadorGrandes)
-	{
-		respuesta = respuesta + respuestaGrande;
-	}
-	
-	
-	//PROMOCIÓN DE EXTRAGRANDES DEDITOS
-	//Creamos el String temporal para las extragrandes
-	String respuestaExtra = "";
-	respuestaExtra =  respuestaExtra + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  EXTRAGRANDE DEDITOS   " + fechaActual + " </tr>";
-	respuestaExtra =  respuestaExtra + "<tr>"
-			+  "<td><strong>Tienda</strong></td>"
-			+  "<td><strong>Cant Pizzas</strong></td>"
-			+  "</tr>";
-	double totalPromoExtra = 0;
-	double totalFinalExtra = 0;
-	//Tendremos un indicador para saber si hubo venta de promoción de medianas
-	boolean indicadorExtras = false;
-	for(Tienda tien : tiendas)
-	{
-		if(!tien.getHostBD().equals(new String("")))
-		{
-			totalPromoExtra  = PedidoDAO.obtenerTotalesPromoXLDeditos(strFechaActual, tien.getHostBD());
-			//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
-			if(totalPromoExtra > 0)
-			{
-				indicadorExtras = true;
-			}
-			respuestaExtra = respuestaExtra + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoExtra) + "</td></tr>";
-			totalFinalExtra = totalFinalExtra + totalPromoExtra;
-		}
-	}
-	respuestaExtra = respuestaExtra + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 22, "C")) + "</td></tr>";
-	respuestaExtra = respuestaExtra + "<tr><td> TOTAL TIENDA VIRTUAL PROMO</td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 22, "T") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 22, "TK")) + "</td></tr>";
-	respuestaExtra = respuestaExtra + "<tr><td> TOTAL TIENDA VIRTUAL NUEVA</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
-	respuestaExtra = respuestaExtra + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalExtra) + "</td></tr>";
-	respuestaExtra = respuestaExtra + "</table> <br/>";
-	
-	//Verificamos si el indicador esta prendido para agregar a la respuesta final
-	if(indicadorExtras)
-	{
-		respuesta = respuesta + respuestaExtra;
-	}
-	
-	
-	//PROMOCIÓN DE EXTRAGRANDES COMBO FAMILIAR
+	//PROMOCIÓN DE EXTRAGRANDES COMBO PARA TODOS
 	//Creamos el String temporal para las extragrandes
 	String respuestaExtraCompartir = "";
-	respuestaExtraCompartir =  respuestaExtraCompartir + "<table border='2'> <tr> REPORTE DE VENTA DE COMBO FAMILIAR   " + fechaActual + " </tr>";
+	respuestaExtraCompartir =  respuestaExtraCompartir + "<table border='2'> <tr> REPORTE DE VENTA DE COMBO PARA TODOS   " + fechaActual + " </tr>";
 	respuestaExtraCompartir =  respuestaExtraCompartir + "<tr>"
 			+  "<td><strong>Tienda</strong></td>"
 			+  "<td><strong>Cant Pizzas</strong></td>"
 			+  "</tr>";
 	double totalPromoExtraComp = 0;
+	double totalPromoExtraCompContact = 0;
+	double totalPromoExtraCompTV = 0;
 	double totalFinalExtraComp = 0;
 	//Tendremos un indicador para saber si hubo venta de promoción de medianas
 	boolean indicadorExtrasComp = false;
@@ -332,10 +434,14 @@ public void generarInfoPromociones()
 		if(!tien.getHostBD().equals(new String("")))
 		{
 			totalPromoExtraComp  = PedidoDAO.obtenerTotalesPromoFamiliar(strFechaActual, tien.getHostBD());
+			totalPromoExtraCompContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 29, "C", tien.getIdTienda()) + PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 34, "C", tien.getIdTienda());
+			totalPromoExtraCompTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 29, "TK", tien.getIdTienda()) + PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 34, "TK", tien.getIdTienda());
 			//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
 			if(totalPromoExtraComp > 0)
 			{
 				indicadorExtrasComp = true;
+				est = new EstadisticaPromocion(strFechaActual, tien.getIdTienda(),29,(int)totalPromoExtraCompContact,(int)totalPromoExtraCompTV,(int)totalPromoExtraComp);
+				EstadisticaPromocionDAO.insertarEstadisticaPromocion(est, false);
 			}
 			respuestaExtraCompartir = respuestaExtraCompartir + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoExtraComp) + "</td></tr>";
 			totalFinalExtraComp = totalFinalExtraComp+ totalPromoExtraComp;
@@ -343,7 +449,9 @@ public void generarInfoPromociones()
 	}
 	respuestaExtraCompartir = respuestaExtraCompartir + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 29, "C") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 34, "C")) + "</td></tr>";
 	respuestaExtraCompartir = respuestaExtraCompartir + "<tr><td> TOTAL TIENDA VIRTUAL PROMO</td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 34, "TK") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 29, "TK") ) + "</td></tr>";
-	respuestaExtraCompartir = respuestaExtraCompartir + "<tr><td> TOTAL TIENDA VIRTUAL NUEVA</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuestaExtraCompartir = respuestaExtraCompartir + "<tr><td> TOTAL APP PROMO</td><td>" + formatea.format( PedidoDAO.obtenerTotalesPromo(strFechaActual, 29, "APP") ) + "</td></tr>";
+	respuestaExtraCompartir = respuestaExtraCompartir + "<tr><td> TOTAL TIENDA VIRTUAL</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuestaExtraCompartir = respuestaExtraCompartir + "<tr><td> TOTAL APP</td><td>" + formatea.format(cantidadPedidosAPP) + "</td></tr>";
 	respuestaExtraCompartir = respuestaExtraCompartir + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalExtraComp) + "</td></tr>";
 	respuestaExtraCompartir = respuestaExtraCompartir + "</table> <br/>";
 	
@@ -353,50 +461,57 @@ public void generarInfoPromociones()
 		respuesta = respuesta + respuestaExtraCompartir;
 	}
 	
-	//PROMOCIÓN COMBO INSEPARABLE
+	
+	//PROMOCIÓN DE EXTRAGRANDES SALVA UNA VIDA
 	//Creamos el String temporal para las extragrandes
-	String respuestaComboInse = "";
-	respuestaComboInse =  respuestaComboInse + "<table border='2'> <tr> REPORTE DE VENTA DE COMBO INSEPARABLE   " + fechaActual + " </tr>";
-	respuestaComboInse =  respuestaComboInse + "<tr>"
+	String respuesta40K = "";
+	respuesta40K =  respuesta40K + "<table border='2'> <tr> REPORTE DE VENTA DE COMBO SALVA UNA VIDA  " + fechaActual + " </tr>";
+	respuesta40K =  respuesta40K + "<tr>"
 			+  "<td><strong>Tienda</strong></td>"
 			+  "<td><strong>Cant Pizzas</strong></td>"
 			+  "</tr>";
-	double totalComboInse = 0;
-	double totalFinalComboInse = 0;
+	double totalPromo40K = 0;
+	double totalPromo40KContact = 0;
+	double totalPromo40KTV = 0;
+	double totalFinal40K = 0;
 	//Tendremos un indicador para saber si hubo venta de promoción de medianas
-	boolean indicadorComboInse = false;
+	boolean indicador40K = false;
 	for(Tienda tien : tiendas)
 	{
 		if(!tien.getHostBD().equals(new String("")))
 		{
-			totalComboInse  = PedidoDAO.obtenerTotalesComboInse(strFechaActual, tien.getHostBD());
+			totalPromo40K  = PedidoDAO.obtenerTotales40K(strFechaActual, tien.getHostBD());
+			totalPromo40KContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 39, "C", tien.getIdTienda());
+			totalPromo40KTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 39, "TK", tien.getIdTienda());
 			//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
-			if(totalComboInse > 0)
+			if(totalPromo40K > 0)
 			{
-				indicadorComboInse = true;
+				indicador40K = true;
+				est = new EstadisticaPromocion(strFechaActual, tien.getIdTienda(),39,(int)totalPromo40KContact,(int)totalPromo40KTV,(int)totalPromo40K);
+				EstadisticaPromocionDAO.insertarEstadisticaPromocion(est, false);
 			}
-			respuestaComboInse = respuestaComboInse + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalComboInse) + "</td></tr>";
-			totalFinalComboInse = totalFinalComboInse + totalComboInse;
+			respuesta40K = respuesta40K + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromo40K) + "</td></tr>";
+			totalFinal40K = totalFinal40K+ totalPromo40K;
 		}
 	}
-	respuestaComboInse = respuestaComboInse + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 30, "C")) + "</td></tr>";
-	respuestaComboInse = respuestaComboInse + "<tr><td> TOTAL TIENDA VIRTUAL PROMO</td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 30, "T") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 30, "TK") ) + "</td></tr>";
-	respuestaComboInse = respuestaComboInse + "<tr><td> TOTAL TIENDA VIRTUAL NUEVA</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
-	respuestaComboInse = respuestaComboInse + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalComboInse) + "</td></tr>";
-	respuestaComboInse = respuestaComboInse + "</table> <br/>";
+	respuesta40K = respuesta40K + "<tr><td> TOTAL CONTACT </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 39, "C")) + "</td></tr>";
+	respuesta40K = respuesta40K + "<tr><td> TOTAL TIENDA VIRTUAL PROMO</td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 39, "TK")) + "</td></tr>";
+	respuesta40K = respuesta40K + "<tr><td> TOTAL APP PROMO</td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 39, "APP")) + "</td></tr>";
+	respuesta40K = respuesta40K + "<tr><td> TOTAL TIENDA VIRTUAL</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+	respuesta40K = respuesta40K + "<tr><td> TOTAL APP</td><td>" + formatea.format(cantidadPedidosAPP) + "</td></tr>";
+	respuesta40K = respuesta40K + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinal40K) + "</td></tr>";
+	respuesta40K = respuesta40K + "</table> <br/>";
 	
 	//Verificamos si el indicador esta prendido para agregar a la respuesta final
-	if(indicadorComboInse)
+	if(indicador40K)
 	{
-		respuesta = respuesta + respuestaComboInse;
+		respuesta = respuesta + respuesta40K;
 	}
-		
-		
 	
 	//Resumen de promociones de volante físico, se engloban los tamaños de MD, GD y XL.
 	//Creamos el String temporal para las extragrandes
 	String respuestaVolante = "";
-	respuestaVolante =  respuestaVolante + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  VOLANTE   " + fechaActual + " </tr>";
+	respuestaVolante =  respuestaVolante + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES MEDIANA  VOLANTE   " + fechaActual + " </tr>";
 	respuestaVolante =  respuestaVolante + "<tr>"
 			+  "<td><strong>Tienda</strong></td>"
 			+  "<td><strong>Cant Pizzas</strong></td>"
@@ -414,6 +529,8 @@ public void generarInfoPromociones()
 			if(totalPromoVola > 0)
 			{
 				indicadorVolantes = true;
+				est = new EstadisticaPromocion(strFechaActual, tien.getIdTienda(),42,0,0,(int)totalPromoVola);
+				EstadisticaPromocionDAO.insertarEstadisticaPromocion(est, false);
 			}
 			respuestaVolante = respuestaVolante + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoVola) + "</td></tr>";
 			totalFinalVola = totalFinalVola + totalPromoVola;
@@ -427,6 +544,42 @@ public void generarInfoPromociones()
 	{
 		respuesta = respuesta + respuestaVolante;
 	}
+	
+	
+	
+	//Resumen de promociones de Rappi, se engloban los tamaños de MD, GD y XL.
+		String respuestaRappi = "";
+		respuestaRappi =  respuestaRappi + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  RAPPI   " + fechaActual + " </tr>";
+		respuestaRappi =  respuestaRappi + "<tr>"
+				+  "<td><strong>Tienda</strong></td>"
+				+  "<td><strong>Cant Pizzas</strong></td>"
+				+  "</tr>";
+		double totalPromoRappi = 0;
+		double totalFinalRappi = 0;
+		//Tendremos un indicador para saber si hubo venta de promoción de medianas
+		boolean indicadorRappi = false;
+		for(Tienda tien : tiendas)
+		{
+			if(!tien.getHostBD().equals(new String("")))
+			{
+				totalPromoRappi  = PedidoDAO.obtenerTotalesPromoRappi(strFechaActual, tien.getHostBD());
+				//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
+				if(totalPromoRappi > 0)
+				{
+					indicadorRappi = true;
+				}
+				respuestaRappi = respuestaRappi + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoRappi) + "</td></tr>";
+				totalFinalRappi = totalFinalRappi + totalPromoRappi;
+			}
+		}
+		respuestaRappi = respuestaRappi + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalRappi) + "</td></tr>";
+		respuestaRappi = respuestaRappi + "</table> <br/>";
+		
+		//Verificamos si el indicador esta prendido para agregar a la respuesta final
+		if(indicadorRappi)
+		{
+			respuesta = respuesta + respuestaRappi;
+		}
 	
 	
 	//Resumen de los códigos promocionales enviados por Tienda
@@ -491,32 +644,49 @@ public void generarInfoPromociones()
 	}
 	
 	
-	//PROMOCIÓN DE DOMICILIOS.COM
-	//Creamos el String temporal para domicilios
-	String respuestaDomicilios = "";
-	respuestaDomicilios =  respuestaDomicilios + "<table border='2'> <tr> CANTIDAD VENDIDA DE PROMOCIONES DOMICILIOS.COM   " + fechaActual + " </tr>";
-	respuestaDomicilios = respuestaDomicilios + "<tr>"
-			+  "<td><strong>PROMOCIÓN</strong></td>"
-			+  "<td><strong>Cant de usos</strong></td>"
-			+  "</tr>";
-	double totalDomicilios = 0;
-	//Tendremos un indicador para saber si hubo venta de promoción de medianas
-	boolean indicadorDomicilios = false;
-	totalDomicilios = PedidoDAO.consultarPedidosDomicilios(strFechaActual);
-	//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
-	if(totalDomicilios > 0)
-	{
-		indicadorDomicilios = true;
-	}
-	respuestaDomicilios = respuestaDomicilios + "<tr><td>PROMOS DOMICILIOS.COM</td><td>" + formatea.format(totalDomicilios) + "</td></tr>";
-	
-	respuestaDomicilios = respuestaDomicilios + "</table> <br/>";
-	
-	//Verificamos si el indicador esta prendido para agregar a la respuesta final
-	if(indicadorDomicilios)
-	{
-		respuesta = respuesta + respuestaDomicilios;
-	}
+	//Reporte de estofadas
+	//PROMOCIÓN DE EL MEJOR COMBO 19900
+		String respuestaEstofada= "";
+		respuestaEstofada = respuestaEstofada + "<table border='2'> <tr> REPORTE DE VENTA DE ESTOFADAS  " + fechaActual + " </tr>";
+		respuestaEstofada = respuestaEstofada + "<tr>"
+				+  "<td><strong>Tienda</strong></td>"
+				+  "<td><strong>Cant Pizzas</strong></td>"
+				+  "</tr>";
+		double totalEstofadas= 0;
+		double totalEstofadasContact = 0;
+		double totalEstofadasTV = 0;
+		double totalFinalEstofadas = 0;
+		//Tendremos un indicador para saber si hubo venta de promoción de medianas
+		boolean indicadorEstofada = false;
+		for(Tienda tien : tiendas)
+		{
+			if(!tien.getHostBD().equals(new String("")))
+			{
+				totalEstofadas  = PedidoDAO.obtenerTotalesEstofada(strFechaActual, tien.getHostBD());
+				totalEstofadasContact = PedidoDAO.obtenerTotalesProductoTienda(strFechaActual, 311,312, "C", tien.getIdTienda());
+				totalEstofadasTV = PedidoDAO.obtenerTotalesProductoTienda(strFechaActual, 311, 312, "TK", tien.getIdTienda());
+				//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
+				if(totalEstofadas > 0)
+				{
+					indicadorEstofada = true;
+				}
+				respuestaEstofada = respuestaEstofada + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalEstofadas) + "</td></tr>";
+				totalFinalEstofadas = totalFinalEstofadas + totalEstofadas;
+			}
+		}
+//		respuestaEstofada = respuestaEstofada + "<tr><td> TOTAL CONTACT PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 24, "C")) + "</td></tr>";
+//		respuestaEstofada = respuestaEstofada + "<tr><td> TOTAL TIENDA VIRTUAL PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 24, "T") + PedidoDAO.obtenerTotalesPromo(strFechaActual, 24, "TK")) + "</td></tr>";
+//		respuestaEstofada = respuestaEstofada + "<tr><td> TOTAL APP PROMO </td><td>" + formatea.format(PedidoDAO.obtenerTotalesPromo(strFechaActual, 24, "APP")) + "</td></tr>";
+		respuestaEstofada = respuestaEstofada + "<tr><td> TOTAL TIENDA VIRTUAL</td><td>" + formatea.format(cantidadPedidosTiendaVirtualNueva) + "</td></tr>";
+		respuestaEstofada = respuestaEstofada + "<tr><td> TOTAL APP</td><td>" + formatea.format(cantidadPedidosAPP) + "</td></tr>";
+		respuestaEstofada = respuestaEstofada + "<tr><td> TOTAL ESTOFADAS </td><td>" + formatea.format(totalFinalEstofadas) + "</td></tr>";
+		respuestaEstofada = respuestaEstofada + "</table> <br/>";
+		
+		//Verificamos si el indicador esta prendido para agregar a la respuesta final
+		if(indicadorEstofada)
+		{
+			respuesta = respuesta + respuestaEstofada;
+		}
 	
 	
 	//PROMOCIÓN DE DIRECTORIO
@@ -570,6 +740,41 @@ public void generarInfoPromociones()
 		}
 	}
 	respuesta = respuesta + "</table> <br/>";
+	
+	//Realizamos inclusión de información DEDITOS LOCOS SAN ANTONIO
+	String respuestaDeditosLocos = "";
+	respuestaDeditosLocos =  respuestaDeditosLocos + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCION DEDITOS LOCOS   " + fechaActual + " </tr>";
+	respuestaDeditosLocos =  respuestaDeditosLocos + "<tr>"
+			+  "<td><strong>Tienda</strong></td>"
+			+  "<td><strong>Cant Pizzas</strong></td>"
+			+  "</tr>";
+	double totalPromoDeditosLocos = 0;
+	double totalFinalDeditosLocos = 0;
+	//Tendremos un indicador para saber si hubo venta de promoción de medianas
+	boolean indicadorDeditosLocos = false;
+	for(Tienda tien : tiendas)
+	{
+		if(!tien.getHostBD().equals(new String("")))
+		{
+			totalPromoDeditosLocos  = PedidoDAO.obtenerTotalesPromoDeditosLocos(strFechaActual, tien.getHostBD());
+			//Si por lo menos en alguna se tuvo venta se prenderá el indicador de promoción de medianas
+			if(totalPromoDeditosLocos > 0)
+			{
+				indicadorDeditosLocos = true;
+			}
+			respuestaDeditosLocos = respuestaDeditosLocos + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(totalPromoDeditosLocos) + "</td></tr>";
+			totalFinalDeditosLocos = totalFinalDeditosLocos + totalPromoDeditosLocos;
+		}
+	}
+	respuestaDeditosLocos = respuestaDeditosLocos + "<tr><td> TOTAL </td><td>" + formatea.format(totalFinalDeditosLocos) + "</td></tr>";
+	respuestaDeditosLocos = respuestaDeditosLocos + "</table> <br/>";
+	
+	//Verificamos si el indicador esta prendido para agregar a la respuesta final
+	if(indicadorDeditosLocos)
+	{
+		respuesta = respuesta + respuestaDeditosLocos;
+	}
+	
 	
 	//Al finalizar verificamos si hay información para enviar
 	if(respuesta.trim().equals(new String("")))

@@ -130,16 +130,16 @@ public class ReporteSemanalDomiciliosCOMReproceso {
 		{
 			razTemp = razonesSociales.get(i);
 			//Con la razón social y con la fecha podemos ir a realizar la consulta de los pedidos de domicilios.com
-			ArrayList pedidosDomCOM = PedidoDAO.obtenerPedidosDomiciliosCOM(razTemp.getIdRazon(), fechaAnterior, fechaActual);
+			ArrayList pedidosDomCOM = PedidoDAO.obtenerPedidosPlataformas(razTemp.getIdRazon(), fechaAnterior, fechaActual,2);
 			//Obtenemos un total por tienda de los pedidos
-			ArrayList pedidosDomCOMTienda = PedidoDAO.obtenerPedidosDomiciliosCOMTienda(razTemp.getIdRazon(), fechaAnterior, fechaActual);
+			ArrayList pedidosDomCOMTienda = PedidoDAO.obtenerPedidosPlataformasTienda(razTemp.getIdRazon(), fechaAnterior, fechaActual,2);
 			//Obtenemos totales de pago online por tienda
-			ArrayList pedidosDomCOMONLINETienda = PedidoDAO.obtenerPedidosDomiciliosCOMONLINETienda(razTemp.getIdRazon(), fechaAnterior, fechaActual);
+			ArrayList pedidosDomCOMONLINETienda = PedidoDAO.obtenerPedidosPlataformasONLINETienda(razTemp.getIdRazon(), fechaAnterior, fechaActual,2);
 			//Obtenemos totales de pago online por tienda
-			ArrayList descuentosDomCOMTienda = PedidoDAO.obtenerDescuentosDomiciliosCOMTienda(razTemp.getIdRazon(), fechaAnterior, fechaActual);
+			ArrayList descuentosDomCOMTienda = PedidoDAO.obtenerDescuentosPlataformasTienda(razTemp.getIdRazon(), fechaAnterior, fechaActual,2);
 			//Procedemos a procesar la información y a enviar el correo con el reporte
 			String respuesta = "";
-			respuesta = respuesta + "<table border='2'> <tr> RESUMEN SEMANAL DOMICILIOS.COM RAZON SOCIAL " + razTemp.getNombreRazon() +  " </tr>";
+			respuesta = respuesta + "<table border='2'> <tr> RESUMEN SEMANAL RAPPI RAZON SOCIAL " + razTemp.getNombreRazon() +  " </tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>Tienda del Pedido</strong></td>"
 					+  "<td><strong>Valor Neto Pedido</strong></td>"
@@ -245,7 +245,7 @@ public class ReporteSemanalDomiciliosCOMReproceso {
 			
 			//Continuamos con las anulaciones que deben realizarse por razón zocial y por rango de fechas
 			ArrayList<MarcacionAnulacionPedido> marAnulaciones = MarcacionAnulacionPedidoDAO.consultarMarcacionAnulacion(fechaAnterior, fechaActual, razTemp.getIdRazon());
-			respuesta = respuesta + "<table border='2'> <tr> RESUMEN SEMANAL POSIBLES ANULACIONES DOMICILIOS.COM RAZON SOCIAL " + razTemp.getNombreRazon() +  " </tr>";
+			respuesta = respuesta + "<table border='2'> <tr> RESUMEN SEMANAL POSIBLES ANULACIONES RAPPI RAZON SOCIAL " + razTemp.getNombreRazon() +  " </tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>ID Pedido Contact</strong></td>"
 					+  "<td><strong>Num PosHeader</strong></td>"
@@ -265,7 +265,7 @@ public class ReporteSemanalDomiciliosCOMReproceso {
 			
 			//Continuamos con los cambiso de pedidos para alertar y qeu se revisen si es el caso
 			ArrayList<MarcacionCambioPedido> marCambios = MarcacionCambioPedidoDAO.consultarMarcacionCambio(fechaAnterior, fechaActual, razTemp.getIdRazon());
-			respuesta = respuesta + "<table border='2'> <tr> RESUMEN SEMANAL POSIBLES CAMBIO DE PEDIDO DOMICILIOS.COM RAZON SOCIAL " + razTemp.getNombreRazon() +  " </tr>";
+			respuesta = respuesta + "<table border='2'> <tr> RESUMEN SEMANAL POSIBLES CAMBIO DE PEDIDO RAPPI RAZON SOCIAL " + razTemp.getNombreRazon() +  " </tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>ID Pedido Contact</strong></td>"
 					+  "<td><strong>Num PosHeader</strong></td>"
@@ -284,11 +284,11 @@ public class ReporteSemanalDomiciliosCOMReproceso {
 			//Procedemos al envío del correo
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-			correo.setAsunto("Reporte Semanal Domicilios.com de la Razón Social " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion());
+			correo.setAsunto("Reporte Semanal RAPPI de la Razón Social " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEDOMICILIOSCOM");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación el reporte semanal de pedidos tomados para domicilios.com separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+			correo.setMensaje("A continuación el reporte semanal de pedidos tomados para RAPPI separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 			

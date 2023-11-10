@@ -5,8 +5,12 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 
+import org.apache.log4j.Logger;
+
 import ConexionSer.ConexionBaseDatos;
 import ModeloSer.Tienda;
+import capaDAOPOS.FormaPagoDAO;
+import capaModeloPOS.Parametro;
 
 public class TiendaDAO {
 	
@@ -200,12 +204,53 @@ public class TiendaDAO {
 				Statement stm = con1.createStatement();
 				String consulta = "select * from tienda";
 				ResultSet rs = stm.executeQuery(consulta);
+				double meta;
 				while(rs.next()){
 					int idTienda = rs.getInt("idtienda");
 					String nombre = rs.getString("nombre");
 					String hostBD = rs.getString("hosbd");
+					meta = rs.getDouble("meta");
 					Tienda tien = new Tienda(idTienda, nombre, "","",0);
 					tien.setHostBD(hostBD);
+					tien.setMeta(meta);
+					tiendas.add(tien);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e){
+				System.out.println("falle consultando tiendas");
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+					System.out.println("falle consultando tiendas");
+				}
+			}
+			return(tiendas);
+			
+		}
+		
+		public static ArrayList<Tienda> obtenerTiendasLocalSinBodega()
+		{
+			ArrayList<Tienda> tiendas = new ArrayList<>();
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDContactLocal();
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select * from tienda where nombre !='BODEGA'";
+				ResultSet rs = stm.executeQuery(consulta);
+				double meta;
+				while(rs.next()){
+					int idTienda = rs.getInt("idtienda");
+					String nombre = rs.getString("nombre");
+					String hostBD = rs.getString("hosbd");
+					meta = rs.getDouble("meta");
+					Tienda tien = new Tienda(idTienda, nombre, "","",0);
+					tien.setHostBD(hostBD);
+					tien.setMeta(meta);
 					tiendas.add(tien);
 				}
 				rs.close();
@@ -256,5 +301,204 @@ public class TiendaDAO {
 			return(valorFecha);
 		}
 
+		public static double obtenerTotalFormaPago( String fecha, String hostBD, boolean auditoria)
+		{
+			//Revismamos unos parámetros
+			int idFormaPago = ParametrosDAO.retornarValorNumericoTienda(hostBD, "IDQRBANCOLOMBIA");
+			System.out.println("idformapago " + idFormaPago);
+		
+			Logger logger = Logger.getLogger("log_file");
+			double total = 0;
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1;
+			if(hostBD.equals(""))
+			{
+				con1 = con.obtenerConexionBDLocal();
+			}else
+			{
+				con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+			}
+			 
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT SUM(b.valordisminuido) FROM pedido a, pedido_forma_pago b WHERE a.idpedidotienda = b.idpedidotienda AND b.idforma_pago = " + idFormaPago +" AND a.fechapedido = '" + fecha + "'";
+				
+				if(auditoria)
+				{
+					logger.info(consulta);
+					System.out.println(consulta);
+				}
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e){
+				logger.error(e.toString());
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+			}
+			return(total);
+			
+		}
+		
+		public static double obtenerTotalFormaPagoEntreFechas( String fechaInicial, String fechaFinal, String hostBD, boolean auditoria)
+		{
+			//Revismamos unos parámetros
+			int idFormaPago = ParametrosDAO.retornarValorNumericoTienda(hostBD, "IDQRBANCOLOMBIA");
+			System.out.println("idformapago " + idFormaPago);
+		
+			Logger logger = Logger.getLogger("log_file");
+			double total = 0;
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1;
+			if(hostBD.equals(""))
+			{
+				con1 = con.obtenerConexionBDLocal();
+			}else
+			{
+				con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+			}
+			 
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT SUM(b.valordisminuido) FROM pedido a, pedido_forma_pago b WHERE a.idpedidotienda = b.idpedidotienda AND b.idforma_pago = " + idFormaPago +" AND a.fechapedido >= '" + fechaInicial + "' and a.fechapedido <= '" + fechaFinal+"'";
+				
+				if(auditoria)
+				{
+					logger.info(consulta);
+					System.out.println(consulta);
+				}
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e){
+				logger.error(e.toString());
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+			}
+			return(total);
+			
+		}
+		
+		public static double obtenerTotalFormaPagoEntreFechasTarjetaPA( String fechaInicial, String fechaFinal, String hostBD, boolean auditoria)
+		{
+			//Revismamos unos parámetros
+			int idFormaPago = ParametrosDAO.retornarValorNumericoTienda(hostBD, "IDTARJETAPA");
+			System.out.println("idformapago " + idFormaPago);
+		
+			Logger logger = Logger.getLogger("log_file");
+			double total = 0;
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1;
+			if(hostBD.equals(""))
+			{
+				con1 = con.obtenerConexionBDLocal();
+			}else
+			{
+				con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+			}
+			 
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT SUM(b.valordisminuido) FROM pedido a, pedido_forma_pago b WHERE a.idpedidotienda = b.idpedidotienda AND b.idforma_pago = " + idFormaPago +" AND a.fechapedido >= '" + fechaInicial + "' and a.fechapedido <= '" + fechaFinal+"'";
+				
+				if(auditoria)
+				{
+					logger.info(consulta);
+					System.out.println(consulta);
+				}
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					total = rs.getDouble(1);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e){
+				logger.error(e.toString());
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+			}
+			return(total);
+			
+		}
+		
+		public static ArrayList obtenerPedidosFormaPago( String fecha, String hostBD, boolean auditoria)
+		{
+			//Revismamos unos parámetros
+			ArrayList respuesta = new ArrayList();
+			int idFormaPago = ParametrosDAO.retornarValorNumericoTienda(hostBD, "IDQRBANCOLOMBIA");
+			System.out.println("idformapago " + idFormaPago);
+		
+			Logger logger = Logger.getLogger("log_file");
+            Long[] fila=  new Long[2];
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1;
+			if(hostBD.equals(""))
+			{
+				con1 = con.obtenerConexionBDLocal();
+			}else
+			{
+				con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+			}
+			 
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT a.idpedidotienda,b.valordisminuido FROM pedido a, pedido_forma_pago b WHERE a.idpedidotienda = b.idpedidotienda AND b.idforma_pago = " + idFormaPago +" AND a.fechapedido = '" + fecha + "'";
+				
+				if(auditoria)
+				{
+					logger.info(consulta);
+					System.out.println(consulta);
+				}
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					fila = new Long[2];
+					fila[0] = rs.getLong(1);
+					fila[1] = rs.getLong(2);
+					respuesta.add(fila);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e){
+				logger.error(e.toString());
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+			}
+			return(respuesta);
+			
+		}
 
 }

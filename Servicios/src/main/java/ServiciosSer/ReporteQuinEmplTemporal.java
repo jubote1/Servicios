@@ -145,9 +145,9 @@ public class ReporteQuinEmplTemporal {
 							+  "<td><strong>Observacion</strong></td>"
 							+  "</tr>";
 					//Recuperamos los evento de empleados para la semana en cuestión
-					ArrayList<EmpleadoTemporalDia> empleadosTempDia = EmpleadoTemporalDiaDAO.obtenerEmpleadoTemporalFecha(fechaActual, fechaAnterior, empTemp.getIdEmpresa(), tien.getHostBD());
+					ArrayList<capaModeloPOS.EmpleadoTemporalDia> empleadosTempDia = capaDAOPOS.EmpleadoTemporalDiaDAO.obtenerEmpleadoTemporalFecha(fechaActual, fechaAnterior, empTemp.getIdEmpresa(), tien.getHostBD());
 					//Comenzamos a recorrer para ir presetnando la información
-					for(EmpleadoTemporalDia empleadoTemp : empleadosTempDia)
+					for(capaModeloPOS.EmpleadoTemporalDia empleadoTemp : empleadosTempDia)
 					{
 						//Calculamos la cantidad de horas trabajadas
 						//Intentamos realizar la conversión de las horas

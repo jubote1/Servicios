@@ -12,6 +12,7 @@ import java.util.Date;
 
 import CapaDAOSer.EmpleadoTemporalDiaDAO;
 import CapaDAOSer.EmpresaTemporalDAO;
+import CapaDAOSer.GastoEmpleadoTemporalDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
@@ -24,6 +25,7 @@ import ModeloSer.DiaFestivo;
 import ModeloSer.EmpleadoBiometria;
 import ModeloSer.EmpleadoTemporalDia;
 import ModeloSer.EmpresaTemporal;
+import ModeloSer.GastoEmpleadoTemporal;
 import ModeloSer.Pedido;
 import ModeloSer.TiempoPedido;
 import ModeloSer.Tienda;
@@ -131,9 +133,10 @@ public class ReporteSemEmplTemporalReproceso {
 		double valorHoraTrabajada = 0;
 		boolean errorConversion = false;
 		boolean esDomingo = false;
+		double totalTienda;
 		for(Tienda tien : tiendas)
 		{
-			
+			totalTienda = 0;
 			if(!tien.getHostBD().equals(new String("")))
 			{
 				for(EmpresaTemporal empTemp: empresasTemp)
@@ -151,11 +154,12 @@ public class ReporteSemEmplTemporalReproceso {
 							+  "<td><strong>Horas Trabajadas</strong></td>"
 							+  "<td><strong>Valor Pagar</strong></td>"
 							+  "<td><strong>Observacion</strong></td>"
+							+  "<td><strong># Pedidos</strong></td>"
 							+  "</tr>";
 					//Recuperamos los evento de empleados para la semana en cuestión
-					ArrayList<EmpleadoTemporalDia> empleadosTempDia = EmpleadoTemporalDiaDAO.obtenerEmpleadoTemporalFecha(fechaActual, fechaAnterior, empTemp.getIdEmpresa(), tien.getHostBD());
+					ArrayList<capaModeloPOS.EmpleadoTemporalDia> empleadosTempDia = capaDAOPOS.EmpleadoTemporalDiaDAO.obtenerEmpleadoTemporalFecha(fechaActual, fechaAnterior, empTemp.getIdEmpresa(), tien.getHostBD());
 					//Comenzamos a recorrer para ir presetnando la información
-					for(EmpleadoTemporalDia empleadoTemp : empleadosTempDia)
+					for(capaModeloPOS.EmpleadoTemporalDia empleadoTemp : empleadosTempDia)
 					{
 						//Calculamos la cantidad de horas trabajadas
 						//Intentamos realizar la conversión de las horas
@@ -224,6 +228,8 @@ public class ReporteSemEmplTemporalReproceso {
 						}
 						//Se acumula el total de la empresa
 						totalEmpresa  = totalEmpresa  + valorHoraTrabajada;
+						//Incluimos el cálculo de la cantidad de pedidos del domiciliario
+						int cantidadPedidos = PedidoDAO.obtenerPedidosEntregados(empleadoTemp.getFechaSistema()+" "+empleadoTemp.getHoraIngreso(), empleadoTemp.getFechaSistema()+" "+empleadoTemp.getHoraSalida(), empleadoTemp.getId(), tien.getHostBD());
 						//Si hay error de conversión de las fechas se muestra diferente.
 						if(errorConversion)
 						{
@@ -235,6 +241,7 @@ public class ReporteSemEmplTemporalReproceso {
 									+  "<td>" + "ERROR CONVERSION" + "</td>"
 									+  "<td>" + "0" + "</td>"
 									+  "<td>" + empleadoTemp.getObservacion() + "</td>"
+									+  "<td>" + cantidadPedidos + "</td>"
 									+  "</tr>";
 						}else
 						{
@@ -246,13 +253,19 @@ public class ReporteSemEmplTemporalReproceso {
 									+  "<td>" + formatea.format(horasTrabajadas) + "</td>"
 									+  "<td>" + formatea.format(valorHoraTrabajada) + "</td>"
 									+  "<td>" + empleadoTemp.getObservacion() + "</td>"
+									+  "<td>" + cantidadPedidos + "</td>"
 									+  "</tr>";
 						}
 					}
 					respuesta = respuesta + "<tr><td colspan ='6'>  TOTAL " + formatea.format(totalEmpresa) + "</td></tr>";
 					respuesta = respuesta + "</table> <br/>";
+					//Acumulamos el total para la tienda
+					totalTienda = totalTienda + totalEmpresa;
 				}
 			}
+			//Realizamos la inserción del total para la tienda
+			GastoEmpleadoTemporal gastEmpTem = new GastoEmpleadoTemporal(tien.getIdTienda(),fechaActual, totalTienda);
+			GastoEmpleadoTemporalDAO.insertarGastoEmpresaTemporal(gastEmpTem);
 		}
 			//Recuperar la lista de distribución para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPSEMEMPLTEMPORAL");

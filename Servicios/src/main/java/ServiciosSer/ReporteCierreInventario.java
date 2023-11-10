@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -33,21 +34,27 @@ import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
+import CapaDAOSer.CierreInventarioSemanalDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ItemInventarioDAO;
 import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.TiendaDAO;
+import CapaDAOSer.VentaSemanalTiendaDAO;
+import ModeloSer.CierreInventarioSemanal;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
 import ModeloSer.Insumo;
 import ModeloSer.Tienda;
+import ModeloSer.VentaSemanalTienda;
 import utilidadesSer.ControladorEnvioCorreo;
 
 public class ReporteCierreInventario {
 	
 	
-	
+	String respuesta = "";
+	String respuestaConDescuentos = "";
+	DecimalFormat formatea = new DecimalFormat("###,###.##");
 	
 public static void main(String[] args)
 {
@@ -103,6 +110,20 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	datFechaAnterior = calendarioActual.getTime();
 	fechaAnterior = dateFormat.format(datFechaAnterior);
 	
+	//INCLUIMOS LA CONSTRUCCIÓN DE LOS CONSUMOS POR TIENDA
+	respuesta =  "<table WIDTH='700' border='2'> <tr> <td colspan='2'> REPORTE DE PORCENTAJE CONSUMO TIENDAS - " + fechaAnterior + "  -  " + fechaActual +  "</td></tr>";
+	respuesta = respuesta + "<tr>"
+			+  "<td WIDTH='100'><strong>TIENDA</strong></td>"
+			+  "<td WIDTH='50'><strong>HORA>PORCENTAJE</strong></td>"
+			+  "</tr>";
+	respuestaConDescuentos =  "<table WIDTH='700' border='2'> <tr> <td colspan='5'> REPORTE DE PORCENTAJE CON DESCUENTOS CONSUMO TIENDAS - " + fechaAnterior + "  -  " + fechaActual +  "</td></tr>";
+	respuestaConDescuentos = respuesta + "<tr>"
+			+  "<td WIDTH='100'><strong>TIENDA</strong></td>"
+			+  "<td WIDTH='50'><strong>PORCENTAJE SIN DESCUENTOS</strong></td>"
+			+  "<td WIDTH='50'><strong>TOTAL VENTA CON DESCUENTOS</strong></td>"
+			+  "<td WIDTH='50'><strong>TOTAL DESCUENTOS</strong></td>"
+			+  "<td WIDTH='50'><strong>PORCENTAJE CON DESCUENTOS</strong></td>"
+			+  "</tr>";
 	
 	//Queremos que la fecha actual sea puesta en el domingo
 	try
@@ -121,12 +142,16 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	//Vamos a realizar una modificación para calcular la venta total de la semana para tienda
 	//Definimos la variable en donde vamos a almacenar dicho total
 	double ventaTotalTiendas = 0;
+	double ventaTienda = 0;
 	for(Tienda tien : tiendas)
 	{
 		if(!tien.getHostBD().equals(new String("")))
 		{
 			//Realizamos la acumulación despues de cada iteración
-			ventaTotalTiendas  = ventaTotalTiendas + PedidoDAO.obtenerTotalesPedidosSemana(fechaAnterior, fechaActual, tien.getHostBD());
+			ventaTienda = PedidoDAO.obtenerTotalesPedidosSemana(fechaAnterior, fechaActual, tien.getHostBD());
+			ventaTotalTiendas  = ventaTotalTiendas + ventaTienda;
+			VentaSemanalTienda ventSemanal = new VentaSemanalTienda(tien.getIdTienda(),fechaActual,ventaTienda, tien.getMeta());
+			VentaSemanalTiendaDAO.insertarVentaSemanalTienda(ventSemanal);
 		}
 	}
 	
@@ -161,6 +186,24 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	correo.setRutasArchivos(rutasArchivos);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 	contro.enviarCorreo();
+	
+	//cerramos la tabla de los totales por tienda
+	respuesta = respuesta + "</table> <br/>";
+	respuestaConDescuentos = respuestaConDescuentos + "</table> <br/>";
+	correo.setAsunto("RESUMEN SEMANAL PORCENTAJE CONSUMO TIENDAS " + fechaActual + " " + fechaAnterior);
+	correos = GeneralDAO.obtenerCorreosParametro("RESUMENPORCOMIDA");
+	correo.setMensaje("A continuación se anexan los resultados de porcentaje de comidas en la semana que finaliza. " + respuesta);
+	correo.setRutasArchivos(null);
+	contro = new ControladorEnvioCorreo(correo, correos);
+	contro.enviarCorreoHTML();
+	
+	//ENVIO DE CORREO CON DESCUENTO
+	correo.setAsunto("RESUMEN SEMANAL PORCENTAJE CONSUMO TIENDAS CON DESCUENTO " + fechaActual + " " + fechaAnterior);
+	correos = GeneralDAO.obtenerCorreosParametro("RESUMENPORCOMIDADESCUENTO");
+	correo.setMensaje("A continuación se anexan los resultados de porcentaje de comidas en la semana que finaliza. " + respuestaConDescuentos);
+	correo.setRutasArchivos(null);
+	contro = new ControladorEnvioCorreo(correo, correos);
+	contro.enviarCorreoHTML();
 }
 
 
@@ -357,6 +400,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             cellFila2.setCellStyle(cellInfoReporte);
             //Obtenemos el total de venta de la semana
             double totalVentaSemana = PedidoDAO.obtenerTotalesPedidosSemana(fechaAnterior, fechaActual, tienda.getHostBD());
+            double totalDescuentosReembolsables = PedidoDAO.obtenerTotalDescuentosReembolsables(fechaAnterior, fechaActual, tienda.getIdTienda());
             cellFila2 = equitetasInfReporte.createCell((short) 7);
             cellFila2.setCellValue(totalVentaSemana);
             //Adicionamos la etiqueta de TOTAL TIENDAS
@@ -387,6 +431,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	        double inventarioFinal;
 	        double consumo;
 	        double costoUnidad = 0;
+	        double embalajeCosto = 0;
 	        double costoTotal = 0;
 	        double costoTotalComida = 0;
 	        double costoTotalComidaSinUsar = 0;
@@ -395,6 +440,9 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	        int idItem;
 	        int idInsumo;
 	        Insumo insumoTemp;
+	        CierreInventarioSemanal cierreInv = new CierreInventarioSemanal();
+	        cierreInv.setIdTienda(tienda.getIdTienda());
+	        cierreInv.setFecha(fechaActual);
 	        //Nos traemos los insumos inventarios
 	        ArrayList <Insumo> insumos = ItemInventarioDAO.obtenerInfoBasicaInsumos();
 	        for (int i = 0; i < filasInforme; ++i) {
@@ -402,12 +450,18 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            
 	            String[] d = (String[]) cierreInventario.get(i);
 	            idItem = Integer.parseInt((String) d[0]);
+	            cierreInv.setIdInsumo(idItem);
 	            nombreInsumo = (String) d[1];
 	            inventarioInicial = Double.parseDouble((String) d[3]);
+	            cierreInv.setInventarioInicial(inventarioInicial);
 	            enviadoTienda = Double.parseDouble((String) d[4]);
+	            cierreInv.setEnviadoTienda(enviadoTienda);
 	            retiroTienda = Double.parseDouble((String) d[5]);
+	            cierreInv.setRetiro(retiroTienda);
 	            inventarioFinal= Double.parseDouble((String) d[6]);
+	            cierreInv.setInventarioFinal(inventarioFinal);
 	            consumo = inventarioInicial + enviadoTienda - retiroTienda - inventarioFinal;
+	            cierreInv.setConsumo(consumo);
 	            //Buscamos el insumo para saber su costounidad
 	            for(int y = 0; y < insumos.size(); y++ )
 	            {
@@ -416,21 +470,27 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            	if(idItem == idInsumo)
 	            	{
 	            		costoUnidad = insumoTemp.getCostoUnidad();
+	            		embalajeCosto = insumoTemp.getEmbalajeCosto();
+	            		cierreInv.setCostoUnitario(costoUnidad);
 	            		if(insumoTemp.getUnidadMedida().equals(new String("unidad")))
 	            		{
 	            			costoTotal = costoUnidad * consumo;
 	            			costoTotalSinUsar = costoUnidad * inventarioFinal;
 	            		}else if(insumoTemp.getUnidadMedida().equals(new String("gramos")))
 	            		{
-	            			costoTotal = (consumo/1000)* costoUnidad;
-	            			costoTotalSinUsar = (inventarioFinal/1000) * costoUnidad;
+	            			costoTotal = (consumo/embalajeCosto)* costoUnidad;
+	            			costoTotalSinUsar = (inventarioFinal/embalajeCosto) * costoUnidad;
 	            		}
 	            		costoTotalComida = costoTotalComida + costoTotal;
 	            		costoTotalComidaSinUsar = costoTotalComidaSinUsar + costoTotalSinUsar;
+	            		cierreInv.setCostoUnitario(costoUnidad);
+	            		cierreInv.setCostoTotal(costoTotal);
+            			cierreInv.setCostoSinConsumir(costoTotalSinUsar);
 	            		break;
 	            	}
 	            }
-	            
+	            //Hacemos la inserción en la tabla
+	            CierreInventarioSemanalDAO.insertarCierreInventarioSemanal(cierreInv);
 	            //Buscamos el valor inicial
 	            datos = dataRow.createCell(0);
 	            datos.setCellValue(nombreInsumo);
@@ -475,19 +535,27 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             datos.setCellStyle(styleInfRep);
             
             
-            
+            cierreInv = new CierreInventarioSemanal();
+	        cierreInv.setIdTienda(tienda.getIdTienda());
+	        cierreInv.setFecha(fechaActual);
             //Continuamos con la inclusión de la información de los consumos de gaseosa
 	        for (int y = 0 ; y < cierreInventarioGas.size(); y++) {
 	            HSSFRow dataRow = sheet.createRow(filasInforme+4);
 	            
 	            String[] d = (String[]) cierreInventarioGas.get(y);
 	            idItem = Integer.parseInt((String) d[0]);
+	            cierreInv.setIdInsumo(idItem);
 	            nombreInsumo = (String) d[1];
 	            inventarioInicial = Double.parseDouble((String) d[3]);
+	            cierreInv.setInventarioInicial(inventarioInicial);
 	            enviadoTienda = Double.parseDouble((String) d[4]);
+	            cierreInv.setEnviadoTienda(enviadoTienda);
 	            retiroTienda = Double.parseDouble((String) d[5]);
+	            cierreInv.setRetiro(retiroTienda);
 	            inventarioFinal= Double.parseDouble((String) d[6]);
+	            cierreInv.setInventarioFinal(inventarioFinal);
 	            consumo = inventarioInicial + enviadoTienda - retiroTienda - inventarioFinal;
+	            cierreInv.setConsumo(consumo);
 	            //Buscamos el insumo para saber su costounidad
 	            for(int z = 0; z < insumos.size(); z++ )
 	            {
@@ -507,9 +575,14 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            		}
 	            		costoTotalComida = costoTotalComida + costoTotal;
 	            		costoTotalComidaSinUsar = costoTotalComidaSinUsar + costoTotalSinUsar;
+	            		cierreInv.setCostoUnitario(costoUnidad);
+	            		cierreInv.setCostoTotal(costoTotal);
+            			cierreInv.setCostoSinConsumir(costoTotalSinUsar);
 	            		break;
 	            	}
 	            }
+	            //Hacemos la inserción en la tabla
+	            CierreInventarioSemanalDAO.insertarCierreInventarioSemanal(cierreInv);
 	            //Buscamos el valor inicial
 	            datos = dataRow.createCell(0);
 	            datos.setCellValue(nombreInsumo);
@@ -551,6 +624,11 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             datos.setCellStyle(styleInfRep);
             datos = dataInt2.createCell(8);
             porcentajeComida = (costoTotalComida/totalVentaSemana)*100;
+            //En este punto tenemos el porcentaje de comida total con GASEOSA para la tienda
+            respuesta = respuesta + "<tr><td>" + tienda.getNombreTienda() +  "</td><td>" + Double.toString(porcentajeComida) + "</td></tr>";
+            //Generamos otro correo con información más detallada
+            double porcentajeComidaConDes = (costoTotalComida/(totalVentaSemana+totalDescuentosReembolsables))*100;
+            respuestaConDescuentos = respuestaConDescuentos + "<tr><td>" + tienda.getNombreTienda() +  "</td><td>" + Double.toString(porcentajeComida) + "</td><td>" + formatea.format(totalVentaSemana+totalDescuentosReembolsables) + "</td><td>" + formatea.format(totalDescuentosReembolsables) + "</td><td>" + Double.toString(porcentajeComidaConDes) + "</td></tr>";
             datos.setCellValue(porcentajeComida);
             datos.setCellStyle(styleInfRep);
             //Colocaremos los valores del total de comida tienda

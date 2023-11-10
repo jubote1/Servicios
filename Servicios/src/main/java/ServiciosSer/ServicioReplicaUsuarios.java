@@ -67,7 +67,7 @@ public void generarReplicaUsuarios()
 	Date fechaActual = new Date();
 	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo.
 	String noExitoso = "";
-	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
+	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocalSinBodega();
 	//Retornamos los objetos de empleados y la biometria, primero debemos retornar
 	ArrayList<Usuario> usuarios = UsuarioDAO.obtenerEmpleadosGeneral();
 	//Obtenemos los empleados inactivos
@@ -95,7 +95,7 @@ public void generarReplicaUsuarios()
 					}
 					//En la inserción de cada usuario local se debe validar si se debe insertar o actualizar el usaurio ya existente
 					//Validamos si el usuario tiene asignada clave rápida 
-					if(usuTemp.getClaveRapida() != null)
+					if((usuTemp.getClaveRapida() != null) && (!usuTemp.getClaveRapida().equals(new String("null"))))
 					{
 						if(usuTemp.getClaveRapida().length() > 0)
 						{

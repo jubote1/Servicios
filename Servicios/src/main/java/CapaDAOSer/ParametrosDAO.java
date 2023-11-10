@@ -254,6 +254,46 @@ public class ParametrosDAO {
 		return(valor);
 	}
 	
+	//Método creado para retornar el valor de variable desde sistema tienda
+		public static int retornarValorNumericoTienda(String hostBD, String variable)
+		{
+			int valor = 0;
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(hostBD);
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select valornumerico from parametros where valorparametro = '"+ variable +"'";
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					
+					try
+					{
+						valor = rs.getInt("valornumerico");
+					}catch(Exception e)
+					{
+					
+						valor = 0;
+					}
+					
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}catch (Exception e)
+			{
+				
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+					
+				}
+			}
+			return(valor);
+		}
+	
 	public static boolean EditarParametroTienda(String hostBD, String parametro, String valorAlfanumerico, int valorNumerico)
 	{
 		boolean respuesta;
