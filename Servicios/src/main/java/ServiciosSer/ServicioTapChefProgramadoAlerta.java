@@ -24,7 +24,6 @@ import ModeloSer.InsumoAlerta;
 import capaControladorPOS.PedidoCtrl;
 import capaModeloPOS.EstadoPosterior;
 import utilidadesSer.ControladorEnvioCorreo;
-import capaControladorPOS.PedidoCtrl;
 
 
 

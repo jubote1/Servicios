@@ -4,8 +4,8 @@ plugins {
 	id 'eclipse'
 }
 
-archivesBaseName = 'ReporteCierreInventarioReprocesoCtrl'
-mainClassName = 'ReporteCierreInventarioReprocesoCtrl'
+archivesBaseName = 'ReporteClienteFiel'
+mainClassName = 'ReporteClienteFiel'
 
 sourceSets.main.java.srcDirs = ['src/main/java']
 
@@ -19,7 +19,7 @@ task fatJar(type: Jar) {
 	manifest {
         attributes 'Implementation-Title': 'Servicios Varios',
         	'Class-Path': '.', 
-        	'Main-Class': 'ServiciosSer.ReporteCierreInventarioReprocesoCtrl'
+        	'Main-Class': 'ServiciosSer.ReporteClienteFiel'
         	
         	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
