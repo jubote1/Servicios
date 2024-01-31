@@ -77,8 +77,8 @@ public class ItemInventarioDAO {
 				Statement stm = con1.createStatement();
 				String consulta = "SELECT a.iditem,a.nombre_item, a.unidad_medida," + 
 						" ifnull((SELECT b.cantidad FROM item_inventario_historico b WHERE a.iditem = b.iditem AND B.fecha = '" + fechaAnterior + "'),0) AS INVENTARIO_INICIAL " +
-						" ,ifnull( (SELECT SUM(d.cantidad) FROM ingreso_inventario c, ingreso_inventario_detalle d WHERE c.idingreso_inventario = d.idingreso_inventario AND d.iditem = a.iditem AND c.fecha_sistema >= '" + fechaAnterior + "' AND c.fecha_sistema < '" + fechaActual + "'),0)  AS ENVIADO_A_TIENDA" +
-						" ,ifnull( (select sum(c.cantidad) from retiro_inventario d, retiro_inventario_detalle c where c.idretiro_inventario = d.idretiro_inventario and c.iditem = a.iditem and d.fecha_sistema >= '" + fechaAnterior +"' AND d.fecha_sistema < '" + fechaActual + "' ),0) AS RETIROS_OTRAS_TIENDAS " + 
+						" ,ifnull( (SELECT SUM(d.cantidad) FROM ingreso_inventario c, ingreso_inventario_detalle d WHERE c.idingreso_inventario = d.idingreso_inventario AND d.iditem = a.iditem AND c.fecha_sistema >= '" + fechaAnterior + "' AND c.fecha_sistema <= '" + fechaActual + "'),0)  AS ENVIADO_A_TIENDA" +
+						" ,ifnull( (select sum(c.cantidad) from retiro_inventario d, retiro_inventario_detalle c where c.idretiro_inventario = d.idretiro_inventario and c.iditem = a.iditem and d.fecha_sistema >= '" + fechaAnterior +"' AND d.fecha_sistema <= '" + fechaActual + "' ),0) AS RETIROS_OTRAS_TIENDAS " + 
 						" ,ifnull((SELECT e.cantidad FROM item_inventario_historico e WHERE a.iditem = e.iditem AND e.fecha = '" + fechaActualSiguiente + "'),0) AS INVENTARIO_FINAL   from item_inventario a WHERE " +
 						" a.categoria LIKE '" + tipoItemInventario + "%'";
 				System.out.println(consulta);

@@ -112,12 +112,13 @@ public class ReporteClienteFiel {
 	            "IdCliente",
 	            "Nombre Cliente",
 	            "Telefono",
-	            "Nombre Tienda",
 	            "Numero Pedidos",
+	            "Nombre Tienda",
 	            "Fecha de Pedido mas reciente",
 	            "Fecha de Pedido mas Antiguo",
 	            "Ofertas Totales",
-	            "Ofertas Vigentes"
+	            "Ofertas Vigentes",
+	            "correo electronico"
 	        };
 		
 		
@@ -226,6 +227,10 @@ public class ReporteClienteFiel {
 		            cellTemp = dataRow.createCell(8);
 		            cellTemp.setCellValue(cliTemp.getOfertasVigentes());
 		            cellTemp.setCellStyle(styleInfRep);
+		            
+		            cellTemp = dataRow.createCell(9);
+		            cellTemp.setCellValue(cliTemp.getCorreo());
+		            cellTemp.setCellStyle(styleInfRep);
 		        }
 		        
 		        for (int i = 0; i < clientesNoFieles.size(); ++i) {
@@ -265,6 +270,10 @@ public class ReporteClienteFiel {
 		            
 		            cellTemp = dataRow.createCell(8);
 		            cellTemp.setCellValue(cliTemp.getOfertasVigentes());
+		            cellTemp.setCellStyle(styleInfRep);
+		            
+		            cellTemp = dataRow.createCell(9);
+		            cellTemp.setCellValue(cliTemp.getCorreo());
 		            cellTemp.setCellStyle(styleInfRep);
 		        }
 		        workbook.write(fileOut);

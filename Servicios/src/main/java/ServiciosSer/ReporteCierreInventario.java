@@ -84,7 +84,6 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	try
 	{
 		fechaActual = dateFormat.format(calendarioActual.getTime());
-		//fechaActual = "2019-05-13";
 	}catch(Exception exc)
 	{
 		System.out.println(exc.toString());

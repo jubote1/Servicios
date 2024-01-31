@@ -1,5 +1,7 @@
 package ServiciosSer;
-
+/*Este proceos deberá correr los lunes así sea reproceso
+ * y no se deberá de sobreescribir cuando se cambie el proceso titular.
+ */
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -74,8 +76,10 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	// En el String fecha guardaremos el contenido de la fecha
 	//Para la ejecución automática asumimos que es un lunes
 	String fechaActual = "";
+	String fechaPosActual = "";
 	//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos del cierre de inventarios
 	Date datFechaAnterior;
+	Date datFechaActual;
 	String fechaAnterior = "";
 	//Creamos el objeto calendario
 	Calendar calendarioActual = Calendar.getInstance();
@@ -83,126 +87,117 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	//Obtenemos la fecha Actual en el formato necesario de base de datos
 	try
 	{
-		fechaActual =  ParametrosDAO.retornarValorAlfanumerico("FECHAREPROCESO");
+		fechaPosActual =  ParametrosDAO.retornarValorAlfanumerico("FECHAREPROCESO");
 	}catch(Exception exc)
 	{
 		System.out.println(exc.toString());
 	}
+	int diaActual = 0;
 	try
 	{
 		//Al objeto calendario le fijamos la fecha actual del sitema
-		calendarioActual.setTime(dateFormat.parse(fechaActual));
+		calendarioActual.setTime(dateFormat.parse(fechaPosActual));
+		diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
 		
 	}catch(Exception e)
 	{
 		System.out.println(e.toString());
 	}
-	//Retormanos el día de la semana actual segun la fecha del calendario
-	//OJO
-	int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
+	//Podemos validación si el proceso no se corre un día lunes no debería de correr
 	//validamos que sea un día lunes
 	if(diaActual == 2)
 	{
-		calendarioActual.add(Calendar.DAY_OF_YEAR, -7);
-	}
-	//Llevamos a un string la fecha anterior para el cálculo de la venta
-	datFechaAnterior = calendarioActual.getTime();
-	fechaAnterior = dateFormat.format(datFechaAnterior);
-	
-	//INCLUIMOS LA CONSTRUCCIÓN DE LOS CONSUMOS POR TIENDA
-	respuesta =  "<table WIDTH='700' border='2'> <tr> <td colspan='2'> REPORTE DE PORCENTAJE CONSUMO TIENDAS - " + fechaAnterior + "  -  " + fechaActual +  "</td></tr>";
-	respuesta = respuesta + "<tr>"
-			+  "<td WIDTH='100'><strong>TIENDA</strong></td>"
-			+  "<td WIDTH='50'><strong>HORA>PORCENTAJE</strong></td>"
-			+  "</tr>";
-	respuestaConDescuentos =  "<table WIDTH='700' border='2'> <tr> <td colspan='5'> REPORTE DE PORCENTAJE CON DESCUENTOS CONSUMO TIENDAS - " + fechaAnterior + "  -  " + fechaActual +  "</td></tr>";
-	respuestaConDescuentos = respuesta + "<tr>"
-			+  "<td WIDTH='100'><strong>TIENDA</strong></td>"
-			+  "<td WIDTH='50'><strong>PORCENTAJE SIN DESCUENTOS</strong></td>"
-			+  "<td WIDTH='50'><strong>TOTAL VENTA CON DESCUENTOS</strong></td>"
-			+  "<td WIDTH='50'><strong>TOTAL DESCUENTOS</strong></td>"
-			+  "<td WIDTH='50'><strong>PORCENTAJE CON DESCUENTOS</strong></td>"
-			+  "</tr>";
-	
-	//Queremos que la fecha actual sea puesta en el domingo
-	try
-	{
-		//Al objeto calendario le fijamos la fecha actual del sistema
-		calendarioActual.setTime(dateFormat.parse(fechaActual));
 		calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
+		datFechaActual = calendarioActual.getTime();
+		fechaActual =  dateFormat.format(datFechaActual);
+		calendarioActual.add(Calendar.DAY_OF_YEAR, -6);
+		//Llevamos a un string la fecha anterior para el cálculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
-		fechaActual = dateFormat.format(datFechaAnterior);
-	}catch(Exception e)
-	{
-		System.out.println(e.toString());
-	}
-	//-- En este punto finalizamos la fijación de las tiendas
-	
-	//Vamos a realizar una modificación para calcular la venta total de la semana para tienda
-	//Definimos la variable en donde vamos a almacenar dicho total
-	double ventaTotalTiendas = 0;
-	double ventaTienda = 0;
-	for(Tienda tien : tiendas)
-	{
-		if(!tien.getHostBD().equals(new String("")))
+		fechaAnterior = dateFormat.format(datFechaAnterior);
+		
+		//INCLUIMOS LA CONSTRUCCIÓN DE LOS CONSUMOS POR TIENDA
+		respuesta =  "<table WIDTH='700' border='2'> <tr> <td colspan='2'> REPORTE DE PORCENTAJE CONSUMO TIENDAS - " + fechaAnterior + "  -  " + fechaActual +  "</td></tr>";
+		respuesta = respuesta + "<tr>"
+				+  "<td WIDTH='100'><strong>TIENDA</strong></td>"
+				+  "<td WIDTH='50'><strong>HORA>PORCENTAJE</strong></td>"
+				+  "</tr>";
+		respuestaConDescuentos =  "<table WIDTH='700' border='2'> <tr> <td colspan='5'> REPORTE DE PORCENTAJE CON DESCUENTOS CONSUMO TIENDAS - " + fechaAnterior + "  -  " + fechaActual +  "</td></tr>";
+		respuestaConDescuentos = respuesta + "<tr>"
+				+  "<td WIDTH='100'><strong>TIENDA</strong></td>"
+				+  "<td WIDTH='50'><strong>PORCENTAJE SIN DESCUENTOS</strong></td>"
+				+  "<td WIDTH='50'><strong>TOTAL VENTA CON DESCUENTOS</strong></td>"
+				+  "<td WIDTH='50'><strong>TOTAL DESCUENTOS</strong></td>"
+				+  "<td WIDTH='50'><strong>PORCENTAJE CON DESCUENTOS</strong></td>"
+				+  "</tr>";
+		//-- En este punto finalizamos la fijación de las tiendas
+		
+		//Vamos a realizar una modificación para calcular la venta total de la semana para tienda
+		//Definimos la variable en donde vamos a almacenar dicho total
+		double ventaTotalTiendas = 0;
+		double ventaTienda = 0;
+		for(Tienda tien : tiendas)
 		{
-			//Realizamos la acumulación despues de cada iteración
-			ventaTienda = PedidoDAO.obtenerTotalesPedidosSemana(fechaAnterior, fechaActual, tien.getHostBD());
-			ventaTotalTiendas  = ventaTotalTiendas + ventaTienda;
-			VentaSemanalTienda ventSemanal = new VentaSemanalTienda(tien.getIdTienda(),fechaActual,ventaTienda, tien.getMeta());
-			VentaSemanalTiendaDAO.insertarVentaSemanalTienda(ventSemanal);
+			if(!tien.getHostBD().equals(new String("")))
+			{
+				//Realizamos la acumulación despues de cada iteración
+				ventaTienda = PedidoDAO.obtenerTotalesPedidosSemana(fechaAnterior, fechaActual, tien.getHostBD());
+				ventaTotalTiendas  = ventaTotalTiendas + ventaTienda;
+				VentaSemanalTienda ventSemanal = new VentaSemanalTienda(tien.getIdTienda(),fechaActual,ventaTienda, tien.getMeta());
+				VentaSemanalTiendaDAO.insertarVentaSemanalTienda(ventSemanal);
+			}
 		}
-	}
-	
-	//Realizamos un ciclo para recorrer cada una de las tiendas	
-	int fila = 0;
-	for(Tienda tien : tiendas)
-	{
-		if(!tien.getHostBD().equals(new String("")))
+		
+		//Realizamos un ciclo para recorrer cada una de las tiendas	
+		int fila = 0;
+		for(Tienda tien : tiendas)
 		{
-			try
+			if(!tien.getHostBD().equals(new String("")))
 			{
-				
-					rutasArchivos[fila] = CalcularCierreSemanalTiendaFormatoExcel(tien, fechaActual, fechaAnterior, ventaTotalTiendas);
+				try
+				{
+					
+						rutasArchivos[fila] = CalcularCierreSemanalTiendaFormatoExcel(tien, fechaActual, fechaAnterior, ventaTotalTiendas, fechaPosActual);
+				}
+				catch(Exception e)
+				{
+					System.out.println(e.toString() + " " + e.fillInStackTrace() + " " + e.getMessage());
+				}
+				fila++;
 			}
-			catch(Exception e)
-			{
-				System.out.println(e.toString() + " " + e.fillInStackTrace() + " " + e.getMessage());
-			}
-			fila++;
 		}
+		
+		//Realizamos el envío del correo electrónico con los archivos
+		Correo correo = new Correo();
+		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+		correo.setAsunto("CIERRE SEMANAL DE INVENTARIO" + fechaActual + " " + fechaAnterior);
+		correo.setContrasena(infoCorreo.getClaveCorreo());
+		//Tendremos que definir los destinatarios de este correo
+		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPCIERREINVENTARIO");
+		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+		correo.setMensaje("A continuación todos los CIERRES de inventarios de las tiendas de pizza americana");
+		correo.setRutasArchivos(rutasArchivos);
+		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+		contro.enviarCorreo();
+		
+		//cerramos la tabla de los totales por tienda
+		respuesta = respuesta + "</table> <br/>";
+		respuestaConDescuentos = respuestaConDescuentos + "</table> <br/>";
+		correo.setAsunto("RESUMEN SEMANAL PORCENTAJE CONSUMO TIENDAS " + fechaActual + " " + fechaAnterior);
+		correos = GeneralDAO.obtenerCorreosParametro("RESUMENPORCOMIDA");
+		correo.setMensaje("A continuación se anexan los resultados de porcentaje de comidas en la semana que finaliza. " + respuesta);
+		correo.setRutasArchivos(null);
+		contro = new ControladorEnvioCorreo(correo, correos);
+		contro.enviarCorreoHTML();
+		
+		//ENVIO DE CORREO CON DESCUENTO
+		correo.setAsunto("RESUMEN SEMANAL PORCENTAJE CONSUMO TIENDAS CON DESCUENTO " + fechaActual + " " + fechaAnterior);
+		correos = GeneralDAO.obtenerCorreosParametro("RESUMENPORCOMIDADESCUENTO");
+		correo.setMensaje("A continuación se anexan los resultados de porcentaje de comidas en la semana que finaliza. " + respuestaConDescuentos);
+		correo.setRutasArchivos(null);
+		contro = new ControladorEnvioCorreo(correo, correos);
+		contro.enviarCorreoHTML();
 	}
 	
-	//Realizamos el envío del correo electrónico con los archivos
-	Correo correo = new Correo();
-	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-	correo.setAsunto("CIERRE SEMANAL DE INVENTARIO" + fechaActual + " " + fechaAnterior);
-	correo.setContrasena(infoCorreo.getClaveCorreo());
-	//Tendremos que definir los destinatarios de este correo
-	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPCIERREINVENTARIO");
-	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	correo.setMensaje("A continuación todos los CIERRES de inventarios de las tiendas de pizza americana");
-	correo.setRutasArchivos(rutasArchivos);
-	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-	contro.enviarCorreo();
-	
-	//cerramos la tabla de los totales por tienda
-	respuesta = respuesta + "</table> <br/>";
-	respuestaConDescuentos = respuestaConDescuentos + "</table> <br/>";
-	correo.setAsunto("RESUMEN SEMANAL PORCENTAJE CONSUMO TIENDAS " + fechaActual + " " + fechaAnterior);
-	correos = GeneralDAO.obtenerCorreosParametro("RESUMENPORCOMIDA");
-	correo.setMensaje("A continuación se anexan los resultados de porcentaje de comidas en la semana que finaliza. " + respuesta);
-	correo.setRutasArchivos(null);
-	contro = new ControladorEnvioCorreo(correo, correos);
-	contro.enviarCorreoHTML();
-	
-	//ENVIO DE CORREO CON DESCUENTO
-	correo.setAsunto("RESUMEN SEMANAL PORCENTAJE CONSUMO TIENDAS CON DESCUENTO " + fechaActual + " " + fechaAnterior);
-	correos = GeneralDAO.obtenerCorreosParametro("RESUMENPORCOMIDADESCUENTO");
-	correo.setMensaje("A continuación se anexan los resultados de porcentaje de comidas en la semana que finaliza. " + respuestaConDescuentos);
-	correo.setRutasArchivos(null);
-	contro = new ControladorEnvioCorreo(correo, correos);
-	contro.enviarCorreoHTML();
 }
 
 
@@ -212,7 +207,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
  * @param fecha
  * @return
  */
-public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fechaActual, String fechaAnterior, double ventaTotalTiendas)
+public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fechaActual, String fechaAnterior, double ventaTotalTiendas, String fechaPosActual)
 {
 	String rutaArchivoGenerado="";
 	String rutaArchivoBD = ParametrosDAO.retornarValorAlfanumericoLocal("RUTACIERREINVENTARIO");
@@ -261,8 +256,8 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 		   	ArrayList cierreInventario = new ArrayList();
 		   	ArrayList cierreInventarioGas = new ArrayList();
 		   	//Llamamos método qeu llenará el ArrayList con el resumen de la información
-		   	cierreInventario = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumos(fechaActual, fechaAnterior, "Insumos", tienda.getHostBD());
-		   	cierreInventarioGas = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumos(fechaActual, fechaAnterior, "Bebidas", tienda.getHostBD());
+		   	cierreInventario = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumosReproceso(fechaActual, fechaAnterior, "Insumos", tienda.getHostBD(), fechaPosActual);
+		   	cierreInventarioGas = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumosReproceso(fechaActual, fechaAnterior, "Bebidas", tienda.getHostBD(), fechaPosActual);
 			//Contralaremos la fila en la que vamos con la variable fila
 			int fila = 0;
 			int filasInforme = 0;

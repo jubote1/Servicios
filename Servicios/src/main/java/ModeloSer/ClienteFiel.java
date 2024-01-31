@@ -11,9 +11,17 @@ public class ClienteFiel {
 	private String nombreTienda;
 	private int ofertas;
 	private int ofertasVigentes;
+	private String correo;
 	
 	
 	
+	
+	public String getCorreo() {
+		return correo;
+	}
+	public void setCorreo(String correo) {
+		this.correo = correo;
+	}
 	public int getOfertas() {
 		return ofertas;
 	}
@@ -69,7 +77,7 @@ public class ClienteFiel {
 		this.fechaMinima = fechaMinima;
 	}
 	public ClienteFiel(int idCliente, String nombreCliente, int numeroPedidos, String fechaMaxima, String fechaMinima,
-			String telefono, String nombreTienda, int ofertas, int ofertasVigentes) {
+			String telefono, String nombreTienda, int ofertas, int ofertasVigentes, String correo) {
 		super();
 		this.idCliente = idCliente;
 		this.nombreCliente = nombreCliente;
@@ -80,6 +88,7 @@ public class ClienteFiel {
 		this.nombreTienda = nombreTienda;
 		this.ofertas = ofertas;
 		this.ofertasVigentes = ofertasVigentes;
+		this.correo = correo;
 	}
 
 	

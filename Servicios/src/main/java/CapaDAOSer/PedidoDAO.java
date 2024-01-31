@@ -2898,15 +2898,16 @@ public class PedidoDAO {
 			String nombreTienda;
 			int ofertas;
 			int ofertasvigentes;
-			ClienteFiel clienteInf = new ClienteFiel(0, "", 0, "", "", "", "",0,0);
+			String correo;
+			ClienteFiel clienteInf = new ClienteFiel(0, "", 0, "", "", "", "",0,0,"");
 			try
 			{
 				Statement stm = con1.createStatement();
 				String consulta = "select b.idcliente, CONCAT(b.nombre ,'-',b.apellido,'-',b.nombrecompania) as nombre , b.telefono, c.nombre nombretienda, count(*) numeropedidos, max(a.fechapedido) fechamaxima, min(a.fechapedido) fechaminima,"
 						+ "(select count(1) from oferta_cliente d where d.idcliente = b.idcliente ) as ofertas ," 
-						+ "(select count(1) from oferta_cliente d where d.idcliente = b.idcliente and d.utilizada = 'N' ) as ofertasvigentes "
+						+ "(select count(1) from oferta_cliente d where d.idcliente = b.idcliente and d.utilizada = 'N' ) as ofertasvigentes, b.email "
 						+ " from pedido a, cliente b, tienda c where a.total_neto > 0 and a.idcliente = b.idcliente and b.idtienda = c.idtienda and fechapedido >= '" + fecha + "' " + 
-						" group by b.idcliente, b.nombre, b.telefono, c.nombre " +
+						" group by b.idcliente, b.nombre, b.telefono, c.nombre, b.email " +
 						 " having count(*) > " + cantidadPedidos;
 				
 				logger.info(consulta);
@@ -2921,7 +2922,8 @@ public class PedidoDAO {
 					nombreTienda = rs.getString("nombretienda");
 					ofertas = rs.getInt("ofertas");
 					ofertasvigentes = rs.getInt("ofertasvigentes");
-					clienteInf = new ClienteFiel(idCliente, nombreCliente, numeroPedidos, fechaMaxima, fechaMinima, telefono, nombreTienda,ofertas, ofertasvigentes);
+					correo = rs.getString("email");
+					clienteInf = new ClienteFiel(idCliente, nombreCliente, numeroPedidos, fechaMaxima, fechaMinima, telefono, nombreTienda,ofertas, ofertasvigentes, correo);
 					clientesFieles.add(clienteInf);
 				}
 				rs.close();
@@ -2985,15 +2987,16 @@ public class PedidoDAO {
 			String nombreTienda;
 			int ofertas;
 			int ofertasvigentes;
-			ClienteFiel clienteInf = new ClienteFiel(0, "", 0, "", "", "", "",0,0);
+			String correo;
+			ClienteFiel clienteInf = new ClienteFiel(0, "", 0, "", "", "", "",0,0,"");
 			try
 			{
 				Statement stm = con1.createStatement();
 				String consulta = "select b.idcliente, CONCAT(b.nombre ,'-',b.apellido,'-',b.nombrecompania) as nombre , b.telefono, c.nombre nombretienda, count(*) numeropedidos, max(a.fechapedido) fechamaxima, min(a.fechapedido) fechaminima, "
 						+ "(select count(1) from oferta_cliente d where d.idcliente = b.idcliente ) as ofertas ," 
-						+ "(select count(1) from oferta_cliente d where d.idcliente = b.idcliente and d.utilizada = 'N' ) as ofertasvigentes "
-						+ " from pedido a, cliente b, tienda c where a.idcliente = b.idcliente and b.idtienda = c.idtienda and fechapedido < '" + fecha +"' and fechapedido > '" + fechaInferior + "' " +
-						" group by b.idcliente, b.nombre, b.telefono, c.nombre " +
+						+ "(select count(1) from oferta_cliente d where d.idcliente = b.idcliente and d.utilizada = 'N' ) as ofertasvigentes, b.email "
+						+ " from pedido a, cliente b, tienda c where a.idcliente = b.idcliente and b.idtienda = c.idtienda  and fechapedido > '" + fechaInferior + "' " +
+						" group by b.idcliente, b.nombre, b.telefono, c.nombre, b.email " +
 						 " having max(fechapedido) < '" + fecha +"' and max(fechapedido) > '" + fechaInferior + "'";
 				
 				logger.info(consulta);
@@ -3008,7 +3011,8 @@ public class PedidoDAO {
 					nombreTienda = rs.getString("nombretienda");
 					ofertas = rs.getInt("ofertas");
 					ofertasvigentes = rs.getInt("ofertasvigentes");
-					clienteInf = new ClienteFiel(idCliente, nombreCliente, numeroPedidos, fechaMaxima, fechaMinima, telefono, nombreTienda,ofertas, ofertasvigentes);
+					correo = rs.getString("email");
+					clienteInf = new ClienteFiel(idCliente, nombreCliente, numeroPedidos, fechaMaxima, fechaMinima, telefono, nombreTienda,ofertas, ofertasvigentes,correo);
 					clientesFieles.add(clienteInf);
 				}
 				rs.close();

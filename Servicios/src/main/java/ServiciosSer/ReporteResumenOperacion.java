@@ -23,10 +23,10 @@ import ModeloSer.Pedido;
 import ModeloSer.TiempoPedido;
 import ModeloSer.Tienda;
 import ModeloSer.Usuario;
-import utilidadesSer.ControladorEnvioCorreo;
-import capaControladorPOS.PedidoCtrl;
 import capaControladorPOS.BiometriaCtrl;
 import capaControladorPOS.EmpleadoCtrl;
+import capaControladorPOS.PedidoCtrl;
+import utilidadesSer.ControladorEnvioCorreo;
 
 public class ReporteResumenOperacion {
 	
