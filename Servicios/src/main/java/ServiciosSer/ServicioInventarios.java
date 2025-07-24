@@ -48,7 +48,7 @@ public class ServicioInventarios {
 		return(idtienda);
 	}
 	
-	//Método para obtener la homologación de los insumo con las diferentes tiendas
+	//Mï¿½todo para obtener la homologaciï¿½n de los insumo con las diferentes tiendas
 	public static int obtenerIdInsumoIntero(int idtienda, int idinsumotienda, String ipBodega)
 	{
 		int idInsumoInterno=0;
@@ -139,7 +139,7 @@ public class ServicioInventarios {
 					idinsumotienda = rsTiendaPixel.getInt("iditem");
 					nombreInsumo = rsTiendaPixel.getString("nombre_item");
 					idinsumointerno = obtenerIdInsumoIntero(idtienda, idinsumotienda, ipBodega);
-					//Control para solo insertar los productos que tengan homologación
+					//Control para solo insertar los productos que tengan homologaciï¿½n
 					if(idinsumointerno > 0)
 					{
 						cantidad = rsTiendaPixel.getDouble("cantidad");
@@ -154,11 +154,11 @@ public class ServicioInventarios {
 								//Si la cantidad retirada de la tienda es menor al tope definido
 								if(cantidad < insTemp.getCantidad())
 								{
-									// Se Acumula el insumo en la conformación de la tabla
+									// Se Acumula el insumo en la conformaciï¿½n de la tabla
 									cuerpoCorreo = cuerpoCorreo + "<tr><td>"+nombreInsumo +"</td><td>" +  cantidad + "</td></tr>";
 									//Se valida si el insumo no ha sido reportado
 									boolean insumoReportado = InsumoAlertaDAO.insumoAlertaReportado(idinsumointerno, idtienda, fechaApertura, ipBodega);
-									//Se prenderá el indicador para envío de correo y se adicionará en la tabla de reportados
+									//Se prenderï¿½ el indicador para envï¿½o de correo y se adicionarï¿½ en la tabla de reportados
 									if(!insumoReportado)
 									{
 										InsumoAlertaDAO.insertarInsumoAlerta(idinsumointerno, idtienda, fechaApertura, ipBodega);
@@ -170,13 +170,13 @@ public class ServicioInventarios {
 						}
 					}
 				}
-				// Al pasar este punto y no se ha salido es porque no se ha disparado excepción por lo tanto aqui podemos realizar el borrado de la tabla oficial y
-				// y pasar la información del  temporal
+				// Al pasar este punto y no se ha salido es porque no se ha disparado excepciï¿½n por lo tanto aqui podemos realizar el borrado de la tabla oficial y
+				// y pasar la informaciï¿½n del  temporal
 				String deleteFinal = "delete from insumo_tienda where idtienda = " + idtienda;
 				stmInventario.executeUpdate(deleteFinal);
 				String insertFinal = "insert into insumo_tienda (select * from insumo_tienda_tmp where idtienda = " + idtienda + ")";
 				stmInventario.executeUpdate(insertFinal);
-				//En este punto haremos la validación de si hay que enviar el correo
+				//En este punto haremos la validaciï¿½n de si hay que enviar el correo
 				if(enviarCorreo)
 				{
 						Date fechaHoraExacta = new Date();
@@ -186,7 +186,7 @@ public class ServicioInventarios {
 						correo.setContrasena("Pizzaamericana2017");
 						ArrayList correos = GeneralDAO.obtenerCorreosParametro("ALERTAINVENTARIO");
 						correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
-						correo.setMensaje("A continuación el reporte de insumos de inventario que están por debajo de los parámetros establecidos: \n" + cuerpoCorreo);
+						correo.setMensaje("A continuaciï¿½n el reporte de insumos de inventario que estï¿½n por debajo de los parï¿½metros establecidos: \n" + cuerpoCorreo);
 						ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 						contro.enviarCorreoHTML();
 				}
@@ -198,7 +198,7 @@ public class ServicioInventarios {
 				
 			}catch(Exception e)
 			{
-				System.out.println("Error en la conexión al Sistema POS tienda " + e.toString());
+				System.out.println("Error en la conexiï¿½n al Sistema POS tienda " + e.toString());
 				try
 				{
 					conInventario.close();
@@ -207,6 +207,8 @@ public class ServicioInventarios {
 					
 				}
 			}
+			//Pero no uses System.gc() en producciÃ³n, ya que puede afectar el rendimiento.
+			//System.gc();
 	}
 	
 	public static void windowsService(String args[]) {

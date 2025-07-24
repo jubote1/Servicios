@@ -42,7 +42,7 @@ public class ReporteHorariosDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center " + e.toString());
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center " + e.toString());
 			try
 			{
 				con1.close();
@@ -81,7 +81,7 @@ public class ReporteHorariosDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center " + e.toString());
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center " + e.toString());
 			try
 			{
 				con1.close();
@@ -142,8 +142,8 @@ public class ReporteHorariosDAO {
 	}
 	
 	/**
-	 * Método creado en la reestructuración de la forma de mostrar la información en donde se vuelve complejo retornarlo en un solo query
-	 * y se hace necesario la devolución de un arrayList con la información para procesarla y mostarla de la manera correcta.
+	 * Mï¿½todo creado en la reestructuraciï¿½n de la forma de mostrar la informaciï¿½n en donde se vuelve complejo retornarlo en un solo query
+	 * y se hace necesario la devoluciï¿½n de un arrayList con la informaciï¿½n para procesarla y mostarla de la manera correcta.
 	 * @param idTienda
 	 * @param fecha
 	 * @param bdGeneral
@@ -155,6 +155,57 @@ public class ReporteHorariosDAO {
 		ConexionBaseDatos con = new ConexionBaseDatos();
 		Connection con1 = con.obtenerConexionBDGeneralLocal();
 		String select  = "select b.nombre_largo, (ELT(WEEKDAY(a.fecha) + 1, 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo')) AS DIA , a.*, b.salario from empleado_evento a , empleado b where a.fecha >= '" + fechaInicial + "' and a.fecha <= '" + fechaFinal + "' and a.id = b.id and b.es_empleado = 1 order by a.id,a.fecha_hora_log asc";
+		System.out.println(select);
+		Statement stm;
+		ArrayList<EmpleadoEvento> eventosEmpleado = new ArrayList();
+		try
+		{
+			stm = con1.createStatement();
+			ResultSet rs = stm.executeQuery(select);
+			int id, idTienda;
+			String tipoEvento, fechaHoraLog, usoBiometria;
+			String nombreEmpleado, fecha, dia;
+			double salario = 0;
+			EmpleadoEvento empEvento;
+			while(rs.next())
+			{
+				id = rs.getInt("id");
+				dia = rs.getString("dia");
+				idTienda = rs.getInt("idtienda");
+				tipoEvento = rs.getString("tipo_evento");
+				fechaHoraLog = rs.getString("fecha_hora_log");
+				usoBiometria = rs.getString("uso_biometria");
+				nombreEmpleado = rs.getString("nombre_largo");
+				fecha = rs.getString("fecha");
+				salario = rs.getDouble("salario");
+				empEvento = new EmpleadoEvento(id, tipoEvento, fecha, fechaHoraLog, idTienda, usoBiometria);
+				empEvento.setNombreEmpleado(nombreEmpleado);
+				empEvento.setDia(dia);
+				empEvento.setSalario(salario);
+				eventosEmpleado.add(empEvento);
+			}
+		}
+		catch (Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+				
+			}catch(Exception e1)
+			{
+				
+			}
+			
+		}	
+		return(eventosEmpleado);
+	}
+	
+	
+	public static ArrayList<EmpleadoEvento> obtenerEntradasSalidasEmpleadosInternosMiosEventos(String fechaInicial, String fechaFinal )
+	{
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDGeneralLocal();
+		String select  = "select b.nombre_largo, (ELT(WEEKDAY(a.fecha) + 1, 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo')) AS DIA , a.*, b.salario from empleado_evento a , empleado b where a.fecha >= '" + fechaInicial + "' and a.fecha <= '" + fechaFinal + "' and a.id = b.id and b.es_empleado = 1 and b.id IN (257,490,552) order by a.id,a.fecha_hora_log asc";
 		System.out.println(select);
 		Statement stm;
 		ArrayList<EmpleadoEvento> eventosEmpleado = new ArrayList();

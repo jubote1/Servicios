@@ -31,7 +31,7 @@ public class ReporteContactCenterDAO {
 			con1.close();
 		}catch (Exception e){
 			cantidadPedidos = 0;
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -62,7 +62,7 @@ public class ReporteContactCenterDAO {
 			con1.close();
 		}catch (Exception e){
 			cantidadPedidos = 0;
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -82,7 +82,7 @@ public class ReporteContactCenterDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido < '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'C'";
+			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido <= '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'C'";
 			ResultSet rs = stm.executeQuery(consulta);
 			System.out.println(consulta);
 			while(rs.next()){
@@ -93,7 +93,7 @@ public class ReporteContactCenterDAO {
 			con1.close();
 		}catch (Exception e){
 			cantidadPedidos = 0;
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -113,7 +113,7 @@ public class ReporteContactCenterDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido < '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'APP'";
+			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido <= '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'APP'";
 			ResultSet rs = stm.executeQuery(consulta);
 			System.out.println(consulta);
 			while(rs.next()){
@@ -124,7 +124,7 @@ public class ReporteContactCenterDAO {
 			con1.close();
 		}catch (Exception e){
 			cantidadPedidos = 0;
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -144,7 +144,7 @@ public class ReporteContactCenterDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido < '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'CRM'";
+			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido <= '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'CRM'";
 			ResultSet rs = stm.executeQuery(consulta);
 			System.out.println(consulta);
 			while(rs.next()){
@@ -155,7 +155,7 @@ public class ReporteContactCenterDAO {
 			con1.close();
 		}catch (Exception e){
 			cantidadPedidos = 0;
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -176,7 +176,7 @@ public class ReporteContactCenterDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String consulta = "SELECT  distinct(b.idcliente), (SELECT COUNT(*) FROM pedido c WHERE c.idcliente = b.idcliente AND c.origen = 'APP') AS cantidad FROM pedido a , cliente b WHERE a.idcliente = b.idcliente and  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido < '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'APP';";
+			String consulta = "SELECT  distinct(b.idcliente), (SELECT COUNT(*) FROM pedido c WHERE c.idcliente = b.idcliente AND c.origen = 'APP') AS cantidad FROM pedido a , cliente b WHERE a.idcliente = b.idcliente and  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido <= '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'APP';";
 			ResultSet rs = stm.executeQuery(consulta);
 			System.out.println(consulta);
 			int idcliente;
@@ -191,7 +191,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -211,7 +211,7 @@ public class ReporteContactCenterDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String consulta = "SELECT COUNT(*) FROM pedido a, detalle_pedido b where a.idpedido = b.idpedido and a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido < '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'C' and b.idproducto = " + idProducto;
+			String consulta = "SELECT COUNT(*) FROM pedido a, detalle_pedido b where a.idpedido = b.idpedido and a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido <= '" + fechaActual + "' and a.enviadopixel = 1 and a.origen = 'C' and b.idproducto = " + idProducto;
 			ResultSet rs = stm.executeQuery(consulta);
 			System.out.println(consulta);
 			while(rs.next()){
@@ -222,7 +222,7 @@ public class ReporteContactCenterDAO {
 			con1.close();
 		}catch (Exception e){
 			cantidadPedidos = 0;
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -242,7 +242,7 @@ public class ReporteContactCenterDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido < '" + fechaActual + "' and a.enviadopixel = 1 and a.origen IN ('T','TK')";
+			String consulta = "SELECT COUNT(*) FROM pedido a where  a.fechapedido >= '" + fechaAnterior + "' and a.fechapedido <= '" + fechaActual + "' and a.enviadopixel = 1 and a.origen IN ('T','TK')";
 			ResultSet rs = stm.executeQuery(consulta);
 			System.out.println(consulta);
 			while(rs.next()){
@@ -253,7 +253,7 @@ public class ReporteContactCenterDAO {
 			con1.close();
 		}catch (Exception e){
 			cantidadPedidos = 0;
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -290,7 +290,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -321,7 +321,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -351,7 +351,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -364,7 +364,7 @@ public class ReporteContactCenterDAO {
 	}
 	
 	/**
-	 * Método que extrae la cantidad de pedidos tomados con origen CRM en un día particular
+	 * Mï¿½todo que extrae la cantidad de pedidos tomados con origen CRM en un dï¿½a particular
 	 * @param fecha
 	 * @return
 	 */
@@ -386,7 +386,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -416,7 +416,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -429,7 +429,7 @@ public class ReporteContactCenterDAO {
 	}
 	
 	/**
-	 * Método que se encarga de traer los pedidos totales de tienda virtual para una fecha y una tienda determinada
+	 * Mï¿½todo que se encarga de traer los pedidos totales de tienda virtual para una fecha y una tienda determinada
 	 * @param fecha
 	 * @param idTienda
 	 * @return
@@ -452,7 +452,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -466,7 +466,7 @@ public class ReporteContactCenterDAO {
 	
 	
 	/**
-	 * Método que se encarga de obtener el total de pedidos por canales no físicos para una tienda y una fechad determinado
+	 * Mï¿½todo que se encarga de obtener el total de pedidos por canales no fï¿½sicos para una tienda y una fechad determinado
 	 * @param fecha
 	 * @param idTienda
 	 * @return
@@ -489,7 +489,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -519,7 +519,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -558,7 +558,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center");
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center");
 			try
 			{
 				con1.close();
@@ -596,7 +596,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center" + e.toString());
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center" + e.toString());
 			try
 			{
 				con1.close();
@@ -634,7 +634,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center " + e.toString());
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center " + e.toString());
 			try
 			{
 				con1.close();
@@ -647,7 +647,7 @@ public class ReporteContactCenterDAO {
 	}
 	
 	/**
-	 * Esta consulta nos trae la cantidad de pedidos por mes de los últimos meses(18 aproximadamente)
+	 * Esta consulta nos trae la cantidad de pedidos por mes de los ï¿½ltimos meses(18 aproximadamente)
 	 * @return
 	 */
 	public static ArrayList obtenerCantidadPedidosMes()
@@ -675,7 +675,7 @@ public class ReporteContactCenterDAO {
 			stm.close();
 			con1.close();
 		}catch (Exception e){
-			System.out.println("falle lanzando la consulta estadísticas pedidos contact center " + e.toString());
+			System.out.println("falle lanzando la consulta estadï¿½sticas pedidos contact center " + e.toString());
 			try
 			{
 				con1.close();

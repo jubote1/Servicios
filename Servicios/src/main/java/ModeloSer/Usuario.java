@@ -12,6 +12,7 @@ public class Usuario {
 	private String contrasena;
 	private String nombreLargo;
 	private int idTipoEmpleado;
+	private int idTipoEmpleado2;
 	private String tipoInicio;
 	private String administrador;
 	private int estadoDomiciliario;
@@ -28,6 +29,12 @@ public class Usuario {
 	
 	
 	
+	public int getIdTipoEmpleado2() {
+		return idTipoEmpleado2;
+	}
+	public void setIdTipoEmpleado2(int idTipoEmpleado2) {
+		this.idTipoEmpleado2 = idTipoEmpleado2;
+	}
 	public int getActivo() {
 		return activo;
 	}
@@ -149,7 +156,7 @@ public class Usuario {
 		this.administrador = administrador;
 	}
 	public Usuario(int idUsuario, String nombreUsuario, String contrasena, String nombreLargo, int idTipoEmpleado,
-			String tipoInicio, String administrador, int activo, int autorizoRedes, String email, int rotacion, double salario) {
+			String tipoInicio, String administrador, int activo, int autorizoRedes, String email, int rotacion, double salario, int idTipoEmpleado2) {
 		super();
 		this.idUsuario = idUsuario;
 		this.nombreUsuario = nombreUsuario;
@@ -163,6 +170,7 @@ public class Usuario {
 		this.email = email;
 		this.rotacion = rotacion;
 		this.salario = salario;
+		this.idTipoEmpleado2 = idTipoEmpleado2;
 	}
 	
 	public Usuario(int idUsuario, String nombreUsuario, String contrasena, String nombreLargo, int idTipoEmpleado,

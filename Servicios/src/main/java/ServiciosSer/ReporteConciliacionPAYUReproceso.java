@@ -24,7 +24,7 @@ public class ReporteConciliacionPAYUReproceso {
 		//TRABAJO CON LAS FECHAS///////
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los cï¿½lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -53,7 +53,7 @@ public class ReporteConciliacionPAYUReproceso {
 		{
 			System.out.println(e.toString());
 		}
-		//Retormanos el día de la semana actual segun la fecha del calendario
+		//Retormanos el dï¿½a de la semana actual segun la fecha del calendario
 		//OJO
 		//int diaActual = 1;
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -92,17 +92,17 @@ public class ReporteConciliacionPAYUReproceso {
 			//Si es sabado se resta cinco
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 		}
-		//Llevamos a un string la fecha anterior para el cálculo de la venta
+		//Llevamos a un string la fecha anterior para el cï¿½lculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
 		fechaAnterior = dateFormat.format(datFechaAnterior);
 		
-		//Antes de realizamos la actualización de los pedidos
+		//Antes de realizamos la actualizaciï¿½n de los pedidos
 		PedidoDAO.actualizarPedidosPayu(fechaAnterior);
 		
 		//En base en lo anterior tenemos la fechaActual y fechaAnterior para ejecutar los procesos
 		double totalPedidos = capaDAOCC.PedidoDAO.consultarTotalPedidosEpaycoRealizados(fechaAnterior, fechaActual);
 		
-		//Sacamos información resumida de total de pedidos en general y por tienda en la semana y por tienda y por día en la semana
+		//Sacamos informaciï¿½n resumida de total de pedidos en general y por tienda en la semana y por tienda y por dï¿½a en la semana
 		String respuesta = "";
 		respuesta = respuesta + "<table border='2'> <tr> <td colspan='2'> TOTAL PEDIDOS PAGO VIRTUAL PAYU SEMANA - " + fechaAnterior + "  -  " + fechaActual +  "</td></tr>";
 		respuesta = respuesta + "<tr>"
@@ -122,10 +122,14 @@ public class ReporteConciliacionPAYUReproceso {
 		{
 			String[] fila = (String[]) totalSemanaTienda.get(i);
 			respuesta = respuesta + "<tr><td>" + fila[1] + "</td><td>" + formatea.format(Double.parseDouble(fila[0])) + "</td></tr>";
+			//Realizamos la inserciÃ³n de los valores para la reporteria
+			//En este punto tenemos el total de la tienda y lo insertaremos en la tabla correspondiente
+			GastoSemanal gastoSemanalTemp = new GastoSemanal(0,Integer.parseInt(fila[2]),32,fechaActual,Double.parseDouble(fila[0]),Double.parseDouble(fila[0]));
+			GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
 		}
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Mostraremos la tabla de venta en total por tienda y día
+		//Mostraremos la tabla de venta en total por tienda y dï¿½a
 		
 		ArrayList totalDiaSemanaTienda = capaDAOCC.PedidoDAO.consultarPedidosEpaycoTiendaDiaSemana(fechaAnterior, fechaActual);
 		respuesta = respuesta + "<table border='2'> <tr> <td colspan='3'> TOTAL PEDIDOS PAGO VIRTUAL PAYU SEMANA POR DIA/TIENDA - " + fechaAnterior + "  -  " + fechaActual +  "</td></tr>";
@@ -247,15 +251,15 @@ public class ReporteConciliacionPAYUReproceso {
 			GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
 		}
 				
-		//Al final el envío del correo
-		//Procedemos al envío del correo
+		//Al final el envï¿½o del correo
+		//Procedemos al envï¿½o del correo
 		Correo correo = new Correo();
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-		correo.setAsunto("CONCILIACIÓN SEMANAL PAGOS PAYU DESDE " + fechaAnterior + " HASTA "  + fechaActual);
+		correo.setAsunto("CONCILIACIï¿½N SEMANAL PAGOS PAYU DESDE " + fechaAnterior + " HASTA "  + fechaActual);
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTECONCILIACIONPAYU");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("A continuación el detalle y resumen de los pedidos con forma de pago virtual EPAYCO entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+		correo.setMensaje("A continuaciï¿½n el detalle y resumen de los pedidos con forma de pago virtual EPAYCO entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 	}

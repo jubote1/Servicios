@@ -66,8 +66,8 @@ public class ReporteSemanalHorariosReproceso {
 		String rutaArchivoGenerado="";
 		String rutaArchivoBD = ParametrosDAO.retornarValorAlfanumericoLocal("RUTAARCHIVOTIEMPO");
 		String rutaImagenReporte = rutaArchivoBD + "LogoPizzaAmericana.png";
-		//Creamos el archivo para el despliegue de la información
-		//Creamos el libro en Excel y la hoja en cuestión, definimos los encabezados.
+		//Creamos el archivo para el despliegue de la informaciï¿½n
+		//Creamos el libro en Excel y la hoja en cuestiï¿½n, definimos los encabezados.
 		HSSFWorkbook workbook = new HSSFWorkbook();
 		HSSFSheet sheet = workbook.createSheet("RESUMEN TIEMPOS");
 		sheet.setColumnWidth(0, 7500);
@@ -92,7 +92,7 @@ public class ReporteSemanalHorariosReproceso {
 		//TRABAJO CON LAS FECHAS///////
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 				String fechaActual = "";
-				//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos de ventas
+				//Variables donde manejaremos la fecha anerior con el fin realizar los cï¿½lculos de ventas
 				Date datFechaAnterior;
 				String fechaAnterior = "";
 				//Creamos el objeto calendario
@@ -119,7 +119,7 @@ public class ReporteSemanalHorariosReproceso {
 				{
 					System.out.println(e.toString());
 				}
-				//Retormanos el día de la semana actual segun la fecha del calendario
+				//Retormanos el dï¿½a de la semana actual segun la fecha del calendario
 				//OJO
 				//int diaActual = 1;
 				int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -158,17 +158,17 @@ public class ReporteSemanalHorariosReproceso {
 					//Si es sabado se resta cinco
 					calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 				}
-				//Llevamos a un string la fecha anterior para el cálculo de la venta
+				//Llevamos a un string la fecha anterior para el cï¿½lculo de la venta
 				datFechaAnterior = calendarioActual.getTime();
 				fechaAnterior = dateFormat.format(datFechaAnterior);
 		///////////////////////////////
 		DecimalFormat formatea = new DecimalFormat("###,###.##");
-		//En respuesta guardaremos el html que guardará todo lo que se desplegará en el correo.
+		//En respuesta guardaremos el html que guardarï¿½ todo lo que se desplegarï¿½ en el correo.
 		String respuesta = "";
-		//Recuperamos los días festivos
+		//Recuperamos los dï¿½as festivos
 		ArrayList<DiaFestivo> festivos = GeneralDAO.obtenerDiasFestivos();
 		
-		//En este punto vamos a replicar la lógica para procesar y generar el reporte
+		//En este punto vamos a replicar la lï¿½gica para procesar y generar el reporte
 		
 		//Luego de definidos las fechas crearemos el archivo que en su nombre contiene las fechas
 		try
@@ -191,7 +191,7 @@ public class ReporteSemanalHorariosReproceso {
 	            cellheader.setFont(whiteFont);
 	            cellheader.setAlignment(HorizontalAlignment .CENTER);
 	            
-	            //Creamos el estilo para la segunda fila de información
+	            //Creamos el estilo para la segunda fila de informaciï¿½n
 	            Font fontSegFila = workbook.createFont();
 	            fontSegFila.setColor(IndexedColors.ORANGE.index);
 	            fontSegFila.setFontHeightInPoints((short) 10.00);
@@ -222,7 +222,7 @@ public class ReporteSemanalHorariosReproceso {
 	            headerRow.setHeight((short)1000);
 	            cellHeader.setCellStyle(cellheader);
 	            
-	            //Realizamos la adición de la imagen del logo de pizza americana
+	            //Realizamos la adiciï¿½n de la imagen del logo de pizza americana
 	            InputStream inputStream = new FileInputStream(rutaImagenReporte);
 	            byte[] imageBytes = IOUtils.toByteArray(inputStream);
 	            int pictureIdx = workbook.addPicture(imageBytes, workbook.PICTURE_TYPE_PNG);
@@ -256,18 +256,18 @@ public class ReporteSemanalHorariosReproceso {
 				EmpleadoEvento eventoTemp;
 				//Arreglo donde iremos dejando cada fila
 				String[] filaTemp = new String[10];
-				//Variables que nos permitiran saber si hubo error en la conversión de las fechas
+				//Variables que nos permitiran saber si hubo error en la conversiï¿½n de las fechas
 				boolean errorInicial = false;
 				boolean errorFinal = false;
-				//Variables qeu nos permitiran saber en que punto vamos de la formación del registro
+				//Variables qeu nos permitiran saber en que punto vamos de la formaciï¿½n del registro
 				boolean ingreso = false;
-				//Salida empezará prendido dado que iniciamos con uno nuevo
+				//Salida empezarï¿½ prendido dado que iniciamos con uno nuevo
 				boolean salida = true;
 				for(int i = 0; i < repEntradasSalidas.size(); i++)
 				{
 					//Retomamos el evento que vamos a procesar
 					eventoTemp = repEntradasSalidas.get(i);
-					//Hacemos la verificación de si el evento es de ingreso o de salida
+					//Hacemos la verificaciï¿½n de si el evento es de ingreso o de salida
 					if(eventoTemp.getTipoEvento().equals(new String("INGRESO")))
 					{
 						//Esto quiere decir que solo hay un ingreso por lo que llenamos el arreglo
@@ -304,7 +304,7 @@ public class ReporteSemanalHorariosReproceso {
 						Date fechaFinal = new Date(), fechaInicial = new Date();
 						double horas = 0;
 						double recargoNocturno = 0;
-						//Intentamos la conversión de las fechas
+						//Intentamos la conversiï¿½n de las fechas
 						try
 						{
 							fechaInicial=dateFormatHora.parse(filaTemp[3]);
@@ -319,16 +319,16 @@ public class ReporteSemanalHorariosReproceso {
 						{
 							errorFinal = true;
 						}
-						//Sino se tuvo error en la conversión de las fehcas.
+						//Sino se tuvo error en la conversiï¿½n de las fehcas.
 				        if(!errorInicial && !errorFinal)
 				        {
-				        	  //Antes de hacer un cálculo de las horas, revisaremos y homologaremos el valor de la hora final
-				        	  //Con el fin de tomar acción sobre las personas que se dan salida muy tarde
+				        	  //Antes de hacer un cï¿½lculo de las horas, revisaremos y homologaremos el valor de la hora final
+				        	  //Con el fin de tomar acciï¿½n sobre las personas que se dan salida muy tarde
 				        	  int horaFinal = fechaFinal.getHours();
 				        	  //Validamos si es lunes, martes, miercoles, jueves o domingo y si la hora Final es mayor a 23 en cuyo caso se fija en ese valor
 				        	  if((filaTemp[2].equals(new String("Lunes")))||(filaTemp[2].equals(new String("Martes")))||(filaTemp[2].equals(new String("Miercoles")))||(filaTemp[2].equals(new String("Jueves")))||(filaTemp[2].equals(new String("Domingo"))))
 				        	  {
-				        		  //Si la hora final es mayor o igual a 23 o ya se fue para el otro día
+				        		  //Si la hora final es mayor o igual a 23 o ya se fue para el otro dï¿½a
 				        		  if(horaFinal >= 23)
 				        		  {
 				        			  horaFinal = 23;
@@ -336,8 +336,8 @@ public class ReporteSemanalHorariosReproceso {
 				        			  fechaFinal.setMinutes(0);
 				        		  }else if(horaFinal >= 0 && horaFinal <= 4)
 				        		  {
-				        			  //Seguramente se pasó al día siguiente, por lo tanto con el objeto calendar
-				        			  //restamos un día y fijamos la hora  a las 23:00 para los cálculos
+				        			  //Seguramente se pasï¿½ al dï¿½a siguiente, por lo tanto con el objeto calendar
+				        			  //restamos un dï¿½a y fijamos la hora  a las 23:00 para los cï¿½lculos
 				        			  horaFinal = 23;
 				        			  calendarioComodin.setTime(fechaFinal);
 				        			  calendarioComodin.add(Calendar.DAY_OF_YEAR, -1);
@@ -347,7 +347,7 @@ public class ReporteSemanalHorariosReproceso {
 				        		  }
 				        	  }else if((filaTemp[2].equals(new String("Viernes")))||(filaTemp[2].equals(new String("Sabado"))))
 				        	  {
-				        		//Si la hora final es mayor o igual a 23 o ya se fue para el otro día
+				        		//Si la hora final es mayor o igual a 23 o ya se fue para el otro dï¿½a
 				        		  if((horaFinal >= 0 && horaFinal <= 4))
 				        		  {
 				        			  horaFinal = 0;
@@ -426,17 +426,17 @@ public class ReporteSemanalHorariosReproceso {
 				}
 			
 			
-			//Obtenemos la información consolidada por persona y día
+			//Obtenemos la informaciï¿½n consolidada por persona y dï¿½a
 			ArrayList reporteHorarios = respuestaReporte;
 			ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 			
-			//La primera parte de la lógica realiza el llenado del arreglo y la segunda realiza el pintado
+			//La primera parte de la lï¿½gica realiza el llenado del arreglo y la segunda realiza el pintado
 			// es aqui donde se interviene el pintado
-			//Se tendrá un variable que iniciará en 1 y que controlará el movimiento de las filas
+			//Se tendrï¿½ un variable que iniciarï¿½ en 1 y que controlarï¿½ el movimiento de las filas
 			int filaActual = 1;
 			
-			//Comenzamos toda la lógica para recorrer el arreglo de empleados por fecha y pintar la inforación como lo requerimos
-			//Variables que nos permitirán almacenar el empleado anterior y revisar si está cambiando con el fin de ir mostrando un camboi
+			//Comenzamos toda la lï¿½gica para recorrer el arreglo de empleados por fecha y pintar la inforaciï¿½n como lo requerimos
+			//Variables que nos permitirï¿½n almacenar el empleado anterior y revisar si estï¿½ cambiando con el fin de ir mostrando un camboi
 			String empleadoAnterior = "";
 			double salarioEmpleadoAnterior = 0;
 			double salarioEmpleadoActual = 0;
@@ -448,8 +448,8 @@ public class ReporteSemanalHorariosReproceso {
 			double acumuladoHoras = 0;
 			String tienda = "";
 			int idTienda;
-			//Creación de variables para apoyar la liquidación de nómina
-			//Para el manejo del cálculo de las horas de recargo nocturno
+			//Creaciï¿½n de variables para apoyar la liquidaciï¿½n de nï¿½mina
+			//Para el manejo del cï¿½lculo de las horas de recargo nocturno
 			double recargoNocTotal = 0;
 			double recargoNoc = 0;
 			//Indicador para saber si la semana tiene festivo
@@ -481,7 +481,7 @@ public class ReporteSemanalHorariosReproceso {
 							+  "<td width='40' nowrap><strong>HORAS</strong></td>"
 							+  "<td width='40' nowrap><strong>TIENDA</strong></td>"
 							+  "</tr>";
-							//Damos un salto adicional de separación 
+							//Damos un salto adicional de separaciï¿½n 
 							filaActual++;
 							//Creamos Encabezado del reporte
 							HSSFRow nombrePersona = sheet.createRow(filaActual);
@@ -515,31 +515,31 @@ public class ReporteSemanalHorariosReproceso {
 					HSSFRow pie = sheet.createRow(filaActual);
 					Cell cellFilaPie = pie.createCell((short) 0);
 					cellFilaPie.setCellValue("TOTAL HORAS " +  acumuladoHoras);
-					//En este punto realizamos los cálculos
+					//En este punto realizamos los cï¿½lculos
 					if(tieneFestivo)
 					{
 						if(salarioEmpleadoAnterior >= 1000000)
 						{
-							horasExtResiduales = acumuladoHoras - horasFestivas - 39;	
+							horasExtResiduales = acumuladoHoras - horasFestivas - 37;	
 						}else
 						{
-							horasExtResiduales = acumuladoHoras - horasFestivas - 19.5;	
+							horasExtResiduales = acumuladoHoras - horasFestivas - 18.5;	
 						}
 						 
 					}else
 					{
 						if(salarioEmpleadoAnterior >= 1000000)
 						{
-							horasExtResiduales = acumuladoHoras - horasFestivas - 48;	
+							horasExtResiduales = acumuladoHoras - horasFestivas - 44;	
 						}else
 						{
-							horasExtResiduales = acumuladoHoras - horasFestivas - 24;	
+							horasExtResiduales = acumuladoHoras - horasFestivas - 22;	
 						}
 							
 					}
 					//El tratamiento no es diferencial en esta parte
 					horasExtrasDominicales = horasTrabDomingos - 8;
-					//Realizamos una validación adicional en donde si las horas extras dominicales son mayores a las
+					//Realizamos una validaciï¿½n adicional en donde si las horas extras dominicales son mayores a las
 					//horas extras Residuales, entonces lo igualamos
 					if(horasExtrasDominicales > horasExtResiduales)
 					{
@@ -559,7 +559,7 @@ public class ReporteSemanalHorariosReproceso {
 					{
 						horasExtrasOrdinarias = 0;
 					}
-					//Realizamos la inclusión de la información en la tabla HTML
+					//Realizamos la inclusiï¿½n de la informaciï¿½n en la tabla HTML
 					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS ORD " + formatea.format(horasExtrasOrdinarias) + "</strong></td> </tr>";
 					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS DOMI " + formatea.format(horasExtrasDominicales) + "</strong></td> </tr>";
 					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS FESTIVA " + formatea.format(horasFestivas) + "</strong></td> </tr>";
@@ -627,7 +627,7 @@ public class ReporteSemanalHorariosReproceso {
 					horas = 0;
 				}
 				acumuladoHoras = acumuladoHoras + horas;
-				//Realizamos la conversión de las horas de recargo nocturna
+				//Realizamos la conversiï¿½n de las horas de recargo nocturna
 
 				try
 				{
@@ -638,7 +638,7 @@ public class ReporteSemanalHorariosReproceso {
 					recargoNoc = 0;
 				}
 				recargoNocTotal = recargoNocTotal + recargoNoc;
-				//Validaremos si el día es domingo
+				//Validaremos si el dï¿½a es domingo
 				if(fila[2].equals(new String("Domingo")))
 				{
 					horasTrabDomingos = horasTrabDomingos + horas;
@@ -681,7 +681,7 @@ public class ReporteSemanalHorariosReproceso {
 				}
 				//Realizamos el pintado de la fila
 				respuesta = respuesta + "<tr><td width='120' nowrap>" + fila[0] + "</td><td width='50' nowrap> " + fila[1] + "</td><td width='50' nowrap> " + fila[2] + "</td><td width='50' nowrap> " + fila[3] + "</td><td width='50' nowrap> "+ fila[4] + "</td><td width='50' nowrap> " + strHoras + "</td><td width='50' nowrap> " + tienda +"</td></tr>";
-				//Realizamos inserción de la tabla
+				//Realizamos inserciï¿½n de la tabla
 				HorarioTrabajado horario = new HorarioTrabajado(0, Integer.parseInt(fila[8]),fila[1], fila[2], fila[3], fila[4],horas,idTienda );
 				HorarioTrabajadoDAO.insertarHorarioTrabajado(horario);
 				
@@ -708,31 +708,31 @@ public class ReporteSemanalHorariosReproceso {
 				idEmpleadoAnterior = idEmpleadoActual;
 			}
 			respuesta = respuesta + "<tr> <td COLSPAN='6' width='400' nowrap><strong>TOTAL HORAS " + formatea.format(acumuladoHoras) + "</strong></td> </tr>";
-			//En este punto realizamos los cálculos
+			//En este punto realizamos los cï¿½lculos
 			if(tieneFestivo)
 			{
 				if(salarioEmpleadoAnterior >= 1000000)
 				{
-					horasExtResiduales = acumuladoHoras - horasFestivas - 39;	
+					horasExtResiduales = acumuladoHoras - horasFestivas - 37;	
 				}else
 				{
-					horasExtResiduales = acumuladoHoras - horasFestivas - 19.5;	
+					horasExtResiduales = acumuladoHoras - horasFestivas - 18.5;	
 				}
 				 
 			}else
 			{
 				if(salarioEmpleadoAnterior >= 1000000)
 				{
-					horasExtResiduales = acumuladoHoras - horasFestivas - 48;	
+					horasExtResiduales = acumuladoHoras - horasFestivas - 44;	
 				}else
 				{
-					horasExtResiduales = acumuladoHoras - horasFestivas - 24;	
+					horasExtResiduales = acumuladoHoras - horasFestivas - 22;	
 				}
 					
 			}
 			//El tratamiento no es diferencial en esta parte
 			horasExtrasDominicales = horasTrabDomingos - 8;
-			//Realizamos una validación adicional en donde si las horas extras dominicales son mayores a las
+			//Realizamos una validaciï¿½n adicional en donde si las horas extras dominicales son mayores a las
 			//horas extras Residuales, entonces lo igualamos
 			if(horasExtrasDominicales > horasExtResiduales)
 			{
@@ -752,13 +752,13 @@ public class ReporteSemanalHorariosReproceso {
 			{
 				horasExtrasOrdinarias = 0;
 			}
-			//Realizamos la inclusión de la información en la tabla HTML
+			//Realizamos la inclusiï¿½n de la informaciï¿½n en la tabla HTML
 			respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS ORD " + formatea.format(horasExtrasOrdinarias) + "</strong></td> </tr>";
 			respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS DOMI " + formatea.format(horasExtrasDominicales) + "</strong></td> </tr>";
 			respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS FESTIVA " + formatea.format(horasFestivas) + "</strong></td> </tr>";
 			respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS RECARGO NOCTURNO " + formatea.format(recargoNocTotal) + "</strong></td> </tr>";
 			respuesta = respuesta + "</table> <br/>";
-			//Insertamos el resumen del último
+			//Insertamos el resumen del ï¿½ltimo
 			HorarioResumen horarioResumen = new HorarioResumen(0, Integer.parseInt(fila[8]), acumuladoHoras, horasExtrasOrdinarias,horasExtrasDominicales, horasFestivas, recargoNocTotal,fechaAnterior,fechaActual );
 			HorarioResumenDAO.insertarHorarioResumen(horarioResumen);
 			//Insertamos el pie
@@ -767,7 +767,7 @@ public class ReporteSemanalHorariosReproceso {
 			cellFilaPie.setCellValue("TOTAL HORAS " +  formatea.format(acumuladoHoras));
 			filaActual = filaActual + 2;
 			
-			//En esta parte termina la generación del correo
+			//En esta parte termina la generaciï¿½n del correo
 			workbook.write(fileOut);
 			fileOut.close();
 			
@@ -775,7 +775,7 @@ public class ReporteSemanalHorariosReproceso {
 			String[] rutasArchivos = new String[1];
 			rutasArchivos[0] = rutaArchivoGenerado;
 			
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciï¿½n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEHORAS");
 			Date fecha = new Date();
 			Correo correo = new Correo();

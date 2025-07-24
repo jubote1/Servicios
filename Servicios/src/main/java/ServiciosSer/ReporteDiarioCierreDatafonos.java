@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import CapaDAOSer.CierreDatafonoPOSDAO;
 import CapaDAOSer.EmpleadoTemporalDiaDAO;
 import CapaDAOSer.EmpresaTemporalDAO;
 import CapaDAOSer.GeneralDAO;
@@ -18,6 +19,7 @@ import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.TiempoPedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import CapaDAOSer.UsuarioDAO;
+import ModeloSer.CierreDatafonoPOS;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
 import ModeloSer.DiaFestivo;
@@ -48,7 +50,7 @@ public class ReporteDiarioCierreDatafonos {
 		//Traemos la fecha actual en un date
 		Date datFechaActual = new Date();
 		
-		//Realizamos la operación para restar un día a la fecha teniendo en cuenta que correrá más tarde
+		//Realizamos la operaciï¿½n para restar un dï¿½a a la fecha teniendo en cuenta que correrï¿½ mï¿½s tarde
 		Calendar calendarioActual = Calendar.getInstance();
 		try
 		{
@@ -69,23 +71,25 @@ public class ReporteDiarioCierreDatafonos {
 		
 		String respuesta = "";
 		
-		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la información
+		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la informaciï¿½n
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
+		ArrayList detallePedido;
+		String[] fila;
 		for(Tienda tien : tiendas)
 		{
 			if(!tien.getHostBD().equals(new String("")))
 			{
-				respuesta = respuesta + "<table border='2'> <tr><td colspan ='5'>" + tien.getNombreTienda() + " CIERRE DE DATÁFONOS " + fechaActual  + "</td></tr>";
+				respuesta = respuesta + "<table border='2'> <tr><td colspan ='5'>" + tien.getNombreTienda() + " CIERRE DE DATï¿½FONOS " + fechaActual  + "</td></tr>";
 				respuesta = respuesta + "<tr>"
 						+  "<td><strong>DATAFONO</strong></td>"
 						+  "<td><strong>TERMINAL</strong></td>"
 						+  "<td><strong>Valor Calculado</strong></td>"
 						+  "<td><strong>Valor Ingresado</strong></td>"
-						+  "<td><strong>Observación</strong></td>"
+						+  "<td><strong>Observaciï¿½n</strong></td>"
 						+  "</tr>";
-				//Recuperamos los evento de empleados para la semana en cuestión
+				//Recuperamos los evento de empleados para la semana en cuestiï¿½n
 				ArrayList<DatafonoCierre> datafonosCierre = DatafonoCierreDAO.consultarDatafonosCierre(fechaActual, tien.getHostBD(), false);
-				//Comenzamos a recorrer para ir presetnando la información
+				//Comenzamos a recorrer para ir presetnando la informaciï¿½n
 				for(DatafonoCierre datTemp : datafonosCierre)
 				{
 					respuesta = respuesta + "<tr>"
@@ -97,16 +101,45 @@ public class ReporteDiarioCierreDatafonos {
 					CapaDAOSer.DatafonoCierreDAO.insertarDatafonoCierre(datTemp, tien.getIdTienda(), fechaActual, false);
 				}
 				respuesta = respuesta + "</table> <br/>";
+				
+				//Agregamos todas los pedidos de datÃ¡fono
+				respuesta = respuesta + "<table WIDTH='600' border='2'> <tr><td colspan ='6'>DETALLE DATAFONOS " + tien.getNombreTienda()  + " </td></tr>";
+				respuesta = respuesta + "<tr>"
+						+  "<td WIDTH='70'><strong>PEDIDO</strong></td>"
+						+  "<td WIDTH='130'><strong>VALOR DE PAGO</strong></td>"
+						+  "<td WIDTH='200'><strong>CLIENTE</strong></td>"
+						+  "<td WIDTH='70'><strong>TELEFONO</strong></td>"
+						+  "<td WIDTH='70'><strong>HORA TOMA PEDIDO</strong></td>"
+						+  "<td WIDTH='60'><strong>DATAFONO</strong></td></tr>";
+				detallePedido = TiendaDAO.obtenerPedidosFormaPagoPar(fechaActual,2, tien.getHostBD(), false);
+				double totalDatafono = 0;
+				for(int i = 0; i < detallePedido.size(); i++)
+				{
+					fila = (String[]) detallePedido.get(i);
+					totalDatafono = totalDatafono + Double.parseDouble(fila[1]);
+					respuesta = respuesta + "<tr>"
+							+  "<td>" + fila[0] + "</td>"
+							+  "<td>" + fila[1] + "</td>"
+							+  "<td>" + fila[2] + "</td>"
+							+  "<td>" + fila[3] + "</td>"
+							+  "<td>" + fila[4] + "</td>"
+							+  "<td>" + fila[5] + "</td></tr>";
+				}
+				respuesta = respuesta + "<tr><td colspan ='6'> TOTAL : " + formatea.format(totalDatafono) +"</td></tr>";
+				respuesta = respuesta + "</table> <br/>";
+				//Realizamos inserciÃ³n de dato total de datÃ¡fono en el datamart histÃ³rico
+				CierreDatafonoPOS cierre = new CierreDatafonoPOS(tien.getIdTienda(),fechaActual,totalDatafono);
+				CierreDatafonoPOSDAO.insertarCierreDatafonoPOS(cierre);
 			}
 		}
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciï¿½n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("CIERREDATAFONO");
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setAsunto("REPORTE DIARIO CIERRE DATAFONOS " + fechaActual);
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación el resumen de cierres de datáfono diario para la fecha " + fechaActual +": \n" + respuesta);
+			correo.setMensaje("A continuaciï¿½n el resumen de cierres de datï¿½fono diario para la fecha " + fechaActual +": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		

@@ -33,8 +33,7 @@ public class ServicioImpresion {
 	private static ServicioImpresion serviceInstance  = new ServicioImpresion();
 		
 		
-	public static void main( String[] args )
-	        
+	public static void main( String[] args )      
 	{
 		
 		ArrayList<ImprimirAdm> impresiones = ImprimirAdmDAO.pendientesImpresion();
@@ -44,8 +43,8 @@ public class ServicioImpresion {
 		{
 			ImprimirAdm impresionTemp = impresiones.get(i);
 			String paraImpr = impresionTemp.getImprimir();
-			//Luego de realizada la impresión
-			Impresion.main(paraImpr, impresionTemp.getImpresora());
+			//Luego de realizada la impresiï¿½n
+			Impresion.main(paraImpr, impresionTemp.getImpresora(),impresionTemp.getQr());
 			
 			try
 			{
@@ -102,8 +101,8 @@ public class ServicioImpresion {
 			}	
 	      
 	      int segundosEje;
-	      //En este punto deberemos de recuperar el número de minutos en el cual se ejecutará el proceso
-		  //Traemos de una variable de configuración el valor de la marcacion domicilios.com
+	      //En este punto deberemos de recuperar el nï¿½mero de minutos en el cual se ejecutarï¿½ el proceso
+		  //Traemos de una variable de configuraciï¿½n el valor de la marcacion domicilios.com
 		  while(!stopped) {
 	          String[] args ={"start"};
 	    	  main(args);
@@ -112,7 +111,7 @@ public class ServicioImpresion {
 	    		  Thread.sleep(2000);
 	    		}catch(Exception e)
 				{
-					System.out.println("Problemas en la pausa en la impresión");
+					System.out.println("Problemas en la pausa en la impresiï¿½n");
 				}
 	    	  
 	      }

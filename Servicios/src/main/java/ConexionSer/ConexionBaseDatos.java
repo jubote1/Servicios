@@ -2,7 +2,7 @@ package ConexionSer;
 import java.sql.*;
 
 /**
- * Método que implementa la conexión a base de datos desde la aplicación de Servicios Tienda
+ * Mï¿½todo que implementa la conexiï¿½n a base de datos desde la aplicaciï¿½n de Servicios Tienda
  * @author JuanDavid
  *
  */
@@ -10,8 +10,8 @@ public class ConexionBaseDatos {
 	
 	
 	/**
-	 * Método que se encarga de retornar la conexión al sistema de Contact Center Web
-	 * @return Retorna un objeto de tipo conexión para la base de datos de Contact Center Web.
+	 * Mï¿½todo que se encarga de retornar la conexiï¿½n al sistema de Contact Center Web
+	 * @return Retorna un objeto de tipo conexiï¿½n para la base de datos de Contact Center Web.
 	 */
 	public Connection obtenerConexionBDContact(){
 		try {
@@ -48,8 +48,8 @@ public class ConexionBaseDatos {
 	}
 	
 	/**
-	 * Método que se encarga de retornar la conexión al sistema de Contact Center Web
-	 * @return Retorna un objeto de tipo conexión para la base de datos de Contact Center Web.
+	 * Mï¿½todo que se encarga de retornar la conexiï¿½n al sistema de Contact Center Web
+	 * @return Retorna un objeto de tipo conexiï¿½n para la base de datos de Contact Center Web.
 	 */
 	public Connection obtenerConexionBDContactLocal(){
 		try {
@@ -350,10 +350,43 @@ public class ConexionBaseDatos {
 		return(con);
 	}
 	
+	public Connection obtenerConexionBDTiendaLocal(){
+		try {
+		    Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
+		    
+
+		} catch (Exception e) {
+
+		    System.out.println(e.toString());
+
+		}
+		
+		Connection con = null;
+		//...
+
+		try {
+			
+			
+			DriverManager.setLoginTimeout(10);
+			con = DriverManager.getConnection(
+		            "jdbc:mysql://localhost/tiendaamericana?"
+		            + "user=root&password=4m32017&serverTimezone=UTC");
+
+		    // Otros y operaciones sobre la base de datos...
+
+		} catch (SQLException ex) {
+
+		    // Mantener el control sobre el tipo de error
+		    System.out.println("SQLException: " + ex.getMessage() + " base de datos localhost");
+
+		}
+		return(con);
+	}
+	
 	/**
-	 * Método que se encarga de retornar la conexión para el sistema de Tienda
-	 * @param dsn Se recibe como parámetro el nombre del DataSource Name con el cual se establecerá la conexión.
-	 * @return Se retorna un objeto de tipo conexión a la base de datos Tienda, en la cual se insertará el pedido.
+	 * Mï¿½todo que se encarga de retornar la conexiï¿½n para el sistema de Tienda
+	 * @param dsn Se recibe como parï¿½metro el nombre del DataSource Name con el cual se establecerï¿½ la conexiï¿½n.
+	 * @return Se retorna un objeto de tipo conexiï¿½n a la base de datos Tienda, en la cual se insertarï¿½ el pedido.
 	 */
 	public Connection obtenerConexionBDTienda(String dsn){
 		String temp = "PixelServicio";
@@ -363,7 +396,7 @@ public class ConexionBaseDatos {
 			 //Class.forName("sybase.jdbc.sqlanywhere.IDriver");
 			 //con = DriverManager.getConnection("jdbc:sqlanywhere:dsn="+dsn+";uid=admin;pwd=xxx");//SystemPos
 			
-			//Cambiamos para la versión 12 del driver en teoria no es necesario registrar el driver lo comentamos
+			//Cambiamos para la versiï¿½n 12 del driver en teoria no es necesario registrar el driver lo comentamos
 			
 			DriverManager.registerDriver( (Driver)
 					 Class.forName( "sybase.jdbc.sqlanywhere.IDriver" ).newInstance() );

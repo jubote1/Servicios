@@ -6,14 +6,14 @@
 			<attribute name="gradle_used_by_scope" value="main,test"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/ProyectoTiendaAmericanaCliente"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/ProyectoPizzaAmericana"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/ProyectoInventarioAmericana"/>
-	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk-16.0.2">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ProyectoTiendaAmericanaCliente"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ProyectoPizzaAmericana"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ProyectoInventarioAmericana"/>
 	<classpathentry kind="output" path="bin/default"/>
 </classpath>

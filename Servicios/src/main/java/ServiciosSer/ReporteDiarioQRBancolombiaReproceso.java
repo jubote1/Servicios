@@ -54,7 +54,7 @@ public class ReporteDiarioQRBancolombiaReproceso {
 		
 		String respuesta = "";
 		
-		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la información
+		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la informaciï¿½n
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		respuesta = respuesta + "<table border='2'> <tr><td colspan ='5'>CIERRE QR BANCOLOMBIA " + fechaActual  + "</td></tr>";
 		respuesta = respuesta + "<tr>"
@@ -80,34 +80,40 @@ public class ReporteDiarioQRBancolombiaReproceso {
 				+  "<td><strong> " + totalGeneral +"</strong></td>"
 				+  "</tr>";
 		respuesta = respuesta + "</table> <br/>";
-		//Realizamos la generación de la información del detalle de los QR por todas las tiendas
+		//Realizamos la generaciï¿½n de la informaciï¿½n del detalle de los QR por todas las tiendas
 		ArrayList detallePedido;
-		Long[] fila;
+		String[] fila;
 		for(Tienda tien : tiendas)
 		{
-			respuesta = respuesta + "<table border='2'> <tr><td colspan ='5'>DETALLE QR BANCOLOMBIA " + tien.getNombreTienda()  + " </td></tr>";
+			respuesta = respuesta + "<table WIDTH='600' border='2'> <tr><td colspan ='5'>DETALLE QR BANCOLOMBIA " + tien.getNombreTienda()  + " </td></tr>";
 			respuesta = respuesta + "<tr>"
-					+  "<td><strong>PEDIDO</strong></td>"
-					+  "<td><strong>VALOR DE PAGO</strong></td></tr>";
+					+  "<td WIDTH='70'><strong>PEDIDO</strong></td>"
+					+  "<td WIDTH='130'><strong>VALOR DE PAGO</strong></td>"
+					+  "<td WIDTH='200'><strong>CLIENTE</strong></td>"
+					+  "<td WIDTH='100'><strong>TELEFONO</strong></td>"
+					+  "<td WIDTH='100'><strong>HORA TOMA PEDIDO</strong></td></tr>";
 			detallePedido = TiendaDAO.obtenerPedidosFormaPago(fechaActual, tien.getHostBD(), false);
 			for(int i = 0; i < detallePedido.size(); i++)
 			{
-				fila = (Long[]) detallePedido.get(i);
+				fila = (String[]) detallePedido.get(i);
 				respuesta = respuesta + "<tr>"
 						+  "<td>" + fila[0] + "</td>"
-						+  "<td>" + fila[1] + "</td></tr>";
+						+  "<td>" + fila[1] + "</td>"
+						+  "<td>" + fila[2] + "</td>"
+						+  "<td>" + fila[3] + "</td>"
+						+  "<td>" + fila[4] + "</td></tr>";
 			}
 			respuesta = respuesta + "</table> <br/>";
 		}
 		
-		//Recuperar la lista de distribución para este correo
+		//Recuperar la lista de distribuciï¿½n para este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("CIERREQRBANCOLOMBIA");
 		Correo correo = new Correo();
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto("REPORTE DIARIO VENTAS QR BANCOLOMBIA " + fechaActual);
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("A continuación el resumen de ventas QR Bancolombia para la fecha " + fechaActual +": \n" + respuesta);
+		correo.setMensaje("A continuaciï¿½n el resumen de ventas QR Bancolombia para la fecha " + fechaActual +": \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 		

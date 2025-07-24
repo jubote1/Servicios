@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import CapaDAOSer.GastoSemanalDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.PedidoDAO;
@@ -22,6 +23,7 @@ import CapaDAOSer.TiendaDAO;
 import ConexionSer.ConexionBaseDatos;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
+import ModeloSer.GastoSemanal;
 import ModeloSer.Pedido;
 import ModeloSer.PedidoFueraTiempo;
 import ModeloSer.PedidoPixel;
@@ -38,7 +40,7 @@ public class ReporteSemanalContactCenter {
 		//TRABAJO CON LAS FECHAS///////
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 				String fechaActual = "";
-				//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos de ventas
+				//Variables donde manejaremos la fecha anerior con el fin realizar los cï¿½lculos de ventas
 				Date datFechaAnterior;
 				String fechaAnterior = "";
 				//Creamos el objeto calendario
@@ -63,7 +65,7 @@ public class ReporteSemanalContactCenter {
 				{
 					System.out.println(e.toString());
 				}
-				//Retormanos el día de la semana actual segun la fecha del calendario
+				//Retormanos el dï¿½a de la semana actual segun la fecha del calendario
 				//OJO
 				//int diaActual = 1;
 				int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -102,12 +104,12 @@ public class ReporteSemanalContactCenter {
 					//Si es sabado se resta cinco
 					calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 				}
-				//Llevamos a un string la fecha anterior para el cálculo de la venta
+				//Llevamos a un string la fecha anterior para el cï¿½lculo de la venta
 				datFechaAnterior = calendarioActual.getTime();
 				fechaAnterior = dateFormat.format(datFechaAnterior);
 		///////////////////////////////
 		DecimalFormat formatea = new DecimalFormat("###,###");
-		//En respuesta guardaremos el html que guardará todo lo que se desplegará en el correo.
+		//En respuesta guardaremos el html que guardarï¿½ todo lo que se desplegarï¿½ en el correo.
 		String respuesta = "";
 		
 		
@@ -131,8 +133,20 @@ public class ReporteSemanalContactCenter {
 				+  "</tr>";
 		respuesta = respuesta + "<tr><td>" + fechaAnterior + "</td><td> " + fechaActual + "</td><td> " + totalPedContact + "</td><td> " + totalPedVirtual + "</td><td> " + totalPedAPP + "</td><td> "+ totalPedCRM +"</td><td> " + totalDeditos + "</td><td> " + totalMaduritos  +"</td></tr>";
 		respuesta = respuesta + "</table> <br/>";
+		//Realizamos la inserciÃ³n de los valores para la reporteria
+		//En este punto tenemos el total de la tienda y lo insertaremos en la tabla correspondiente
+		GastoSemanal gastoSemanalTemp = new GastoSemanal(0,0,27,fechaActual,totalPedContact,totalPedContact);
+		GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
+		gastoSemanalTemp = new GastoSemanal(0,0,28,fechaActual,totalPedVirtual,totalPedVirtual);
+		GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
+		gastoSemanalTemp = new GastoSemanal(0,0,29,fechaActual,totalPedAPP,totalPedAPP);
+		GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
+		gastoSemanalTemp = new GastoSemanal(0,0,30,fechaActual,totalPedCRM,totalPedCRM);
+		GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
+		gastoSemanalTemp = new GastoSemanal(0,0,31,fechaActual,totalDeditos + totalMaduritos,totalDeditos + totalMaduritos);
+		GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
 		
-		//Vamos a agregar la lógica para el tema de tickets promedio
+		//Vamos a agregar la lï¿½gica para el tema de tickets promedio
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		ArrayList<capaModeloPOS.TicketPromedio> ticketsSemana;
 		for(Tienda tien : tiendas)
@@ -150,7 +164,7 @@ public class ReporteSemanalContactCenter {
 		
 		try
 		{
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciï¿½n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTESEMANALCONTACTVIRTUAL");
 			Date fecha = new Date();
 			Correo correo = new Correo();

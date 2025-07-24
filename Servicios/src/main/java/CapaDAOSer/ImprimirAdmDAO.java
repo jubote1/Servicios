@@ -30,11 +30,13 @@ public class ImprimirAdmDAO {
 			int idImpresion;
 			String imprimir;
 			String impresora;
+			String qr;
 			while(rs.next()){
 				idImpresion = rs.getInt("idimpresion");
 				imprimir = rs.getString("imprimir");
 				impresora = rs.getString("impresora");
-				ImprimirAdm colaImp = new ImprimirAdm(idImpresion,imprimir,impresora);
+				qr = rs.getString("qr");
+				ImprimirAdm colaImp = new ImprimirAdm(idImpresion,imprimir,impresora,qr);
 				impresiones.add(colaImp);
 				
 			}

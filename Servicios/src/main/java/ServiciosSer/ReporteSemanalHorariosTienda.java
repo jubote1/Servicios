@@ -67,7 +67,7 @@ public class ReporteSemanalHorariosTienda {
 		//TRABAJO CON LAS FECHAS///////
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los cï¿½lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -94,7 +94,7 @@ public class ReporteSemanalHorariosTienda {
 		{
 			System.out.println(e.toString());
 		}
-		//Retormanos el día de la semana actual segun la fecha del calendario
+		//Retormanos el dï¿½a de la semana actual segun la fecha del calendario
 		//OJO
 		//int diaActual = 1;
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -133,14 +133,14 @@ public class ReporteSemanalHorariosTienda {
 			//Si es sabado se resta cinco
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 		}
-		//Llevamos a un string la fecha anterior para el cálculo de la venta
+		//Llevamos a un string la fecha anterior para el cï¿½lculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
 		fechaAnterior = dateFormat.format(datFechaAnterior);
 		///////////////////////////////
 		DecimalFormat formatea = new DecimalFormat("###,###.##");
-		//En respuesta guardaremos el html que guardará todo lo que se desplegará en el correo.
+		//En respuesta guardaremos el html que guardarï¿½ todo lo que se desplegarï¿½ en el correo.
 		String respuesta = "";
-		//Recuperamos los días festivos
+		//Recuperamos los dï¿½as festivos
 		ArrayList<DiaFestivo> festivos = GeneralDAO.obtenerDiasFestivos();
 		
 		//Obtenemos los horarios de que tiendas para procesar
@@ -164,18 +164,18 @@ public class ReporteSemanalHorariosTienda {
 				EmpleadoEvento eventoTemp;
 				//Arreglo donde iremos dejando cada fila
 				String[] filaTemp = new String[9];
-				//Variables que nos permitiran saber si hubo error en la conversión de las fechas
+				//Variables que nos permitiran saber si hubo error en la conversiï¿½n de las fechas
 				boolean errorInicial = false;
 				boolean errorFinal = false;
-				//Variables qeu nos permitiran saber en que punto vamos de la formación del registro
+				//Variables qeu nos permitiran saber en que punto vamos de la formaciï¿½n del registro
 				boolean ingreso = false;
-				//Salida empezará prendido dado que iniciamos con uno nuevo
+				//Salida empezarï¿½ prendido dado que iniciamos con uno nuevo
 				boolean salida = true;
 				for(int i = 0; i < repEntradasSalidas.size(); i++)
 				{
 					//Retomamos el evento que vamos a procesar
 					eventoTemp = repEntradasSalidas.get(i);
-					//Hacemos la verificación de si el evento es de ingreso o de salida
+					//Hacemos la verificaciï¿½n de si el evento es de ingreso o de salida
 					if(eventoTemp.getTipoEvento().equals(new String("INGRESO")))
 					{
 						//Esto quiere decir que solo hay un ingreso por lo que llenamos el arreglo
@@ -210,7 +210,7 @@ public class ReporteSemanalHorariosTienda {
 						Date fechaFinal = new Date(), fechaInicial = new Date();
 						double horas = 0;
 						double recargoNocturno = 0;
-						//Intentamos la conversión de las fechas
+						//Intentamos la conversiï¿½n de las fechas
 						try
 						{
 							fechaInicial=dateFormatHora.parse(filaTemp[3]);
@@ -225,16 +225,16 @@ public class ReporteSemanalHorariosTienda {
 						{
 							errorFinal = true;
 						}
-						//Sino se tuvo error en la conversión de las fehcas.
+						//Sino se tuvo error en la conversiï¿½n de las fehcas.
 				        if(!errorInicial && !errorFinal)
 				        {
-				        	  //Antes de hacer un cálculo de las horas, revisaremos y homologaremos el valor de la hora final
-				        	  //Con el fin de tomar acción sobre las personas que se dan salida muy tarde
+				        	  //Antes de hacer un cï¿½lculo de las horas, revisaremos y homologaremos el valor de la hora final
+				        	  //Con el fin de tomar acciï¿½n sobre las personas que se dan salida muy tarde
 				        	  int horaFinal = fechaFinal.getHours();
 				        	  //Validamos si es lunes, martes, miercoles, jueves o domingo y si la hora Final es mayor a 23 en cuyo caso se fija en ese valor
 				        	  if((filaTemp[2].equals(new String("Lunes")))||(filaTemp[2].equals(new String("Martes")))||(filaTemp[2].equals(new String("Miercoles")))||(filaTemp[2].equals(new String("Jueves")))||(filaTemp[2].equals(new String("Domingo"))))
 				        	  {
-				        		  //Si la hora final es mayor o igual a 23 o ya se fue para el otro día
+				        		  //Si la hora final es mayor o igual a 23 o ya se fue para el otro dï¿½a
 				        		  if(horaFinal >= 23)
 				        		  {
 				        			  horaFinal = 23;
@@ -242,8 +242,8 @@ public class ReporteSemanalHorariosTienda {
 				        			  fechaFinal.setMinutes(0);
 				        		  }else if(horaFinal >= 0 && horaFinal <= 4)
 				        		  {
-				        			  //Seguramente se pasó al día siguiente, por lo tanto con el objeto calendar
-				        			  //restamos un día y fijamos la hora  a las 23:00 para los cálculos
+				        			  //Seguramente se pasï¿½ al dï¿½a siguiente, por lo tanto con el objeto calendar
+				        			  //restamos un dï¿½a y fijamos la hora  a las 23:00 para los cï¿½lculos
 				        			  horaFinal = 23;
 				        			  calendarioComodin.setTime(fechaFinal);
 				        			  calendarioComodin.add(Calendar.DAY_OF_YEAR, -1);
@@ -253,7 +253,7 @@ public class ReporteSemanalHorariosTienda {
 				        		  }
 				        	  }else if((filaTemp[2].equals(new String("Viernes")))||(filaTemp[2].equals(new String("Sabado"))))
 				        	  {
-				        		//Si la hora final es mayor o igual a 23 o ya se fue para el otro día
+				        		//Si la hora final es mayor o igual a 23 o ya se fue para el otro dï¿½a
 				        		  if((horaFinal >= 0 && horaFinal <= 4))
 				        		  {
 				        			  horaFinal = 0;
@@ -339,11 +339,11 @@ public class ReporteSemanalHorariosTienda {
 				}
 			
 			
-				//Obtenemos la información consolidada por persona y día
+				//Obtenemos la informaciï¿½n consolidada por persona y dï¿½a
 				ArrayList reporteHorarios = respuestaReporte;
 				ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();			
-				//Comenzamos toda la lógica para recorrer el arreglo de empleados por fecha y pintar la inforación como lo requerimos
-				//Variables que nos permitirán almacenar el empleado anterior y revisar si está cambiando con el fin de ir mostrando un camboi
+				//Comenzamos toda la lï¿½gica para recorrer el arreglo de empleados por fecha y pintar la inforaciï¿½n como lo requerimos
+				//Variables que nos permitirï¿½n almacenar el empleado anterior y revisar si estï¿½ cambiando con el fin de ir mostrando un camboi
 				String empleadoAnterior = "";
 				int idEmpleadoAnterior = 0;
 				String empleadoActual = "";
@@ -353,8 +353,8 @@ public class ReporteSemanalHorariosTienda {
 				double acumuladoHoras = 0;
 				String tienda = "";
 				int idTienda;
-				//Creación de variables para apoyar la liquidación de nómina
-				//Para el manejo del cálculo de las horas de recargo nocturno
+				//Creaciï¿½n de variables para apoyar la liquidaciï¿½n de nï¿½mina
+				//Para el manejo del cï¿½lculo de las horas de recargo nocturno
 				double recargoNocTotal = 0;
 				double recargoNoc = 0;
 				//Indicador para saber si la semana tiene festivo
@@ -390,17 +390,17 @@ public class ReporteSemanalHorariosTienda {
 					if(!empleadoAnterior.equals(empleadoActual))
 					{
 						respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>TOTAL HORAS " + formatea.format(acumuladoHoras) + "</strong></td> </tr>";
-						//En este punto realizamos los cálculos
+						//En este punto realizamos los cï¿½lculos
 						if(tieneFestivo)
 						{
-							horasExtResiduales = acumuladoHoras - horasFestivas - 40;	 
+							horasExtResiduales = acumuladoHoras - horasFestivas - 37;	 
 						}else
 						{
-							horasExtResiduales = acumuladoHoras - horasFestivas - 48;	
+							horasExtResiduales = acumuladoHoras - horasFestivas - 44;	
 						}
 						//El tratamiento no es diferencial en esta parte
 						horasExtrasDominicales = horasTrabDomingos - 8;
-						//Realizamos una validación adicional en donde si las horas extras dominicales son mayores a las
+						//Realizamos una validaciï¿½n adicional en donde si las horas extras dominicales son mayores a las
 						//horas extras Residuales, entonces lo igualamos
 						if(horasExtrasDominicales > horasExtResiduales)
 						{
@@ -420,7 +420,7 @@ public class ReporteSemanalHorariosTienda {
 						{
 							horasExtrasOrdinarias = 0;
 						}
-						//Realizamos la inclusión de la información en la tabla HTML
+						//Realizamos la inclusiï¿½n de la informaciï¿½n en la tabla HTML
 						respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS ORD " + formatea.format(horasExtrasOrdinarias) + "</strong></td> </tr>";
 						respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS DOMI " + formatea.format(horasExtrasDominicales) + "</strong></td> </tr>";
 						respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS FESTIVA " + formatea.format(horasFestivas) + "</strong></td> </tr>";
@@ -461,7 +461,7 @@ public class ReporteSemanalHorariosTienda {
 						horas = 0;
 					}
 					acumuladoHoras = acumuladoHoras + horas;
-					//Realizamos la conversión de las horas de recargo nocturna
+					//Realizamos la conversiï¿½n de las horas de recargo nocturna
 	
 					try
 					{
@@ -472,7 +472,7 @@ public class ReporteSemanalHorariosTienda {
 						recargoNoc = 0;
 					}
 					recargoNocTotal = recargoNocTotal + recargoNoc;
-					//Validaremos si el día es domingo
+					//Validaremos si el dï¿½a es domingo
 					if(fila[2].equals(new String("Domingo")))
 					{
 						horasTrabDomingos = horasTrabDomingos + horas;
@@ -520,17 +520,17 @@ public class ReporteSemanalHorariosTienda {
 					idEmpleadoAnterior = idEmpleadoActual;
 				}
 				respuesta = respuesta + "<tr> <td COLSPAN='6' width='400' nowrap><strong>TOTAL HORAS " + formatea.format(acumuladoHoras) + "</strong></td> </tr>";
-				//En este punto realizamos los cálculos
+				//En este punto realizamos los cï¿½lculos
 				if(tieneFestivo)
 				{
-					horasExtResiduales = acumuladoHoras - horasFestivas - 40;	 
+					horasExtResiduales = acumuladoHoras - horasFestivas - 37;	 
 				}else
 				{
-					horasExtResiduales = acumuladoHoras - horasFestivas - 48;	
+					horasExtResiduales = acumuladoHoras - horasFestivas - 44;	
 				}
 				//El tratamiento no es diferencial en esta parte
 				horasExtrasDominicales = horasTrabDomingos - 8;
-				//Realizamos una validación adicional en donde si las horas extras dominicales son mayores a las
+				//Realizamos una validaciï¿½n adicional en donde si las horas extras dominicales son mayores a las
 				//horas extras Residuales, entonces lo igualamos
 				if(horasExtrasDominicales > horasExtResiduales)
 				{
@@ -550,7 +550,7 @@ public class ReporteSemanalHorariosTienda {
 				{
 					horasExtrasOrdinarias = 0;
 				}
-				//Realizamos la inclusión de la información en la tabla HTML
+				//Realizamos la inclusiï¿½n de la informaciï¿½n en la tabla HTML
 				respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS ORD " + formatea.format(horasExtrasOrdinarias) + "</strong></td> </tr>";
 				respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS DOMI " + formatea.format(horasExtrasDominicales) + "</strong></td> </tr>";
 				respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS FESTIVA " + formatea.format(horasFestivas) + "</strong></td> </tr>";
@@ -579,7 +579,7 @@ public class ReporteSemanalHorariosTienda {
 			}
 		}
 		
-		//En este punto vamos a replicar la lógica para procesar y generar el reporte
+		//En este punto vamos a replicar la lï¿½gica para procesar y generar el reporte
 		
 		//Luego de definidos las fechas crearemos el archivo que en su nombre contiene las fechas
 		

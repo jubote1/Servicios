@@ -43,14 +43,6 @@ public class ReporteQuinEmplTemporalReproceso {
 		DecimalFormat formatea = new DecimalFormat("###,###.##");
 		//Traemos la fechaActual en Blanco
 		String fechaActual = "";
-		//Traemos la fecha actual en un date
-		Date datFechaActual = new Date();
-		//Tomamos estas dos variables que nos ayudarán a fijar la fecha anterior para las operaciones
-		int mesActual = 0;
-		int diaActual = 0;
-		int anoActual = 0;
-		//Variables donde manejaremos la fecha anerior con el fin realizar el rango de los facturado por empleados temporales
-		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
 		Calendar calendarioActual = Calendar.getInstance();
@@ -60,12 +52,7 @@ public class ReporteQuinEmplTemporalReproceso {
 		{
 			//OJO
 			fechaActual = ParametrosDAO.retornarValorAlfanumerico("FECHAREPROCESO");
-			datFechaActual = dateFormat.parse(fechaActual);
-			calendarioActual.setTime(datFechaActual);
-			//Fijamos los números para el mes actual y dia actual del mes
-			mesActual = calendarioActual.get(Calendar.MONTH) + 1;
-			diaActual = calendarioActual.get(Calendar.DAY_OF_MONTH);
-			anoActual = calendarioActual.get(Calendar.YEAR);
+			fechaAnterior = ParametrosDAO.retornarValorAlfanumerico("FECHAREPROCESO2");
 		}catch(Exception exc)
 		{
 			System.out.println(exc.toString());
@@ -79,200 +66,184 @@ public class ReporteQuinEmplTemporalReproceso {
 		{
 			System.out.println(e.toString());
 		}
-		//Procedemos a tener la lógica para fijar la fecha anterior
-		if((diaActual >=1 && diaActual< 15)||(diaActual >= 30))
-		{
-			diaActual= 16;
-			if(mesActual == 1)
-			{
-				mesActual = 12;
-				anoActual = anoActual -1;
-			}else
-			{
-				mesActual = mesActual -1;
-			}
-		}
-		else if(diaActual >= 15 && diaActual < 29)
-		{
-			diaActual = 1;
-		}
-		//Con lo anterior fijamos cual es la quincena a trabajar
 		
-		
-		
-		fechaAnterior = anoActual+"-"+mesActual+"-"+diaActual;
-		
-		//OJO De forma temporal para el reporte CON UNA FECHA TEMPORAL
-		//fechaActual = "2020-04-30";
-		
-		String respuesta = "";
-		
-		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la información
-		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
-		//Recuperamos las empresas temporales de la base de datos general
-		ArrayList<EmpresaTemporal> empresasTemp = EmpresaTemporalDAO.retornarEmpresasTemporales();
-		//Se recuperan los días festivos
-		ArrayList<DiaFestivo> festivos = GeneralDAO.obtenerDiasFestivos();
-		double valorHoraNormal;
-		double valorHoraDominical;
-		double totalEmpresa = 0;
-		double horasTrabajadas = 0;
-		double valorHoraTrabajada = 0;
-		boolean errorConversion = false;
-		boolean esDomingo = false;
-		int diaActualSemana = 0;
-		for(Tienda tien : tiendas)
-		{
+			String respuesta = "";
 			
-			if(!tien.getHostBD().equals(new String("")))
+			//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la informaciï¿½n
+			ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
+			//Recuperamos las empresas temporales de la base de datos general
+			ArrayList<EmpresaTemporal> empresasTemp = EmpresaTemporalDAO.retornarEmpresasTemporales();
+			//Se recuperan los dï¿½as festivos
+			ArrayList<DiaFestivo> festivos = GeneralDAO.obtenerDiasFestivos();
+			double valorHoraNormal;
+			double valorHoraDominical;
+			double valorHoraSabado;
+			double totalEmpresa = 0;
+			double horasTrabajadas = 0;
+			double valorHoraTrabajada = 0;
+			boolean errorConversion = false;
+			boolean esDomingo = false;
+			boolean esSabado = false;
+			int diaActualSemana = 0;
+			for(Tienda tien : tiendas)
 			{
-				for(EmpresaTemporal empTemp: empresasTemp)
+				
+				if(!tien.getHostBD().equals(new String("")))
 				{
-					totalEmpresa = 0;
-					valorHoraNormal = empTemp.getValorHoraNormal();
-					valorHoraDominical = empTemp.getValorHoraDominical();
-					//Creamos el encabezado para tienda y empresa
-					respuesta = respuesta + "<table border='2'> <tr><td colspan ='6'> QUINCENAL " + tien.getNombreTienda() + " - " + empTemp.getNombreEmpresa() + "-" + empTemp.getValorHoraNormal() + "-" + empTemp.getValorHoraDominical() + "</td></tr>";
-					respuesta = respuesta + "<tr>"
-							+  "<td><strong>Personal</strong></td>"
-							+  "<td><strong>Fecha</strong></td>"
-							+  "<td><strong>Hora Ingreso</strong></td>"
-							+  "<td><strong>Hora Salida</strong></td>"
-							+  "<td><strong>Horas Trabajadas</strong></td>"
-							+  "<td><strong>Valor Pagar</strong></td>"
-							+  "<td><strong>Observacion</strong></td>"
-							+  "</tr>";
-					//Recuperamos los evento de empleados para la semana en cuestión
-					ArrayList<EmpleadoTemporalDia> empleadosTempDia = EmpleadoTemporalDiaDAO.obtenerEmpleadoTemporalFechaReproceso(fechaActual, fechaAnterior, empTemp.getIdEmpresa(), tien.getHostBD());
-					//Comenzamos a recorrer para ir presetnando la información
-					for(EmpleadoTemporalDia empleadoTemp : empleadosTempDia)
+					for(EmpresaTemporal empTemp: empresasTemp)
 					{
-						//Calculamos la cantidad de horas trabajadas
-						//Intentamos realizar la conversión de las horas
-						errorConversion = false;
-						esDomingo = false;
-						diaActualSemana = 0;
-						try
+						totalEmpresa = 0;
+						valorHoraNormal = empTemp.getValorHoraNormal();
+						valorHoraDominical = empTemp.getValorHoraDominical();
+						valorHoraSabado = empTemp.getValorHoraSabado();
+						//Creamos el encabezado para tienda y empresa
+						respuesta = respuesta + "<table border='2'> <tr><td colspan ='6'> QUINCENAL " + tien.getNombreTienda() + " - " + empTemp.getNombreEmpresa() + "-" + empTemp.getValorHoraNormal() + "-" + empTemp.getValorHoraDominical() + "-" + empTemp.getValorHoraSabado() + "</td></tr>";
+						respuesta = respuesta + "<tr>"
+								+  "<td><strong>Personal</strong></td>"
+								+  "<td><strong>Fecha</strong></td>"
+								+  "<td><strong>Hora Ingreso</strong></td>"
+								+  "<td><strong>Hora Salida</strong></td>"
+								+  "<td><strong>Horas Trabajadas</strong></td>"
+								+  "<td><strong>Valor Pagar</strong></td>"
+								+  "<td><strong>Observacion</strong></td>"
+								+  "</tr>";
+						//Recuperamos los evento de empleados para la semana en cuestiï¿½n
+						ArrayList<capaModeloPOS.EmpleadoTemporalDia> empleadosTempDia = capaDAOPOS.EmpleadoTemporalDiaDAO.obtenerEmpleadoTemporalFecha(fechaActual, fechaAnterior, empTemp.getIdEmpresa(), tien.getHostBD());
+						//Comenzamos a recorrer para ir presetnando la informaciï¿½n
+						for(capaModeloPOS.EmpleadoTemporalDia empleadoTemp : empleadosTempDia)
 						{
-							//Formateamos las fechas para posteriormente proceder a calcular el número de horas trabajadas
-							Date fechaIng = dateFormatHora.parse(empleadoTemp.getFechaSistema()+" "+empleadoTemp.getHoraIngreso());
-							Date fechaSal = dateFormatHora.parse(empleadoTemp.getFechaSistema()+" "+empleadoTemp.getHoraSalida());
-							//Pondremos un control por si hay error en la hora de salida del empleado temporal
-							String hora = empleadoTemp.getHoraSalida().substring(0, 2);
-							int intHora = 0;
+							//Calculamos la cantidad de horas trabajadas
+							//Intentamos realizar la conversiï¿½n de las horas
+							errorConversion = false;
+							esDomingo = false;
+							esSabado = false;
+							diaActualSemana = 0;
 							try
 							{
-								intHora = Integer.parseInt(hora);
+								//Formateamos las fechas para posteriormente proceder a calcular el nï¿½mero de horas trabajadas
+								Date fechaIng = dateFormatHora.parse(empleadoTemp.getFechaSistema()+" "+empleadoTemp.getHoraIngreso());
+								Date fechaSal = dateFormatHora.parse(empleadoTemp.getFechaSistema()+" "+empleadoTemp.getHoraSalida());
+								//Pondremos un control por si hay error en la hora de salida del empleado temporal
+								String hora = empleadoTemp.getHoraSalida().substring(0, 2);
+								int intHora = 0;
+								try
+								{
+									intHora = Integer.parseInt(hora);
+								}catch(Exception e)
+								{
+									intHora  = 99;
+								}
+								//Si la hora es cero deberemos de sumar un dï¿½a a la fechaSistema
+								if(intHora == 0)
+								{
+									calendarioTrans.setTime(dateFormat.parse(empleadoTemp.getFechaSistema()));
+									calendarioTrans.add(Calendar.DAY_OF_YEAR, 1);
+									fechaSal = dateFormatHora.parse(dateFormat.format(calendarioTrans.getTime())+" "+ empleadoTemp.getHoraSalida());
+									//Realizaremos el envï¿½o de un correo para notificar estï¿½ situaciï¿½n
+									//Recuperar la lista de distribuciï¿½n para este correo
+									ArrayList correos = GeneralDAO.obtenerCorreosParametro("ERRORREPLICAINV");
+									Correo correo = new Correo();
+									CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+									correo.setAsunto("OJO POSIBLE ERROR REPORTE EMPLEADO TEMPORALES" + fechaAnterior + " AL " + fechaActual);
+									correo.setContrasena(infoCorreo.getClaveCorreo());
+									correo.setUsuarioCorreo(infoCorreo.getClaveCorreo());
+									correo.setMensaje(" Hay un posible error en el registro de empleados temporales "+ empleadoTemp.getNombre() + " " + empleadoTemp.getFechaSistema());
+									ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+									contro.enviarCorreoHTML();
+								}
+								horasTrabajadas = ((fechaSal.getTime()-fechaIng.getTime())/1000);
+								horasTrabajadas =(horasTrabajadas)/3600;
+								//Fijar la fecha en el calendario para posteriormente saber si es domingo o no
+								calendarioActual.setTime(fechaIng);
+								diaActualSemana = calendarioActual.get(Calendar.DAY_OF_WEEK);
+								//En caso de ser domingo debemos de prender un indicador que nos servirï¿½ para saber el valor de la hora
+								if(diaActualSemana ==  1)
+								{
+									esDomingo = true;
+								}else if(diaActualSemana ==  7)
+								{
+									esSabado = true;
+								}
+								//Luego de la validaciï¿½n de si es domingo hacemos la validaciï¿½n de si es festivo
+								boolean esFestivo = validarFestivo(festivos, empleadoTemp.getFechaSistema());
+								if(esFestivo)
+								{
+									esDomingo = true;
+								}
 							}catch(Exception e)
 							{
-								intHora  = 99;
+								errorConversion = true;
 							}
-							//Si la hora es cero deberemos de sumar un día a la fechaSistema
-							if(intHora == 0)
+							//En caso de ser domingo se hace cï¿½lculo con la hora dominicial
+							if(esDomingo)
 							{
-								calendarioTrans.setTime(dateFormat.parse(empleadoTemp.getFechaSistema()));
-								calendarioTrans.add(Calendar.DAY_OF_YEAR, 1);
-								fechaSal = dateFormatHora.parse(dateFormat.format(calendarioTrans.getTime())+" "+empleadoTemp.getHoraSalida());
-								//Realizaremos el envío de un correo para notificar está situación
-								//Recuperar la lista de distribución para este correo
-								ArrayList correos = GeneralDAO.obtenerCorreosParametro("ERRORREPLICAINV");
-								Correo correo = new Correo();
-								CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-								correo.setAsunto("OJO POSIBLE ERROR REPORTE EMPLEADO TEMPORALES" + fechaAnterior + " AL " + fechaActual);
-								correo.setContrasena(infoCorreo.getClaveCorreo());
-								correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-								correo.setMensaje(" Hay un posible error en el registro de empleados temporales "+ empleadoTemp.getNombre() + " " + empleadoTemp.getFechaSistema());
-								ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-								contro.enviarCorreoHTML();
-							}
-							horasTrabajadas = ((fechaSal.getTime()-fechaIng.getTime())/1000);
-							horasTrabajadas =(horasTrabajadas)/3600;
-							//Fijar la fecha en el calendario para posteriormente saber si es domingo o no
-							calendarioActual.setTime(fechaIng);
-							diaActualSemana = calendarioActual.get(Calendar.DAY_OF_WEEK);
-							//En caso de ser domingo debemos de prender un indicador que nos servirá para saber el valor de la hora
-							if(diaActualSemana ==  1)
+								valorHoraTrabajada = horasTrabajadas * valorHoraDominical;
+							}else if(esSabado)
 							{
-								esDomingo = true;
-							}
-							//Luego de la validación de si es domingo hacemos la validación de si es festivo
-							boolean esFestivo = validarFestivo(festivos, empleadoTemp.getFechaSistema());
-							if(esFestivo)
+								valorHoraTrabajada = horasTrabajadas * valorHoraSabado;
+							}else
 							{
-								esDomingo = true;
+								valorHoraTrabajada = horasTrabajadas * valorHoraNormal;
 							}
-						}catch(Exception e)
-						{
-							errorConversion = true;
+							//Se acumula el total de la empresa
+							totalEmpresa  = totalEmpresa  + valorHoraTrabajada;
+							//Si hay error de conversiï¿½n de las fechas se muestra diferente.
+							if(errorConversion)
+							{
+								respuesta = respuesta + "<tr>"
+										+  "<td>" + empleadoTemp.getNombre() + "</td>"
+										+  "<td>" + empleadoTemp.getFechaSistema() + "</td>"
+										+  "<td>" + empleadoTemp.getHoraIngreso() + "</td>"
+										+  "<td>" + empleadoTemp.getHoraSalida() + "</td>"
+										+  "<td>" + "ERROR CONVERSION" + "</td>"
+										+  "<td>" + "0" + "</td>"
+										+  "<td>" + empleadoTemp.getObservacion() + "</td>"
+										+  "</tr>";
+							}else
+							{
+								respuesta = respuesta + "<tr>"
+										+  "<td>" + empleadoTemp.getNombre() + "</td>"
+										+  "<td>" + empleadoTemp.getFechaSistema() + "</td>"
+										+  "<td>" + empleadoTemp.getHoraIngreso() + "</td>"
+										+  "<td>" + empleadoTemp.getHoraSalida() + "</td>"
+										+  "<td>" + formatea.format(horasTrabajadas) + "</td>"
+										+  "<td>" + formatea.format(valorHoraTrabajada) + "</td>"
+										+  "<td>" + empleadoTemp.getObservacion() + "</td>"
+										+  "</tr>";
+							}
 						}
-						//En caso de ser domingo se hace cálculo con la hora dominicial
-						if(esDomingo)
-						{
-							valorHoraTrabajada = horasTrabajadas * valorHoraDominical;
-						}else
-						{
-							valorHoraTrabajada = horasTrabajadas * valorHoraNormal;
-						}
-						//Se acumula el total de la empresa
-						totalEmpresa  = totalEmpresa  + valorHoraTrabajada;
-						//Si hay error de conversión de las fechas se muestra diferente.
-						if(errorConversion)
-						{
-							respuesta = respuesta + "<tr>"
-									+  "<td>" + empleadoTemp.getNombre() + "</td>"
-									+  "<td>" + empleadoTemp.getFechaSistema() + "</td>"
-									+  "<td>" + empleadoTemp.getHoraIngreso() + "</td>"
-									+  "<td>" + empleadoTemp.getHoraSalida() + "</td>"
-									+  "<td>" + "ERROR CONVERSION" + "</td>"
-									+  "<td>" + "0" + "</td>"
-									+  "<td>" + empleadoTemp.getObservacion() + "</td>"
-									+  "</tr>";
-						}else
-						{
-							respuesta = respuesta + "<tr>"
-									+  "<td>" + empleadoTemp.getNombre() + "</td>"
-									+  "<td>" + empleadoTemp.getFechaSistema() + "</td>"
-									+  "<td>" + empleadoTemp.getHoraIngreso() + "</td>"
-									+  "<td>" + empleadoTemp.getHoraSalida() + "</td>"
-									+  "<td>" + formatea.format(horasTrabajadas) + "</td>"
-									+  "<td>" + formatea.format(valorHoraTrabajada) + "</td>"
-									+  "<td>" + empleadoTemp.getObservacion() + "</td>"
-									+  "</tr>";
-						}
+						respuesta = respuesta + "<tr><td colspan ='6'>  TOTAL " + formatea.format(totalEmpresa) + "</td></tr>";
+						respuesta = respuesta + "</table> <br/>";
 					}
-					respuesta = respuesta + "<tr><td colspan ='6'>  TOTAL " + formatea.format(totalEmpresa) + "</td></tr>";
-					respuesta = respuesta + "</table> <br/>";
 				}
 			}
-		}
-			//Recuperar la lista de distribución para este correo
-			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPQUINPLTEMPORAL");
-			Correo correo = new Correo();
-			correo.setAsunto("REPORTE QUINCENAL PERSONAL TEMPORAL-" + fechaAnterior + " AL " + fechaActual);
-			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-			correo.setContrasena(infoCorreo.getClaveCorreo());
-			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación el resumen quincenal de personal temporal desde la fecha "+ fechaAnterior + " a la fecha " + fechaActual +": \n" + respuesta);
-			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-			contro.enviarCorreoHTML();
-		
-	}
-		
-	public static boolean validarFestivo(ArrayList<DiaFestivo> festivos, String fechaActual )
-	{
-		DiaFestivo festivoTemp = new DiaFestivo(0,"");
-		boolean respuesta = false;
-		for(int i = 0; i < festivos.size(); i++)
-		{
-			festivoTemp = festivos.get(i);
-			if(festivoTemp.getFechaFestiva().equals(fechaActual))
-			{
-				respuesta = true;
-				break;
+				//Recuperar la lista de distribuciï¿½n para este correo
+				ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPQUINPLTEMPORAL");
+				Correo correo = new Correo();
+				CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+				correo.setAsunto("REPORTE QUINCENAL PERSONAL TEMPORAL-" + fechaAnterior + " AL " + fechaActual);
+				correo.setContrasena(infoCorreo.getClaveCorreo());
+				correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+				correo.setMensaje("A continuaciï¿½n el resumen quincenal de personal temporal desde la fecha "+ fechaAnterior + " a la fecha " + fechaActual +": \n" + respuesta);
+				ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+				contro.enviarCorreoHTML();
+				
 			}
+				
+			public static boolean validarFestivo(ArrayList<DiaFestivo> festivos, String fechaActual )
+			{
+				DiaFestivo festivoTemp = new DiaFestivo(0,"");
+				boolean respuesta = false;
+				for(int i = 0; i < festivos.size(); i++)
+				{
+					festivoTemp = festivos.get(i);
+					if(festivoTemp.getFechaFestiva().equals(fechaActual))
+					{
+						respuesta = true;
+						break;
+					}
+				}
+				return(respuesta);
+			}
+			
 		}
-		return(respuesta);
-	}
-	
-}
-

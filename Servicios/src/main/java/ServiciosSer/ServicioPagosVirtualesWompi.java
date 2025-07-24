@@ -52,8 +52,6 @@ public class ServicioPagosVirtualesWompi {
 		
 	public static void main( String[] args )  
 	{
-		//Prueba
-		//notificarWhatsApp("Juan Botero", 435653, 275623, "probando");
 		
 		//Requerimos primero que todo obtener el rango de fechas con el fin de tener dicho rango para las consultas
 		//Definimos el formato como manejaremos las fechas
@@ -91,13 +89,13 @@ public class ServicioPagosVirtualesWompi {
 		
 		//Parametro de la URL Server
 		String urlServerContact = "";
-		//Se crea la variable que se encargará de la respuesta
+		//Se crea la variable que se encargarï¿½ de la respuesta
 		String respuesta = "";
 		boolean indicadorCorreo = false;
-		//A continuación hacemos referencia a obtener los pedidos virtuales que están pendientes y ya fueron realizados para mandar a la tienda
+		//A continuaciï¿½n hacemos referencia a obtener los pedidos virtuales que estï¿½n pendientes y ya fueron realizados para mandar a la tienda
 		ArrayList<Pedido> pedidosVirtualesRealizados = PedidoDAO.ConsultarPedidosVirtualRealizados(fechaActual);
 		
-		//Vamos armando un correo con los pagos realizados por cada ejecución
+		//Vamos armando un correo con los pagos realizados por cada ejecuciï¿½n
 		respuesta = respuesta + "<table border='2'> <tr> PAGOS VIRTUALES YA REALIZADOS Y SU RESULTADO " + " </tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Id Pedido</strong></td>"
@@ -106,10 +104,10 @@ public class ServicioPagosVirtualesWompi {
 				+  "<td><strong>Fecha Pedido</strong></td>"
 				+  "<td><strong>Usuario</strong></td>"
 				+  "<td><strong>IdLink</strong></td>"
-				+  "<td><strong>Estado Envío</strong></td>"
+				+  "<td><strong>Estado Envï¿½o</strong></td>"
 				+  "</tr>";
 		String tiendaKuno = "";
-		//Luego de obtenidos los pedidos que se podrían enviar, procedemos a realizar el envío uno a uno
+		//Luego de obtenidos los pedidos que se podrï¿½an enviar, procedemos a realizar el envï¿½o uno a uno
 		for(int i = 0; i < pedidosVirtualesRealizados.size(); i++)
 		{
 			//Si es la primera 	vez se hace la consulta de la URL
@@ -118,13 +116,13 @@ public class ServicioPagosVirtualesWompi {
 				urlServerContact = ParametrosDAO.retornarValorAlfanumericoLocal("URLCONTACTCENTER");
 			}
 			Pedido pedido = pedidosVirtualesRealizados.get(i);
-			//La idea es que en este punto se va a intentar reenviar el pedido y se notificará el resultado en el correo
+			//La idea es que en este punto se va a intentar reenviar el pedido y se notificarï¿½ el resultado en el correo
 			PedidoCtrl pedCtrl = new PedidoCtrl();
 			if((pedido.getOrigen().equals(new String("TK"))) || (pedido.getOrigen().equals(new String("APP"))) || (pedido.getOrigen().equals(new String("CRM"))))
 			{
 				tiendaKuno = "S";
-				//Se hace una diferenciación de los pedidos en tienda virtual, aqui haremos una validación de que la hora
-				//de ingreso del pedido vs la hora actual tenga más de 10 minutos para enviarlo.
+				//Se hace una diferenciaciï¿½n de los pedidos en tienda virtual, aqui haremos una validaciï¿½n de que la hora
+				//de ingreso del pedido vs la hora actual tenga mï¿½s de 5 minutos para enviarlo.
 				Date datefechaInsercion = new Date();
 				try
 				{
@@ -138,7 +136,7 @@ public class ServicioPagosVirtualesWompi {
 				int difTiempo = Math.abs((int) (datFechaActual.getTime() - datefechaInsercion.getTime() ));
 				Math.abs(minutos = (int)TimeUnit.MILLISECONDS.toMinutes(difTiempo ));
 				double dMinutos = (double) minutos;
-				if(dMinutos < 10)
+				if(dMinutos < 5)
 				{
 					continue;
 				}
@@ -150,9 +148,9 @@ public class ServicioPagosVirtualesWompi {
 			String strRespReenvio = "";
 			if(respReenvio)
 			{
-				strRespReenvio = "SE ENVÍO A TIENDA";
-				//En este punto contamos que si hubo envío a la tienda, es aqui donde vamos a incluir la notificación
-				//ESTA PARTE LA DEJAREMOS SUSPENDIDA, PORQUE NOS PARECE UN POCO INVASIVA EN CUANTO A INFORMACIÓN PARA EL CLIENTE
+				strRespReenvio = "SE ENVï¿½O A TIENDA";
+				//En este punto contamos que si hubo envï¿½o a la tienda, es aqui donde vamos a incluir la notificaciï¿½n
+				//ESTA PARTE LA DEJAREMOS SUSPENDIDA, PORQUE NOS PARECE UN POCO INVASIVA EN CUANTO A INFORMACIï¿½N PARA EL CLIENTE
 			}else
 			{
 				strRespReenvio = "ERROR AL ENVIAR";
@@ -163,11 +161,11 @@ public class ServicioPagosVirtualesWompi {
 		
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Se debe realizar el envío del correo electrónico reportando como estuvo el envío de los pedidos pagados
-		//Adicionamos condición de notificar Pagos
+		//Se debe realizar el envï¿½o del correo electrï¿½nico reportando como estuvo el envï¿½o de los pedidos pagados
+		//Adicionamos condiciï¿½n de notificar Pagos
 		if(indicadorCorreo && notificarPagos)
 		{
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciï¿½n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEPAGOSVIRTUAL");
 			Date fecha = new Date();
 			Correo correo = new Correo();
@@ -175,7 +173,7 @@ public class ServicioPagosVirtualesWompi {
 			correo.setAsunto("PAGOS VIRTUALES - ENVIO A TIENDA " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación los pagos virtuales realizados y su estado de envío a tienda: \n" + respuesta);
+			correo.setMensaje("A continuaciï¿½n los pagos virtuales realizados y su estado de envï¿½o a tienda: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}
@@ -191,7 +189,7 @@ public class ServicioPagosVirtualesWompi {
 				+  "<td><strong>IdLink</strong></td>"
 				+  "<td><strong>Usuario</strong></td>"
 				+  "</tr>";
-		//Posteriormente realizamos el reporte de los pagos virtuales que llevan más de 20 minutos y no se han pagado.
+		//Posteriormente realizamos el reporte de los pagos virtuales que llevan mï¿½s de 20 minutos y no se han pagado.
 		//Vamos a agregar un control para ejecutar todo este bloque en los minutos 4 y minutos 8
 		if((minutos%4 == 0) || (minutos%8 == 0))
 		{
@@ -202,7 +200,7 @@ public class ServicioPagosVirtualesWompi {
 				boolean reportarCliente = PedidoDAO.seDebeReportarPagoVirtual(pedidoSinPagar.getIdpedido());
 				if(reportarCliente)
 				{
-					//Realizaremos la lógica para enviarle un correo y mensaje al cliente indicando que lleva 20 minutos y no se 
+					//Realizaremos la lï¿½gica para enviarle un correo y mensaje al cliente indicando que lleva 20 minutos y no se 
 					//ha realizado el pago
 					capaControladorCC.PedidoCtrl pedCtrl = new capaControladorCC.PedidoCtrl();
 					pedCtrl.realizarRenotificacionWompi(pedidoSinPagar.getIdLink(), pedidoSinPagar.getIdcliente(), "https://checkout.wompi.co/l/" +pedidoSinPagar.getIdLink(), pedidoSinPagar.getIdpedido());
@@ -215,7 +213,7 @@ public class ServicioPagosVirtualesWompi {
 			
 			if(indicadorCorreo && notificarNoPagos)
 			{
-				//Recuperar la lista de distribución para este correo
+				//Recuperar la lista de distribuciï¿½n para este correo
 				ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEVIRTUALSINPAGO");
 				Date fecha = new Date();
 				Correo correo = new Correo();
@@ -229,7 +227,7 @@ public class ServicioPagosVirtualesWompi {
 				contro.enviarCorreoHTML();
 			}
 			
-			//La idea en esta Franja también es ejecutar el envío del mensaje de WhatsApp si es el caso
+			//La idea en esta Franja tambiï¿½n es ejecutar el envï¿½o del mensaje de WhatsApp si es el caso
 			ArrayList<Pedido> pedidosVirtualesNotWha = PedidoDAO.ConsultarPagosVirtualSinPagarRango(fechaActual, 20,30);
 			for(int j = 0; j < pedidosVirtualesNotWha.size(); j++)
 			{
@@ -237,17 +235,18 @@ public class ServicioPagosVirtualesWompi {
 				boolean reportarCliente = PedidoDAO.seDebeReportarPagoWhatsApp(pedidoSinPagar.getIdpedido());
 				if(reportarCliente)
 				{
-					notificarWhatsApp(pedidoSinPagar.getNombrecliente(), pedidoSinPagar.getIdpedido(), pedidoSinPagar.getIdcliente(), "https://checkout.wompi.co/l/" +pedidoSinPagar.getIdLink());
+					//# SE QUITA TEMPORALMENTE NOTIFICACIÃ“N WHATSAPP
+					//notificarWhatsApp(pedidoSinPagar.getNombrecliente(), pedidoSinPagar.getIdpedido(), pedidoSinPagar.getIdcliente(), "https://checkout.wompi.co/l/" +pedidoSinPagar.getIdLink());
 				}
 			}
 			
 		}
-		//Realizamos proceso para cancelar pedidos que tienen más de 50 minutos y enviar notificación al cliente de esta situación
+		//Realizamos proceso para cancelar pedidos que tienen mï¿½s de 50 minutos y enviar notificaciï¿½n al cliente de esta situaciï¿½n
 		ArrayList<Pedido> pedidosVirtualesCancelar = PedidoDAO.ConsultarPagosVirtualSinPagarEspecial(fechaActual, 50);
-		//Se crea la variable que se encargará de la respuesta
+		//Se crea la variable que se encargarï¿½ de la respuesta
 		respuesta = "";
 		indicadorCorreo = false;
-		//Vamos armando un correo con los pagos realizados por cada ejecución
+		//Vamos armando un correo con los pagos realizados por cada ejecuciï¿½n
 		respuesta = respuesta + "<table border='2'> <tr> PAGOS VIRTUALES CANCELADOS POR NO PAGO " + " </tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Id Pedido</strong></td>"
@@ -259,7 +258,7 @@ public class ServicioPagosVirtualesWompi {
 				+  "<td><strong>ESTADO</strong></td>"
 				+  "</tr>";
 		
-		//Luego de obtenidos los pedidos que se podrían enviar, procedemos a realizar el envío uno a uno
+		//Luego de obtenidos los pedidos que se podrï¿½an enviar, procedemos a realizar el envï¿½o uno a uno
 		for(int i = 0; i < pedidosVirtualesCancelar.size(); i++)
 		{
 			//Si es la primera 	vez se hace la consulta de la URL
@@ -268,7 +267,7 @@ public class ServicioPagosVirtualesWompi {
 				urlServerContact = ParametrosDAO.retornarValorAlfanumericoLocal("URLCONTACTCENTER");
 			}
 			Pedido pedido = pedidosVirtualesCancelar.get(i);
-			//La idea es que en este punto se va a intentar reenviar el pedido y se notificará el resultado en el correo
+			//La idea es que en este punto se va a intentar reenviar el pedido y se notificarï¿½ el resultado en el correo
 			capaControladorCC.PedidoCtrl pedCtrl = new capaControladorCC.PedidoCtrl();
 			pedCtrl.realizarCancelacionWompi(pedido.getIdcliente(), pedido.getIdpedido());
 			pedCtrl.cancelarPedido(pedido.getIdpedido());
@@ -278,10 +277,10 @@ public class ServicioPagosVirtualesWompi {
 		
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Se debe realizar el envío del correo electrónico reportando como estuvo el envío de los pedidos pagados
+		//Se debe realizar el envï¿½o del correo electrï¿½nico reportando como estuvo el envï¿½o de los pedidos pagados
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciï¿½n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEVIRTUALSINPAGO");
 			Date fecha = new Date();
 			Correo correo = new Correo();
@@ -289,19 +288,19 @@ public class ServicioPagosVirtualesWompi {
 			correo.setAsunto("PEDIDOS PAGO VIRTUAL CANCELADOS " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación los pedidos de pago virtuales cancelados por no pago en el tiempo estipulado: \n" + respuesta);
+			correo.setMensaje("A continuaciï¿½n los pedidos de pago virtuales cancelados por no pago en el tiempo estipulado: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}
 		
 		
-		//Realizamos otro control al proceso para controlar si hay pedido que tengan forma de pago virtual y tengan el idlink vacío.
+		//Realizamos otro control al proceso para controlar si hay pedido que tengan forma de pago virtual y tengan el idlink vacï¿½o.
 		capaControladorCC.PedidoCtrl pedCtrlSinLink = new capaControladorCC.PedidoCtrl();
 		ArrayList<Pedido> pedidosVirtualesSinLink = PedidoDAO.ConsultarPagosVirtualSinLink(fechaActual);
-		//Se crea la variable que se encargará de la respuesta
+		//Se crea la variable que se encargarï¿½ de la respuesta
 		respuesta = "";
 		indicadorCorreo = false;
-		//Vamos armando un correo con los pagos realizados por cada ejecución
+		//Vamos armando un correo con los pagos realizados por cada ejecuciï¿½n
 		respuesta = respuesta + "<table border='2'> <tr> CUIDADO PAGOS VIRTUALES SIN LINK DE PAGOS " + " </tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Id Pedido</strong></td>"
@@ -318,16 +317,16 @@ public class ServicioPagosVirtualesWompi {
 			Pedido pedido = pedidosVirtualesSinLink.get(i);
 			respuesta = respuesta + "<tr><td>" +  pedido.getIdpedido() + "</td><td>" +  pedido.getNombretienda() + "</td><td>" + pedido.getNombrecliente() + "</td><td>" + pedido.getFechainsercion() + "</td><td>" + pedido.getUsuariopedido() + "</td><td>" + pedido.getIdLink() + "</td></tr>";
 			indicadorCorreo = true;
-			//Realizar la creacion de un link y envío de información al cliente
+			//Realizar la creacion de un link y envï¿½o de informaciï¿½n al cliente
 			pedCtrlSinLink.verificarEnvioLinkPagosProcesoWompi(pedido.getIdpedido(), pedido.getIdcliente(), pedido.getTotal_neto(), pedido.getIdtienda());
 		}
 		
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Se debe realizar el envío del correo electrónico reportando como estuvo el envío de los pedidos pagados
+		//Se debe realizar el envï¿½o del correo electrï¿½nico reportando como estuvo el envï¿½o de los pedidos pagados
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciï¿½n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEVIRTUALSINPAGO");
 			Date fecha = new Date();
 			Correo correo = new Correo();
@@ -335,7 +334,7 @@ public class ServicioPagosVirtualesWompi {
 			correo.setAsunto("OJO PEDIDOS PAGO VIRTUAL SIN LINK GENERADO  " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación los pedidos de pago virtuales que no tienen link se debería recrear el link y verificar que si le llegue al cliente: \n" + respuesta);
+			correo.setMensaje("A continuaciï¿½n los pedidos de pago virtuales que no tienen link se deberï¿½a recrear el link y verificar que si le llegue al cliente: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}
@@ -348,7 +347,7 @@ public class ServicioPagosVirtualesWompi {
 		for(int i = 0; i < pagosNoti.size(); i++)
 		{
 			PedidoPagoVirtualConsolidado pedidoTemp = pagosNoti.get(i);
-			//Debemos de consumir un servicio que estará expuesto en la tienda
+			//Debemos de consumir un servicio que estarï¿½ expuesto en la tienda
 			respNoti = pedCtrlNoti.notificarPedidoTienda(pedidoTemp.getIdLink(), pedidoTemp.getTipoPago(), pedidoTemp.getIdTienda());
 			if(respNoti)
 			{
@@ -364,7 +363,7 @@ public class ServicioPagosVirtualesWompi {
 		String telefonoCelular = "";
 		String respuestaServicio = "";
 		Cliente clienteNotif = ClienteDAO.obtenerClienteporID(idCliente);
-		//Revisamos la lógica para obtener el telefono
+		//Revisamos la lï¿½gica para obtener el telefono
 		if(clienteNotif.getTelefonoCelular()!= null)
 		{
 			if(!clienteNotif.getTelefonoCelular().equals(new String("")))
@@ -399,12 +398,12 @@ public class ServicioPagosVirtualesWompi {
 		//Validaremos que el telefono celular si se hubiese podido tomar
 		if(!telefonoCelular.equals(new String("")))
 		{
-			//Envío de mensaje con ultramsg
+			//Envï¿½o de mensaje con ultramsg
 			OkHttpClient client = new OkHttpClient();
 			IntegracionCRM intWhat = IntegracionCRMDAO.obtenerInformacionIntegracion("ULTRAMSG");
 			okhttp3.MediaType mediaType = okhttp3.MediaType.parse("application/x-www-form-urlencoded");
-			String mensajeEvidencia = "token=" + intWhat.getAccessToken() + "&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Ingresa y realiza el proceso de pago. Una vez efectudado el pago,iniciaremos la elaboración de tu pedido. ¡Que lo disfrutes! &priority=1&referenceId=";
-			RequestBody body = RequestBody.create(mediaType, "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +" ya han pasado más de 20 minutos y no hemos registrado tu pago, este es tu link de pago " + linkPago + " . Ingresa y realiza el proceso de pago. Una vez efectudado el pago,iniciaremos la elaboración de tu pedido. ¡Que lo disfrutes! &priority=1&referenceId=");
+			String mensajeEvidencia = "token=" + intWhat.getAccessToken() + "&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Ingresa y realiza el proceso de pago. Una vez efectudado el pago,iniciaremos la elaboraciï¿½n de tu pedido. ï¿½Que lo disfrutes! &priority=1&referenceId=";
+			RequestBody body = RequestBody.create(mediaType, "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +" ya han pasado mï¿½s de 20 minutos y no hemos registrado tu pago, este es tu link de pago " + linkPago + " . Ingresa y realiza el proceso de pago. Una vez efectudado el pago,iniciaremos la elaboraciï¿½n de tu pedido. ï¿½Que lo disfrutes! &priority=1&referenceId=");
 			Request request = new Request.Builder()
 			  .url("https://api.ultramsg.com/" + intWhat.getClientID() + "/messages/chat")
 			  .post(body)
@@ -416,7 +415,7 @@ public class ServicioPagosVirtualesWompi {
 			}catch(Exception e)
 			{
 				System.out.println("ERROR " + e.toString());
-				//Recuperar la lista de distribución para este correo
+				//Recuperar la lista de distribuciï¿½n para este correo
 				ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEVIRTUALSINPAGO");
 				Date fecha = new Date();
 				Correo correo = new Correo();
@@ -437,7 +436,7 @@ public class ServicioPagosVirtualesWompi {
 		String telefonoCelular = "";
 		String respuestaServicio = "";
 		Cliente clienteNotif = ClienteDAO.obtenerClienteporID(idCliente);
-		//Revisamos la lógica para obtener el telefono
+		//Revisamos la lï¿½gica para obtener el telefono
 		if(clienteNotif.getTelefonoCelular()!= null)
 		{
 			if(!clienteNotif.getTelefonoCelular().equals(new String("")))
@@ -475,8 +474,8 @@ public class ServicioPagosVirtualesWompi {
 			OkHttpClient client = new OkHttpClient();
 			IntegracionCRM intWhat = IntegracionCRMDAO.obtenerInformacionIntegracion("ULTRAMSG");
 			okhttp3.MediaType mediaType = okhttp3.MediaType.parse("application/x-www-form-urlencoded");
-			String mensajeEvidencia = "token=" + intWhat.getAccessToken() + "&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Pizza Americana te recuerda realizar el proceso de pago. Una vez efectudado el pago, iniciaremos la elaboración de tu pedido. ¡Que lo disfrutes! &priority=1&referenceId=";
-			RequestBody body = RequestBody.create(mediaType, "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Pizza Americana te recuerda realizar el proceso de pago. Una vez efectudado el pago, iniciaremos la elaboración de tu pedido. ¡Que lo disfrutes! &priority=1&referenceId=");
+			String mensajeEvidencia = "token=" + intWhat.getAccessToken() + "&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Pizza Americana te recuerda realizar el proceso de pago. Una vez efectudado el pago, iniciaremos la elaboraciï¿½n de tu pedido. ï¿½Que lo disfrutes! &priority=1&referenceId=";
+			RequestBody body = RequestBody.create(mediaType, "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Pizza Americana te recuerda realizar el proceso de pago. Una vez efectudado el pago, iniciaremos la elaboraciï¿½n de tu pedido. ï¿½Que lo disfrutes! &priority=1&referenceId=");
 			Request request = new Request.Builder()
 			  .url("https://api.ultramsg.com/"+ intWhat.getClientID() +"/messages/chat")
 			  .post(body)
@@ -488,7 +487,7 @@ public class ServicioPagosVirtualesWompi {
 			}catch(Exception e)
 			{
 				System.out.println("ERROR " + e.toString());
-				//Recuperar la lista de distribución para este correo
+				//Recuperar la lista de distribuciï¿½n para este correo
 				ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEVIRTUALSINPAGO");
 				Date fecha = new Date();
 				Correo correo = new Correo();
@@ -496,7 +495,7 @@ public class ServicioPagosVirtualesWompi {
 				correo.setAsunto("OJO ERROR EN SERVICIO DE WHATSAPP  " + fecha.toString() + mensajeEvidencia);
 				correo.setContrasena(infoCorreo.getClaveCorreo());
 				correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-				correo.setMensaje("Se presenta error en servicio de API de WhatsApp." +  e.toString() + "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Pizza Americana te recuerda realizar el proceso de pago. Una vez efectudado el pago, iniciaremos la elaboración de tu pedido. ¡Que lo disfrutes! &priority=1&referenceId=");
+				correo.setMensaje("Se presenta error en servicio de API de WhatsApp." +  e.toString() + "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Pizza Americana te recuerda realizar el proceso de pago. Una vez efectudado el pago, iniciaremos la elaboraciï¿½n de tu pedido. ï¿½Que lo disfrutes! &priority=1&referenceId=");
 				ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 				contro.enviarCorreo();
 			}

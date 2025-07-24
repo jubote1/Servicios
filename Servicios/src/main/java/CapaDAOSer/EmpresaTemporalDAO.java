@@ -10,7 +10,7 @@ import ModeloSer.EmpresaTemporal;
 public class EmpresaTemporalDAO {
 	
 	/**
-	 * Método que se encarga de retornar las empresas temporales existentes en el sistema general
+	 * Mï¿½todo que se encarga de retornar las empresas temporales existentes en el sistema general
 	 * @param bdGeneral
 	 * @param auditoria
 	 * @return
@@ -29,13 +29,14 @@ public class EmpresaTemporalDAO {
 			EmpresaTemporal empTemp;
 			int idEmpresa;
 			String nombreEmpresa;
-			double valorHoraNormal, valorHoraDominical;
+			double valorHoraNormal, valorHoraDominical, valorHoraSabado;
 			while(rs.next()){
 				idEmpresa = rs.getInt("idempresa");
 				nombreEmpresa = rs.getString("nombre_empresa");
 				valorHoraNormal = rs.getDouble("valor_hora_normal");
 				valorHoraDominical = rs.getDouble("valor_hora_dominical");
-				empTemp = new EmpresaTemporal(idEmpresa, nombreEmpresa, valorHoraNormal, valorHoraDominical);
+				valorHoraSabado = rs.getDouble("valor_hora_sabado");
+				empTemp = new EmpresaTemporal(idEmpresa, nombreEmpresa, valorHoraNormal, valorHoraDominical,valorHoraSabado);
 				empresasTemporales.add(empTemp);
 				
 			}
@@ -66,12 +67,13 @@ public class EmpresaTemporalDAO {
 			ResultSet rs = stm.executeQuery(consulta);
 			EmpresaTemporal empTemp;
 			String nombreEmpresa;
-			double valorHoraNormal, valorHoraDominical;
+			double valorHoraNormal, valorHoraDominical, valorHoraSabado;
 			while(rs.next()){
 				nombreEmpresa = rs.getString("nombre_empresa");
 				valorHoraNormal = rs.getDouble("valor_hora_normal");
 				valorHoraDominical = rs.getDouble("valor_hora_dominical");
-				empTemp = new EmpresaTemporal(idEmpresa, nombreEmpresa, valorHoraNormal, valorHoraDominical);
+				valorHoraSabado = rs.getDouble("valor_hora_sabado");
+				empTemp = new EmpresaTemporal(idEmpresa, nombreEmpresa, valorHoraNormal, valorHoraDominical, valorHoraSabado);
 				empresasTemporales.add(empTemp);
 				
 			}

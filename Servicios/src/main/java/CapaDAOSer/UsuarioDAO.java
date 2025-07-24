@@ -13,7 +13,7 @@ import ModeloSer.EmpleadoBiometria;
 import ModeloSer.TipoEmpleado;
 import ModeloSer.Usuario;
 /**
- * Clase que se encarga de implementar toda la interacción con la base de datos para la entidad Usuario.
+ * Clase que se encarga de implementar toda la interacciï¿½n con la base de datos para la entidad Usuario.
  * @author JuanDavid
  *
  */
@@ -21,7 +21,7 @@ public class UsuarioDAO {
 
 //LA PRIMERA FASE TIENE COMO OBJETIVO RECOPILAR LA INFO DE LA BASE DE DATOS GENERAL
 /*
- * Método que se encargará de retornar todos los empleados de la base de datos general
+ * Mï¿½todo que se encargarï¿½ de retornar todos los empleados de la base de datos general
  */
 	public static ArrayList<Usuario> obtenerEmpleadosGeneral()
 	{
@@ -37,8 +37,8 @@ public class UsuarioDAO {
 			ResultSet rs = stm.executeQuery(consulta);
 			int id;
 			String nombre, nombreLargo, administrador, tipoInicio, contrasena, claveRapida;
-			int tipoEmpleado, esEmpleado;
-			//Homologación general
+			int tipoEmpleado, esEmpleado, tipoEmpleado2;
+			//Homologaciï¿½n general
 			int activo = 0;
 			int autorizoRedes = 0;
 			String email = "";
@@ -51,6 +51,7 @@ public class UsuarioDAO {
 				administrador = rs.getString("administrador");
 				tipoInicio = rs.getString("tipoinicio");
 				tipoEmpleado = rs.getInt("idtipoempleado");
+				tipoEmpleado2 = rs.getInt("idtipoempleado2");
 				contrasena = rs.getString("password");
 				try {
 					esEmpleado = rs.getInt("es_empleado");
@@ -64,9 +65,10 @@ public class UsuarioDAO {
 				rotacion = rs.getInt("rotacion");
 				salario = rs.getDouble("salario");
 				Usuario usuarioTemp = new Usuario(id, nombre, contrasena, nombreLargo, tipoEmpleado,
-			tipoInicio, administrador, activo, autorizoRedes,email,rotacion,salario);
+			tipoInicio, administrador, activo, autorizoRedes,email,rotacion,salario,0);
 				usuarioTemp.setEsEmpleado(esEmpleado);
 				usuarioTemp.setClaveRapida(claveRapida);
+				usuarioTemp.setIdTipoEmpleado2(tipoEmpleado2);
 				empleados.add(usuarioTemp);
 				
 			}
@@ -100,8 +102,8 @@ public class UsuarioDAO {
 			ResultSet rs = stm.executeQuery(consulta);
 			int id;
 			String nombre, nombreLargo, administrador, tipoInicio, contrasena, claveRapida;
-			int tipoEmpleado, esEmpleado;
-			//Homologación general
+			int tipoEmpleado,tipoEmpleado2, esEmpleado;
+			//Homologaciï¿½n general
 			int activo = 0;
 			int autorizoRedes = 0;
 			String email = "";
@@ -115,6 +117,7 @@ public class UsuarioDAO {
 				administrador = rs.getString("administrador");
 				tipoInicio = rs.getString("tipoinicio");
 				tipoEmpleado = rs.getInt("idtipoempleado");
+				tipoEmpleado2 = rs.getInt("idtipoempleado2");
 				contrasena = rs.getString("password");
 				try {
 					esEmpleado = rs.getInt("es_empleado");
@@ -128,7 +131,7 @@ public class UsuarioDAO {
 				rotacion = rs.getInt("rotacion");
 				salario = rs.getDouble("salario");
 				Usuario usuarioTemp = new Usuario(id, nombre, contrasena, nombreLargo, tipoEmpleado,
-						tipoInicio, administrador, activo, autorizoRedes,email,rotacion,salario);
+						tipoInicio, administrador, activo, autorizoRedes,email,rotacion,salario,tipoEmpleado2);
 				usuarioTemp.setEsEmpleado(esEmpleado);
 				usuarioTemp.setClaveRapida(claveRapida);
 				empleados.add(usuarioTemp);
@@ -151,7 +154,7 @@ public class UsuarioDAO {
 	}
 	
 	/**
-	 * Método qeu se encargará de retornar la toma de biometría de todos los empleados
+	 * Mï¿½todo qeu se encargarï¿½ de retornar la toma de biometrï¿½a de todos los empleados
 	 * @return
 	 */
 	public static ArrayList<EmpleadoBiometria> obtenerEmpleadosBiometriaGeneral()
@@ -192,9 +195,9 @@ public class UsuarioDAO {
 	
 	
 	
-// De aqui en adelante tendremos los temas para trabajar de manera LOCAL LA INSERCIÓN Y BORRADO DE LAS TABLAS
+// De aqui en adelante tendremos los temas para trabajar de manera LOCAL LA INSERCIï¿½N Y BORRADO DE LAS TABLAS
 	/**
-	 * Método para clarear las tablas locales que serán sujeto de inserción
+	 * Mï¿½todo para clarear las tablas locales que serï¿½n sujeto de inserciï¿½n
 	 * @param hostBD
 	 * @return
 	 */
@@ -230,9 +233,9 @@ public class UsuarioDAO {
 	
 		
 	/**
-	 * Método qeu se encarga de insertar un empleado en el sistema
-	 * @param empleado Se recibe un objeto de tipo usuario con la información del empleado que termina siendo un autor del sistema
-	 * @return Se retorna un entero con id asignado por el sistema en la inserción.
+	 * Mï¿½todo qeu se encarga de insertar un empleado en el sistema
+	 * @param empleado Se recibe un objeto de tipo usuario con la informaciï¿½n del empleado que termina siendo un autor del sistema
+	 * @return Se retorna un entero con id asignado por el sistema en la inserciï¿½n.
 	 */
 	public static int insertarEmpleadoLocal(Usuario empleado, String hostBD)
 	{
@@ -249,10 +252,10 @@ public class UsuarioDAO {
 			}
 			if(empleado.getClaveRapida().equals(new String("null")))
 			{
-				insert = "insert into empleado (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, es_empleado, activo, autorizo_redes, email, rotacion, salario) values (" + empleado.getIdUsuario() + " ,'" + empleado.getNombreUsuario() + "' , '" + empleado.getContrasena() + "' , '" + empleado.getNombreLargo() + "' , '" + empleado.getAdministrador() + "', " + empleado.getidTipoEmpleado() + " , '" + empleado.getTipoInicio() + "' , " + empleado.getEsEmpleado() + " , " + empleado.getActivo() + " , " + empleado.getAutorizoRedes() + " , '" + empleado.getEmail() + "' , " + empleado.getRotacion() + " , " + empleado.getSalario() +")"; 
+				insert = "insert into empleado (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, es_empleado, activo, autorizo_redes, email, rotacion, salario, idtipoempleado2) values (" + empleado.getIdUsuario() + " ,'" + empleado.getNombreUsuario() + "' , '" + empleado.getContrasena() + "' , '" + empleado.getNombreLargo() + "' , '" + empleado.getAdministrador() + "', " + empleado.getidTipoEmpleado() + " , '" + empleado.getTipoInicio() + "' , " + empleado.getEsEmpleado() + " , " + empleado.getActivo() + " , " + empleado.getAutorizoRedes() + " , '" + empleado.getEmail() + "' , " + empleado.getRotacion() + " , " + empleado.getSalario() + " , " + empleado.getIdTipoEmpleado2() +")"; 
 			}else
 			{
-				insert = "insert into empleado (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, claverapida, es_empleado, activo, autorizo_redes, email, rotacion, salario) values (" + empleado.getIdUsuario() + " ,'" + empleado.getNombreUsuario() + "' , '" + empleado.getContrasena() + "' , '" + empleado.getNombreLargo() + "' , '" + empleado.getAdministrador() + "', " + empleado.getidTipoEmpleado() + " , '" + empleado.getTipoInicio() + "' , '" + empleado.getClaveRapida() + "' ," + empleado.getEsEmpleado() + " , " + empleado.getActivo() + " , " + empleado.getAutorizoRedes() + " , '" + empleado.getEmail() + "' , " + empleado.getRotacion() + " , " + empleado.getSalario() +")"; 
+				insert = "insert into empleado (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, claverapida, es_empleado, activo, autorizo_redes, email, rotacion, salario, idtipoempleado2) values (" + empleado.getIdUsuario() + " ,'" + empleado.getNombreUsuario() + "' , '" + empleado.getContrasena() + "' , '" + empleado.getNombreLargo() + "' , '" + empleado.getAdministrador() + "', " + empleado.getidTipoEmpleado() + " , '" + empleado.getTipoInicio() + "' , '" + empleado.getClaveRapida() + "' ," + empleado.getEsEmpleado() + " , " + empleado.getActivo() + " , " + empleado.getAutorizoRedes() + " , '" + empleado.getEmail() + "' , " + empleado.getRotacion() + " , " + empleado.getSalario() + " , " + empleado.getIdTipoEmpleado2() +")"; 
 			}
 			stm.executeUpdate(insert, Statement.RETURN_GENERATED_KEYS);
 			ResultSet rs = stm.getGeneratedKeys();
@@ -317,8 +320,8 @@ public class UsuarioDAO {
 	
 	
 	/**
-	 * Método que se encarga de retornar un valor booleano indicando si el empleado determinado existe o no en la tabla de usuarios
-	 * de la tienda, para saber si debe lanzar la creación o una actualización.
+	 * Mï¿½todo que se encarga de retornar un valor booleano indicando si el empleado determinado existe o no en la tabla de usuarios
+	 * de la tienda, para saber si debe lanzar la creaciï¿½n o una actualizaciï¿½n.
 	 * @param idUsuario
 	 * @param hostBD
 	 * @return
@@ -359,9 +362,9 @@ public class UsuarioDAO {
 	}
 	
 	/**
-	 * Método qeu se encarga de insertar un usuario en el sistema PÖS
-	 * @param empleado Se recibe un objeto de tipo usuario con la información del usuario que termina siendo un autor del sistema
-	 * @return Se retorna un entero con id asignado por el sistema en la inserción.
+	 * Mï¿½todo qeu se encarga de insertar un usuario en el sistema Pï¿½S
+	 * @param empleado Se recibe un objeto de tipo usuario con la informaciï¿½n del usuario que termina siendo un autor del sistema
+	 * @return Se retorna un entero con id asignado por el sistema en la inserciï¿½n.
 	 */
 	public static int insertarUsuarioLocal(Usuario usuario, String hostBD)
 	{
@@ -403,9 +406,9 @@ public class UsuarioDAO {
 	}
 	
 	/**
-	 * Método qeu se encarga de actualizar un usuario en el sistema PÖS
-	 * @param empleado Se recibe un objeto de tipo usuario con la información del usuario que termina siendo un autor del sistema
-	 * @return Se retorna un valor booleano que indica si se realizó o no la actualización.
+	 * Mï¿½todo qeu se encarga de actualizar un usuario en el sistema Pï¿½S
+	 * @param empleado Se recibe un objeto de tipo usuario con la informaciï¿½n del usuario que termina siendo un autor del sistema
+	 * @return Se retorna un valor booleano que indica si se realizï¿½ o no la actualizaciï¿½n.
 	 */
 	public static boolean actualizarUsuarioLocal(Usuario usuario, String hostBD)
 	{

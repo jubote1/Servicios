@@ -58,12 +58,12 @@ public class ReporteSemanalRappi {
 		//Obtenemos las razones sociales que vamos a procesar
 		ArrayList<RazonSocial> razonesSociales = RazonSocialDAO.obtenerRazones();
 		RazonSocial razTemp;
-		//Recuperamos la relación Marcación , tienda comisión
+		//Recuperamos la relaciï¿½n Marcaciï¿½n , tienda comisiï¿½n
 		ArrayList<MarcacionComision> marcacionesComision = MarcacionComisionDAO.obtenerMarcacionComision(2);
 		//Posteriormente realizamos el procesamiento para definir el rango de fechas del cual deseamos procesar el reporte
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los cï¿½lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -90,7 +90,7 @@ public class ReporteSemanalRappi {
 		{
 			System.out.println(e.toString());
 		}
-		//Retormanos el día de la semana actual segun la fecha del calendario
+		//Retormanos el dï¿½a de la semana actual segun la fecha del calendario
 		//OJO
 		//int diaActual = 1;
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -117,7 +117,7 @@ public class ReporteSemanalRappi {
 		}
 		
 		
-		//En este punto ya tenemos FechaActual y fechaAnterior, con estas dos iremos a obtener los pedidos para la presentación pero esto lo haremos en un ciclo for por razón social.
+		//En este punto ya tenemos FechaActual y fechaAnterior, con estas dos iremos a obtener los pedidos para la presentaciï¿½n pero esto lo haremos en un ciclo for por razï¿½n social.
 		//Recuperamos el idProducto asociado a domicilios.com
 		for(int i = 0; i < razonesSociales.size(); i++)
 		{
@@ -129,9 +129,9 @@ public class ReporteSemanalRappi {
 			ArrayList pedidosDomCOMTienda;
 			//Obtenemos totales de pago online por tienda
 			ArrayList pedidosDomCOMONLINETienda = PedidoDAO.obtenerPedidosPlataformasONLINETienda(razTemp.getIdRazon(), fechaAnterior, fechaActual,2);
-			//Procedemos a procesar la información y a enviar el correo con el reporte
+			//Procedemos a procesar la informaciï¿½n y a enviar el correo con el reporte
 			String respuesta = "";
-			//Agregamos en este apartado el total de pedidos por tienda para poder extraer la comisión por tienda
+			//Agregamos en este apartado el total de pedidos por tienda para poder extraer la comisiï¿½n por tienda
 			respuesta = respuesta + "<table border='2'> <tr colspan='8'>RAPPI TOTAL POR TIENDA " + razTemp.getNombreRazon() +  " </tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>Tienda</strong></td>"
@@ -140,7 +140,7 @@ public class ReporteSemanalRappi {
 					+  "<td><strong>Total Descuentos</strong></td>"
 					+  "<td><strong>Total Tarifa Servicio</strong></td>"
 					+  "<td><strong>Total Propina</strong></td>"
-					+  "<td><strong>Comisión Total</strong></td>"
+					+  "<td><strong>Comisiï¿½n Total</strong></td>"
 					+  "<td><strong>Costo Pagos en Linea</strong></td>"
 					+"</tr>";
 			String[] resTotalTienda;
@@ -226,26 +226,32 @@ public class ReporteSemanalRappi {
 				totalDescuentoFinal = totalDescuentoFinal + totalDescuento;
 				respuesta = respuesta + "<tr><td>" + tiendaTemp.getNombreTienda() + "</td><td>" + formatea.format(totalPedidoTienda) +  "</td><td>" + formatea.format(totalPagosONLINE) + "</td><td>" + formatea.format(totalDescuento) + "</td><td>" + formatea.format(totalTarifaServicio) + "</td><td>" + formatea.format(totalPropina) + "</td><td>" + formatea.format(totalComision) + "</td><td>" + formatea.format(totalGastoPagoONLINE) +"</td></tr>";
 				//En este punto tenemos el total de la tienda y lo insertaremos en la tabla correspondiente
-				GastoSemanal gastoSemanalTemp = new GastoSemanal(0,tiendaTemp.getIdTienda(),18,fechaActual,totalComision+totalGastoPagoONLINE,totalComision+totalGastoPagoONLINE);
+				GastoSemanal gastoSemanalTemp = new GastoSemanal(0,tiendaTemp.getIdTienda(),34,fechaActual,totalPagosONLINE,totalPagosONLINE);
+				GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
+				//En este punto tenemos el total de la tienda y lo insertaremos en la tabla correspondiente
+				gastoSemanalTemp = new GastoSemanal(0,tiendaTemp.getIdTienda(),18,fechaActual,totalComision+totalGastoPagoONLINE,totalComision+totalGastoPagoONLINE);
+				GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
+				//Agregamos el item del reporte asociado con los descuentos asumidos por la plataforma
+				gastoSemanalTemp = new GastoSemanal(0,tiendaTemp.getIdTienda(),23,fechaActual,totalDescuento,totalDescuento);
 				GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
 			}
 			respuesta = respuesta + "</table> <br/>";
 			double totalConsignacionBruto = totalConsignacion;
-			respuesta = respuesta + "<b>TOTAL BRUTO CONSIGNACIÓN " + formatea.format(totalConsignacionBruto) +"</b><br/>";
+			respuesta = respuesta + "<b>TOTAL BRUTO CONSIGNACIï¿½N " + formatea.format(totalConsignacionBruto) +"</b><br/>";
 			totalConsignacion = totalConsignacion - totalComisionFinal - totalGastoPagoONLINEFinal - totalTarifaServicioFinal + totalDescuentoFinal;
-			respuesta = respuesta + "<b> - TOTAL GASTO COMISIÓN " + formatea.format(totalComisionFinal) +"</b><br/>";
+			respuesta = respuesta + "<b> - TOTAL GASTO COMISIï¿½N " + formatea.format(totalComisionFinal) +"</b><br/>";
 			respuesta = respuesta + "<b> - TOTAL GASTO PAGOS ON LINE " + formatea.format(totalGastoPagoONLINEFinal) +"</b><br/>";
 			respuesta = respuesta + "<b> - TOTAL TARIFA DE SERVICIO DE RAPPI " + formatea.format(totalTarifaServicioFinal) +"</b><br/>";
 			respuesta = respuesta + "<b> + TOTAL DESCUENTOS ASUMIDOS POR RAPPI " + formatea.format(totalDescuentoFinal) +"</b><br/>";
-			respuesta = respuesta + "<b>CONSIGNACIÓN APROXIMADA " + formatea.format(totalConsignacion) +"</b><br/>";
-			//Procedemos al envío del correo
+			respuesta = respuesta + "<b>CONSIGNACIï¿½N APROXIMADA " + formatea.format(totalConsignacion) +"</b><br/>";
+			//Procedemos al envï¿½o del correo
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-			correo.setAsunto("Reporte Facturación Semanal RAPPI de la Razón Social " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion());
+			correo.setAsunto("Reporte Facturaciï¿½n Semanal RAPPI de la Razï¿½n Social " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEDOMICILIOSRAPPI");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación el reporte semanal de pedidos tomados para RAPPI separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+			correo.setMensaje("A continuaciï¿½n el reporte semanal de pedidos tomados para RAPPI separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 			

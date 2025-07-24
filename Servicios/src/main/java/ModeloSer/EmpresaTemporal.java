@@ -6,6 +6,15 @@ public class EmpresaTemporal {
 	String nombreEmpresa;
 	double valorHoraNormal;
 	double valorHoraDominical;
+	double valorHoraSabado;
+	
+	
+	public double getValorHoraSabado() {
+		return valorHoraSabado;
+	}
+	public void setValorHoraSabado(double valorHoraSabado) {
+		this.valorHoraSabado = valorHoraSabado;
+	}
 	public int getIdEmpresa() {
 		return idEmpresa;
 	}
@@ -30,14 +39,17 @@ public class EmpresaTemporal {
 	public void setValorHoraDominical(double valorHoraDominical) {
 		this.valorHoraDominical = valorHoraDominical;
 	}
-	public EmpresaTemporal(int idEmpresa, String nombreEmpresa, double valorHoraNormal, double valorHoraDominical) {
+
+	
+	public EmpresaTemporal(int idEmpresa, String nombreEmpresa, double valorHoraNormal, double valorHoraDominical,
+			double valorHoraSabado) {
 		super();
 		this.idEmpresa = idEmpresa;
 		this.nombreEmpresa = nombreEmpresa;
 		this.valorHoraNormal = valorHoraNormal;
 		this.valorHoraDominical = valorHoraDominical;
+		this.valorHoraSabado = valorHoraSabado;
 	}
-	
 	public String toString() {
 	    return nombreEmpresa;
 	}

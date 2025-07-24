@@ -3,6 +3,7 @@ package ModeloSer;
 public class EmpleadoTemporalDia {
 	
 	private int id;
+	private int idTienda;
 	private String identificacion;
 	private String nombre;
 	private String telefono;
@@ -14,7 +15,12 @@ public class EmpleadoTemporalDia {
 	private String observacion;
 	
 	
-	
+	public int getIdTienda() {
+		return idTienda;
+	}
+	public void setIdTienda(int idTienda) {
+		this.idTienda = idTienda;
+	}
 	public String getObservacion() {
 		return observacion;
 	}
@@ -87,7 +93,21 @@ public class EmpleadoTemporalDia {
 		this.idEmpresa = idEmpresa;
 		this.observacion = observacion;
 	}
-	
-	
+	public EmpleadoTemporalDia(int id, int idTienda, String identificacion, String nombre, String telefono,
+			String empresa, String fechaSistema, String horaIngreso, String horaSalida, int idEmpresa,
+			String observacion) {
+		super();
+		this.id = id;
+		this.idTienda = idTienda;
+		this.identificacion = identificacion;
+		this.nombre = nombre;
+		this.telefono = telefono;
+		this.empresa = empresa;
+		this.fechaSistema = fechaSistema;
+		this.horaIngreso = horaIngreso;
+		this.horaSalida = horaSalida;
+		this.idEmpresa = idEmpresa;
+		this.observacion = observacion;
+	}
 
 }
