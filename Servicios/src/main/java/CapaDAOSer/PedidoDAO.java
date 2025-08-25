@@ -3467,7 +3467,7 @@ public class PedidoDAO {
 			try
 			{
 				Statement stm = con1.createStatement();
-				String consulta = "SELECT a.idtienda, a.idpedidotienda, a.fechapedido, b.email, a.total_neto, concat(b.nombre,' ', b.apellido) as nombres  FROM pedido a, cliente b where a.idcliente = b.idcliente and a.fechapedido = '" + fecha + "' AND b.email != '' and b.email != 'integration@rappi.com' and b.email IS NOT NULL"; 
+				String consulta = "SELECT a.idtienda, a.idpedidotienda, a.fechapedido, b.email, a.total_neto, concat(b.nombre,' ', b.apellido) as nombres  FROM pedido a, cliente b where a.idcliente = b.idcliente and a.fechapedido = '" + fecha + "' AND b.email != '' and b.email != 'integration@rappi.com' and b.email != 'NO TIENE' and b.email IS NOT NULL"; 
 				ResultSet rs = stm.executeQuery(consulta);
 				String correo = "";
 				int idTienda = 0;

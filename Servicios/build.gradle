@@ -4,8 +4,8 @@ plugins {
 	id 'eclipse'
 }
 
-archivesBaseName = 'ReporteSemanalPlanFidelizacion'
-mainClassName = 'ReporteSemanalPlanFidelizacion'
+archivesBaseName = 'ServicioReplicaProgramaFidelizacion'
+mainClassName = 'ServicioReplicaProgramaFidelizacion'
 //compileJava.options.fork = true
 //compileJava.options.forkOptions.executable = 'C:/Program Files/Java/jdk-16.0.2/bin/javac.exe'
 
@@ -21,7 +21,7 @@ task fatJar(type: Jar) {
 	manifest {
         attributes 'Implementation-Title': 'Servicios Varios',
         	'Class-Path': '.', 
-        	'Main-Class': 'ServiciosSer.ReporteSemanalPlanFidelizacion'
+        	'Main-Class': 'ServiciosSer.ServicioReplicaProgramaFidelizacion'
         	
         	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }

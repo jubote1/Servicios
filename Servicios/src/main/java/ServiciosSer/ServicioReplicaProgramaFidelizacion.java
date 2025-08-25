@@ -94,6 +94,11 @@ public void generarReplicaProgramaFidelidad()
 		System.out.println(exc.toString());
 	}
 	Double valorPuntos = ParametrosDAO.retornarValorNumericoLocalDouble("VALORPUNTO");
+	int diasVigencia = ParametrosDAO.retornarValorNumerico("DIASVIGENCIAPUNTOS");
+	if(diasVigencia == 0)
+	{
+		diasVigencia = 180;
+	}
 	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocalSinBodega();
 	ArrayList<PedidoPlanFidelizacion> pedidos;
 	PedidoPlanFidelizacion pedidoTemp;
@@ -110,6 +115,16 @@ public void generarReplicaProgramaFidelidad()
     ArrayList<JSONObject> destinatarios = new ArrayList();
     int templateId = 2; // ID de la plantilla en Brevo
     double puntosAcumulados = 0;
+    //Aplicamos lógica para el vencimiento de transacciones.
+    ArrayList<FidelizacionTransaccion> vencimientos = FidelizacionTransaccionDAO.obtenerFidelizacionTransaccionesVencimiento();
+    double puntosVencidos = 0;
+    for(FidelizacionTransaccion venTemp: vencimientos)
+    {
+    	puntosVencidos = venTemp.getPuntos() - venTemp.getPuntosRedimidos();
+    	FidelizacionTransaccionDAO.vencerFidelizacionTransaccion(venTemp.getCorreo(), venTemp.getIdTienda(), venTemp.getIdPedidoTienda(), puntosVencidos);
+    	//Disminuimos los puntos vencidos utilizamos el método de redimir aunque estrictamente no es redención.
+    	ClienteFidelizacionDAO.redimirPuntosClienteFidelizacion(venTemp.getCorreo(), puntosVencidos);
+    }
 	for(Tienda tien : tiendas)
 	{
 		destinatarios = new ArrayList();
@@ -130,7 +145,7 @@ public void generarReplicaProgramaFidelidad()
 					{
 						puntosAcumulados = ClienteFidelizacionDAO.sumarPuntosClienteFidelizacion(pedidoTemp.getCorreo(), puntosSumar);
 						FidelizacionTransaccion fidelizaTransac = new FidelizacionTransaccion(pedidoTemp.getCorreo(), pedidoTemp.getIdTienda(), pedidoTemp.getIdPedidoTienda(), pedidoTemp.getValorNeto(), puntosSumar);
-						FidelizacionTransaccionDAO.insertarFidelizacionTransaccion(fidelizaTransac);
+						FidelizacionTransaccionDAO.insertarFidelizacionTransaccion(fidelizaTransac, diasVigencia);
 				        // Lista de destinatarios con nombres y puntos
 				        destinatarios.add(new JSONObject().put("email", pedidoTemp.getCorreo()).put("nombre", pedidoTemp.getNombreCliente()).put("puntos", puntosSumar).put("puntostotal", puntosAcumulados));
 					}
