@@ -147,40 +147,53 @@ public void generarReplicaProgramaFidelidad()
 			pedidos = PedidoDAO.obtenerPedidosValidarFidelizacion(fechaActual, tien.getHostBD());
 			for(int i = 0; i < pedidos.size(); i++)
 			{
-				pedidoTemp = pedidos.get(i);
-				//Validamos la existencia en el plan de fidelizacion
-				boolean clienteFideliza = ClienteFidelizacionDAO.existeClienteFidelizacion(pedidoTemp.getCorreo());
-				if(clienteFideliza)
+				try
 				{
-					puntosSumar = 0;
-					if(existeExcepcion)
+					pedidoTemp = pedidos.get(i);
+					//Validamos la existencia en el plan de fidelizacion
+					boolean clienteFideliza = ClienteFidelizacionDAO.existeClienteFidelizacion(pedidoTemp.getCorreo());
+					if(clienteFideliza)
 					{
-						//Debemos hacer la validación que si estemos en el rango de la excepcion
-						String strFechaPedido = pedidoTemp.getFechaInsercion();
-						String strFechaInicioExp = fechaActual + " " + excepcion.getHoraInicio()+":00";
-						String strFechaIFinExp = fechaActual + " " + excepcion.getHoraFin()+":00";
-						DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-						LocalDateTime fechaPedido = LocalDateTime.parse(strFechaPedido, formatter);
-						LocalDateTime fechaInicioExp = LocalDateTime.parse(strFechaInicioExp, formatter);
-						LocalDateTime fechaIFinExp = LocalDateTime.parse(strFechaIFinExp, formatter);
-						if (fechaPedido.isAfter(fechaInicioExp) && fechaPedido.isBefore(fechaIFinExp)) {
-							puntosSumar = pedidoTemp.getValorNeto()/excepcion.getValorPunto();
-				        } else {
-				        	puntosSumar = pedidoTemp.getValorNeto()/valorPuntos;
-				        }
-					}else
-					{
-						puntosSumar = pedidoTemp.getValorNeto()/valorPuntos;
+						puntosSumar = 0;
+						if(existeExcepcion)
+						{
+							//Debemos hacer la validación que si estemos en el rango de la excepcion
+							String strFechaPedido = pedidoTemp.getFechaInsercion();
+							String strFechaInicioExp = fechaActual + " " + excepcion.getHoraInicio()+":00";
+							String strFechaIFinExp = fechaActual + " " + excepcion.getHoraFin()+":00";
+							DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+							LocalDateTime fechaPedido = LocalDateTime.parse(strFechaPedido, formatter);
+							LocalDateTime fechaInicioExp = LocalDateTime.parse(strFechaInicioExp, formatter);
+							LocalDateTime fechaIFinExp = LocalDateTime.parse(strFechaIFinExp, formatter);
+							if (fechaPedido.isAfter(fechaInicioExp) && fechaPedido.isBefore(fechaIFinExp)) {
+								puntosSumar = pedidoTemp.getValorNeto()/excepcion.getValorPunto();
+					        } else {
+					        	puntosSumar = pedidoTemp.getValorNeto()/valorPuntos;
+					        }
+						}else
+						{
+							puntosSumar = pedidoTemp.getValorNeto()/valorPuntos;
+						}
+						boolean existeTransaccion = FidelizacionTransaccionDAO.existeFidelizacionTransaccion(pedidoTemp.getCorreo(), pedidoTemp.getIdTienda(), pedidoTemp.getIdPedidoTienda());
+						if(!existeTransaccion && puntosSumar > 0)
+						{
+							puntosAcumulados = ClienteFidelizacionDAO.sumarPuntosClienteFidelizacion(pedidoTemp.getCorreo(), puntosSumar);
+							FidelizacionTransaccion fidelizaTransac = new FidelizacionTransaccion(pedidoTemp.getCorreo(), pedidoTemp.getIdTienda(), pedidoTemp.getIdPedidoTienda(), pedidoTemp.getValorNeto(), puntosSumar, pedidoTemp.getUsuarioPedido());
+							FidelizacionTransaccionDAO.insertarFidelizacionTransaccion(fidelizaTransac, diasVigencia);
+					        // Lista de destinatarios con nombres y puntos
+					        destinatarios.add(new JSONObject().put("email", pedidoTemp.getCorreo()).put("nombre", pedidoTemp.getNombreCliente()).put("puntos", puntosSumar).put("puntostotal", puntosAcumulados));
+						}
 					}
-					boolean existeTransaccion = FidelizacionTransaccionDAO.existeFidelizacionTransaccion(pedidoTemp.getCorreo(), pedidoTemp.getIdTienda(), pedidoTemp.getIdPedidoTienda());
-					if(!existeTransaccion && puntosSumar > 0)
-					{
-						puntosAcumulados = ClienteFidelizacionDAO.sumarPuntosClienteFidelizacion(pedidoTemp.getCorreo(), puntosSumar);
-						FidelizacionTransaccion fidelizaTransac = new FidelizacionTransaccion(pedidoTemp.getCorreo(), pedidoTemp.getIdTienda(), pedidoTemp.getIdPedidoTienda(), pedidoTemp.getValorNeto(), puntosSumar);
-						FidelizacionTransaccionDAO.insertarFidelizacionTransaccion(fidelizaTransac, diasVigencia);
-				        // Lista de destinatarios con nombres y puntos
-				        destinatarios.add(new JSONObject().put("email", pedidoTemp.getCorreo()).put("nombre", pedidoTemp.getNombreCliente()).put("puntos", puntosSumar).put("puntostotal", puntosAcumulados));
-					}
+				}
+				catch(Exception excPedido)
+				{
+					//Un pedido con datos malos no puede tumbar el proceso completo.
+					//Antes, una fechainsercion nula o con otro formato hacia estallar
+					//LocalDateTime.parse, la excepcion salia del main y las tiendas que
+					//faltaban por recorrer no acumulaban puntos ese dia.
+					System.out.println("Fidelizacion: se omite un pedido de la tienda "
+							+ tien.getIdTienda() + " (" + (i + 1) + " de " + pedidos.size()
+							+ "): " + excPedido);
 				}
 			}
 			//REALIZAMOS UNA SEPARACIÓN POR CANTIDAD DE PUNTOS 

@@ -3479,7 +3479,7 @@ public class PedidoDAO {
 			try
 			{
 				Statement stm = con1.createStatement();
-				String consulta = "SELECT a.idtienda, a.idpedidotienda, a.fechapedido, b.email, a.total_neto, concat(b.nombre,' ', b.apellido) as nombres, a.fechainsercion  FROM pedido a, cliente b where a.idcliente = b.idcliente and a.fechapedido = '" + fecha + "' AND b.email != '' and b.email != 'integration@rappi.com' and b.email != 'NO TIENE' and b.email IS NOT NULL"; 
+				String consulta = "SELECT a.idtienda, a.idpedidotienda, a.fechapedido, b.email, a.total_neto, concat(b.nombre,' ', b.apellido) as nombres, a.fechainsercion, a.usuariopedido  FROM pedido a, cliente b where a.idcliente = b.idcliente and a.fechapedido = '" + fecha + "' AND b.email != '' and b.email != 'integration@rappi.com' and b.email != 'NO TIENE' and b.email IS NOT NULL"; 
 				ResultSet rs = stm.executeQuery(consulta);
 				String correo = "";
 				int idTienda = 0;
@@ -3487,6 +3487,7 @@ public class PedidoDAO {
 				double valorNeto = 0;
 				String nombres;
 				String fechaInsercion;
+				String usuarioPedido;
 				while(rs.next()){
 					correo = rs.getString("email");
 					idTienda = rs.getInt("idtienda");
@@ -3494,7 +3495,8 @@ public class PedidoDAO {
 					valorNeto = rs.getDouble("total_neto");
 					nombres= rs.getString("nombres");
 					fechaInsercion = rs.getString("fechainsercion");
-					pedidoTemp = new PedidoPlanFidelizacion(fecha,correo,idTienda, idPedidoTienda, valorNeto,nombres,fechaInsercion);
+					usuarioPedido = rs.getString("usuariopedido");
+					pedidoTemp = new PedidoPlanFidelizacion(fecha,correo,idTienda, idPedidoTienda, valorNeto,nombres,fechaInsercion,usuarioPedido);
 					pedidos.add(pedidoTemp);
 				}
 				rs.close();

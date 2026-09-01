@@ -175,7 +175,7 @@ public void generarReplicaProgramaFidelidad()
 					if(!existeTransaccion && puntosSumar > 0)
 					{
 						puntosAcumulados = ClienteFidelizacionDAO.sumarPuntosClienteFidelizacion(pedidoTemp.getCorreo(), puntosSumar);
-						FidelizacionTransaccion fidelizaTransac = new FidelizacionTransaccion(pedidoTemp.getCorreo(), pedidoTemp.getIdTienda(), pedidoTemp.getIdPedidoTienda(), pedidoTemp.getValorNeto(), puntosSumar);
+						FidelizacionTransaccion fidelizaTransac = new FidelizacionTransaccion(pedidoTemp.getCorreo(), pedidoTemp.getIdTienda(), pedidoTemp.getIdPedidoTienda(), pedidoTemp.getValorNeto(), puntosSumar, pedidoTemp.getUsuarioPedido());
 						FidelizacionTransaccionDAO.insertarFidelizacionTransaccion(fidelizaTransac, diasVigencia);
 				        // Lista de destinatarios con nombres y puntos
 				        destinatarios.add(new JSONObject().put("email", pedidoTemp.getCorreo()).put("nombre", pedidoTemp.getNombreCliente()).put("puntos", puntosSumar).put("puntostotal", puntosAcumulados));

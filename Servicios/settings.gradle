@@ -13,6 +13,7 @@ rootProject.name = 'Servicios'
  *     Windows: C:\Users\<usuario>\.gradle\gradle.properties
  *     Linux:   ~/.gradle/gradle.properties
  *
+<<<<<<< HEAD
  * Contenido (usar barras normales / incluso en Windows):
  *
  *     rutaPizzaAmericana=D:/ECLIPSE_WORKSPACE/ProyectoPizzaAmericana
@@ -68,4 +69,61 @@ if (!faltantes.isEmpty()) {
             + faltantes.join(' | ')
             + ' -- declare la ruta en su gradle.properties personal, ver el'
             + ' comentario al inicio de settings.gradle')
+=======
+ * Contenido (use barras normales / incluso en Windows):
+ *
+ *     rutaPizzaAmericana=D:/ECLIPSE_WORKSPACE/ProyectoPizzaAmericana
+ *     rutaTiendaAmericanaCliente=C:/Users/ASUS/git/ProyectoTiendaAmericanaCliente
+ *     rutaInventarioAmericana=C:/Users/ASUS/git/ProyectoInventarioAmericana/ProyectoInventarioAmericana
+ *
+ * Si alguien no declara una ruta, se intentan primero las rutas por convencion
+ * (los repositorios como hermanos del workspace) y solo entonces se falla, con
+ * un mensaje que dice exactamente que falta y donde se busco.
+ */
+
+def faltantes = []
+
+def referenciar = { String nombre, String propiedad, List<String> porConvencion ->
+    def candidatas = []
+    if (settings.hasProperty(propiedad)) {
+        candidatas << new File(settings.getProperty(propiedad).toString().trim())
+    }
+    porConvencion.each { candidatas << new File(settingsDir, it) }
+
+    // Se identifica el proyecto por su build.gradle. Si se apunta a una carpeta
+    // que no existe, Gradle crea en silencio un proyecto vacio y el error
+    // aparece mucho despues como "None of the consumable configurations have
+    // attributes", que no dice nada. Por eso se valida aqui.
+    def dir = candidatas.find { new File(it, 'build.gradle').isFile() }
+    if (dir == null) {
+        faltantes << "  ${nombre}   (propiedad: ${propiedad})\n" +
+                candidatas.collect { "        se busco en: ${it.absolutePath}" }.join('\n')
+        return
+    }
+
+    include ":${nombre}"
+    project(":${nombre}").projectDir = dir
+    println "Servicios referencia ${nombre} -> ${dir.canonicalPath}"
+}
+
+referenciar('ProyectoPizzaAmericana', 'rutaPizzaAmericana',
+        ['../../ProyectoPizzaAmericana'])
+
+referenciar('ProyectoTiendaAmericanaCliente', 'rutaTiendaAmericanaCliente',
+        ['../../ProyectoTiendaAmericanaCliente'])
+
+// El proyecto Gradle de inventarios esta anidado dentro del repositorio, por eso
+// se intentan las dos profundidades.
+referenciar('ProyectoInventarioAmericana', 'rutaInventarioAmericana',
+        ['../../ProyectoInventarioAmericana/ProyectoInventarioAmericana',
+         '../../ProyectoInventarioAmericana'])
+
+if (!faltantes.isEmpty()) {
+    throw new GradleException(
+            "\nNo se pudo ubicar el codigo de estos proyectos que Servicios necesita:\n\n"
+            + faltantes.join('\n\n')
+            + "\n\nDeclare la ruta en su archivo personal de Gradle:\n"
+            + "    C:\Users\<usuario>\.gradle\gradle.properties\n"
+            + "Vea el comentario al inicio de settings.gradle para el formato.\n")
+>>>>>>> branch 'JuanDavidClaude' of https://github.com/jubote1/Servicios.git
 }

@@ -10,6 +10,9 @@ public class PedidoPlanFidelizacion {
 	String nombreCliente;
 	double puntosAcumulados;
 	String fechaInsercion;
+	//Cajero que tomo el pedido, leido de pedido.usuariopedido de la base de la
+	//tienda. Es el dato que permite saber quien genero cada acumulacion.
+	String usuarioPedido;
 	
 
 	public String getNombreCliente() {
@@ -58,11 +61,11 @@ public class PedidoPlanFidelizacion {
 	public String getFechaInsercion() {
 		return fechaInsercion;
 	}
-	public void setFechaInsercion(String fechaInsercion) {
+	public void setFechaInsercion(String fechaInsercion, String usuarioPedido) {
 		this.fechaInsercion = fechaInsercion;
 	}
 	public PedidoPlanFidelizacion(String fechaPedido, String correo, int idTienda, int idPedidoTienda,
-			double valorNeto, String nombres, String fechaInsercion) {
+			double valorNeto, String nombres, String fechaInsercion, String usuarioPedido) {
 		super();
 		this.fechaPedido = fechaPedido;
 		this.correo = correo;
@@ -71,6 +74,7 @@ public class PedidoPlanFidelizacion {
 		this.valorNeto = valorNeto;
 		this.nombreCliente = nombres;
 		this.fechaInsercion = fechaInsercion;
+		this.usuarioPedido = usuarioPedido == null ? "" : usuarioPedido;
 	}
 	public PedidoPlanFidelizacion() {
 		super();
@@ -79,4 +83,10 @@ public class PedidoPlanFidelizacion {
 	
 	
 
+	public String getUsuarioPedido() {
+		return this.usuarioPedido;
+	}
+	public void setUsuarioPedido(String usuarioPedido) {
+		this.usuarioPedido = usuarioPedido == null ? "" : usuarioPedido;
+	}
 }
