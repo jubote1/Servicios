@@ -9,6 +9,7 @@ public class PedidoPlanFidelizacion {
 	double valorNeto;
 	String nombreCliente;
 	double puntosAcumulados;
+	String fechaInsercion;
 	
 
 	public String getNombreCliente() {
@@ -53,8 +54,15 @@ public class PedidoPlanFidelizacion {
 	public void setValorNeto(double valorNeto) {
 		this.valorNeto = valorNeto;
 	}
+	
+	public String getFechaInsercion() {
+		return fechaInsercion;
+	}
+	public void setFechaInsercion(String fechaInsercion) {
+		this.fechaInsercion = fechaInsercion;
+	}
 	public PedidoPlanFidelizacion(String fechaPedido, String correo, int idTienda, int idPedidoTienda,
-			double valorNeto, String nombres) {
+			double valorNeto, String nombres, String fechaInsercion) {
 		super();
 		this.fechaPedido = fechaPedido;
 		this.correo = correo;
@@ -62,6 +70,7 @@ public class PedidoPlanFidelizacion {
 		this.idPedidoTienda = idPedidoTienda;
 		this.valorNeto = valorNeto;
 		this.nombreCliente = nombres;
+		this.fechaInsercion = fechaInsercion;
 	}
 	public PedidoPlanFidelizacion() {
 		super();

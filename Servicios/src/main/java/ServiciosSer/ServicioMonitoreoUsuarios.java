@@ -67,13 +67,13 @@ public static void main(String[] args)
 public void monitoreoUsuarios()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCI”N");
+	System.out.println("EMPEZAMOS LA EJECUCI√ìN");
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	//Formateamos la fecha Actual para consulta
 	String strFechaActual = dateFormat.format(fechaActual);
-	//Restarle el dÌa para que como se har· dÌa atrasado
+	//Restarle el d√≠a para que como se har√° d√≠a atrasado
 	Calendar calendarioActual = Calendar.getInstance();
 	try
 	{
@@ -85,7 +85,7 @@ public void monitoreoUsuarios()
 		System.out.println(e.toString());
 	}
 	
-	//Llevamos a un string la fecha anterior para el c·lculo de la venta
+	//Llevamos a un string la fecha anterior para el c√°lculo de la venta
 	fechaActual = calendarioActual.getTime();
 	strFechaActual = dateFormat.format(fechaActual);
 	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo	
@@ -97,7 +97,7 @@ public void monitoreoUsuarios()
 	for(int i = 0; i < repEntradasSalidas.size(); i++)
 	{
 		EmpleadoEvento empEventoTemp = repEntradasSalidas.get(i);
-		//La idea es que esto pasar· una ˙nica vez, o la primera vez
+		//La idea es que esto pasar√° una √∫nica vez, o la primera vez
 		if(empEventoAnterior.getId() == 0)
 		{
 			empEventoAnterior = repEntradasSalidas.get(i);
@@ -128,18 +128,18 @@ public void monitoreoUsuarios()
 				}
 				if(intHora >= 20)
 				{
-					resultado = resultado + " " + empEventoAnterior.getId()+ "-" + empEventoAnterior.getNombreEmpleado() + " INGRESO APARENTEMENTE TARDÕO " + empEventoAnterior.getFechaHoraLog();
+					resultado = resultado + " " + empEventoAnterior.getId()+ "-" + empEventoAnterior.getNombreEmpleado() + " INGRESO APARENTEMENTE TARD√çO " + empEventoAnterior.getFechaHoraLog();
 					String email = EmpleadoEventoDAO.obtenerCorreoElectronico(empEventoAnterior.getId());
-					//Enviamos correo notificando al empleado que tiene problemas con al biometrÌa
+					//Enviamos correo notificando al empleado que tiene problemas con al biometr√≠a
 					Correo correo = new Correo();
-					correo.setAsunto("POSIBLE INCONVENIENTE BIOMETRIA EN DÕA " + fechaActual.toString());
+					correo.setAsunto("POSIBLE INCONVENIENTE BIOMETRIA EN D√çA " + fechaActual.toString());
 					CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 					correo.setContrasena(infoCorreo.getClaveCorreo());
 					//Tendremos que definir los destinatarios de este correo
 					ArrayList correos = new ArrayList();
 					correos.add(email);
 					correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-					String mensaje = "SeÒor Empleado el dÌa de ayer tuvo problemas con el registro de su biometrÌa, por favor revise apenas pueda y notifique la situaciÛn. Tuvo INGRESO AL PARECER TARDÕO " + empEventoAnterior.getFechaHoraLog();
+					String mensaje = "Se√±or Empleado el d√≠a de ayer tuvo problemas con el registro de su biometr√≠a, por favor revise apenas pueda y notifique la situaci√≥n. Tuvo INGRESO AL PARECER TARD√çO " + empEventoAnterior.getFechaHoraLog();
 					correo.setMensaje(mensaje);
 					ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 					contro.enviarCorreoHTML();
@@ -151,16 +151,16 @@ public void monitoreoUsuarios()
 			{
 				resultado = resultado + " " + empEventoAnterior.getId()+ "-" + empEventoAnterior.getNombreEmpleado() + " INGRESO " + empEventoAnterior.getFechaHoraLog() + " - SALIDA NO HAY";
 				String email = EmpleadoEventoDAO.obtenerCorreoElectronico(empEventoAnterior.getId());
-				//Enviamos correo notificando al empleado que tiene problemas con al biometrÌa
+				//Enviamos correo notificando al empleado que tiene problemas con al biometr√≠a
 				Correo correo = new Correo();
-				correo.setAsunto("POSIBLE INCONVENIENTE BIOMETRIA EN DÕA " + fechaActual.toString());
+				correo.setAsunto("POSIBLE INCONVENIENTE BIOMETRIA EN D√çA " + fechaActual.toString());
 				CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 				correo.setContrasena(infoCorreo.getClaveCorreo());
 				//Tendremos que definir los destinatarios de este correo
 				ArrayList correos = new ArrayList();
 				correos.add(email);
 				correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-				String mensaje = "SeÒor Empleado el dÌa de ayer tuvo problemas con el registro de su biometrÌa, por favor revise apenas pueda y notifique la situaciÛn. Tuvo INGRESO " + empEventoAnterior.getFechaHoraLog()+ " - SALIDA NO HAY";
+				String mensaje = "Se√±or Empleado el d√≠a de ayer tuvo problemas con el registro de su biometr√≠a, por favor revise apenas pueda y notifique la situaci√≥n. Tuvo INGRESO " + empEventoAnterior.getFechaHoraLog()+ " - SALIDA NO HAY";
 				correo.setMensaje(mensaje);
 				ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 				contro.enviarCorreoHTML();
@@ -183,15 +183,15 @@ public void monitoreoUsuarios()
 	}
 	
 	
-	//Realizamos el envÌo del correo electrÛnico con los archivos
+	//Realizamos el env√≠o del correo electr√≥nico con los archivos
 	Correo correo = new Correo();
-	correo.setAsunto("EMPLEADOS CON POSIBLES PROBLEMAS BIOMETRIA EN DÕA " + fechaActual.toString());
+	correo.setAsunto("EMPLEADOS CON POSIBLES PROBLEMAS BIOMETRIA EN D√çA " + fechaActual.toString());
 	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 	correo.setContrasena(infoCorreo.getClaveCorreo());
 	//Tendremos que definir los destinatarios de este correo
 	ArrayList correos = GeneralDAO.obtenerCorreosParametro("ERRORBIOMETRIA");
 	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuaciÛn la informaciÛn de las personas que posiblemente tienen problemas con el acceso " + resultado;
+	String mensaje = "A continuaci√≥n la informaci√≥n de las personas que posiblemente tienen problemas con el acceso " + resultado;
 	correo.setMensaje(mensaje);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 	contro.enviarCorreoHTML();

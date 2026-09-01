@@ -40,7 +40,7 @@ public class ServicioReporteEstadisticasSemanales {
 		//TRABAJO CON LAS FECHAS///////
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 				String fechaActual = "";
-				//Variables donde manejaremos la fecha anerior con el fin realizar los c·lculos de ventas
+				//Variables donde manejaremos la fecha anerior con el fin realizar los c√°lculos de ventas
 				Date datFechaAnterior;
 				String fechaAnterior = "";
 				//Creamos el objeto calendario
@@ -65,7 +65,7 @@ public class ServicioReporteEstadisticasSemanales {
 				{
 					System.out.println(e.toString());
 				}
-				//Retormanos el dÌa de la semana actual segun la fecha del calendario
+				//Retormanos el d√≠a de la semana actual segun la fecha del calendario
 				//OJO
 				//int diaActual = 1;
 				int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -104,12 +104,12 @@ public class ServicioReporteEstadisticasSemanales {
 					//Si es sabado se resta cinco
 					calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 				}
-				//Llevamos a un string la fecha anterior para el c·lculo de la venta
+				//Llevamos a un string la fecha anterior para el c√°lculo de la venta
 				datFechaAnterior = calendarioActual.getTime();
 				fechaAnterior = dateFormat.format(datFechaAnterior);
 		///////////////////////////////
 		DecimalFormat formatea = new DecimalFormat("###,###");
-		//En respuesta guardaremos el html que guardar· todo lo que se desplegar· en el correo.
+		//En respuesta guardaremos el html que guardar√° todo lo que se desplegar√° en el correo.
 		String respuesta = "";
 		String respuestaProblema = "";
 	    //obtenenemos todas las tiendas
@@ -150,18 +150,18 @@ public class ServicioReporteEstadisticasSemanales {
 				respuestaProblema = respuestaProblema + " " + tienda.getNombreTienda();
 			}
 		}
-		//Realizamos la depuraciÛn de la tabla insertar ubicaciÛn domiciliario
+		//Realizamos la depuraci√≥n de la tabla insertar ubicaci√≥n domiciliario
 		UbicacionDomiciliarioDAO.depurarUbicacionDomiciliario();
 		
-		//Recuperar la lista de distribuciÛn para este correo
+		//Recuperar la lista de distribuci√≥n para este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPESTADISTICASSEMANAL");
 		Date fecha = new Date();
 		Correo correo = new Correo();
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-		correo.setAsunto("REPORTE ESTADÕSTICAS SEMANAL DE " + fechaAnterior + " HASTA " + fechaActual);
+		correo.setAsunto("REPORTE ESTAD√çSTICAS SEMANAL DE " + fechaAnterior + " HASTA " + fechaActual);
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("La informaciÛn de las estadÌsticas ha sido replicada de manera correcta en: \n" + respuesta + " y de manera incorrecta en " + respuestaProblema);
+		correo.setMensaje("La informaci√≥n de las estad√≠sticas ha sido replicada de manera correcta en: \n" + respuesta + " y de manera incorrecta en " + respuestaProblema);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 

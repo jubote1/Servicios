@@ -65,7 +65,7 @@ public static void main(String[] args)
 public void generarReplicaConsumosHistoricos()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCIÓN");
+	System.out.println("EMPEZAMOS LA EJECUCIÃ“N");
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -73,7 +73,7 @@ public void generarReplicaConsumosHistoricos()
 	String strFechaActual = dateFormat.format(fechaActual);
 	//String strFechaActual = "2020-08-20";
 	
-	//Restarle el día para que como se hará día atrasado
+	//Restarle el dÃ­a para que como se harÃ¡ dÃ­a atrasado
 	Calendar calendarioActual = Calendar.getInstance();
 	try
 	{
@@ -90,7 +90,7 @@ public void generarReplicaConsumosHistoricos()
 	boolean existeConsumoPorciones = false;
 	for(int i = 1; i <= 14; i++)
 	{
-		//Llevamos a un string la fecha anterior para el cálculo de la venta
+		//Llevamos a un string la fecha anterior para el cÃ¡lculo de la venta
 		fechaActual = calendarioActual.getTime();
 		strFechaActual = dateFormat.format(fechaActual);
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
@@ -101,13 +101,13 @@ public void generarReplicaConsumosHistoricos()
 			
 			if(!tien.getHostBD().equals(new String("")))
 			{
-				//Validaremos si para la fecha y la tienda en cuestión ya hay información
+				//Validaremos si para la fecha y la tienda en cuestiÃ³n ya hay informaciÃ³n
 				existeConsumo = ConsumoInventarioDAO.existeConsumoInventario(strFechaActual, tien.getIdTienda());
 				if(!existeConsumo)
 				{
 					try
 					{
-						//Una vez obtenidos los consumos inventarios del día en cuestión realizaremos la inserción en el sistema de Bodega
+						//Una vez obtenidos los consumos inventarios del dÃ­a en cuestiÃ³n realizaremos la inserciÃ³n en el sistema de Bodega
 						consumosInventario = ItemInventarioDAO.recuperarConsumosInventario(strFechaActual, tien.getHostBD());
 						for(ConsumoInventario consuTemp: consumosInventario)
 						{
@@ -141,7 +141,7 @@ public void generarReplicaConsumosHistoricos()
 			}
 		}
 	}
-	//Realizamos el envío del correo electrónico con los archivos
+	//Realizamos el envÃ­o del correo electrÃ³nico con los archivos
 	Correo correo = new Correo();
 	correo.setAsunto("REPLICA DE CONSUMOS DE TIENDAS " + fechaActual.toString());
 	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
@@ -149,7 +149,7 @@ public void generarReplicaConsumosHistoricos()
 	//Tendremos que definir los destinatarios de este correo
 	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
 	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuación se información del proceso de replica de consumo de tiendas " + respuesta;
+	String mensaje = "A continuaciÃ³n se informaciÃ³n del proceso de replica de consumo de tiendas " + respuesta;
 	correo.setMensaje(mensaje);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 	contro.enviarCorreoHTML();

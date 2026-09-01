@@ -12,7 +12,7 @@ import ModeloSer.Insumo;
 
 public class ItemInventarioDAO {
 
-	//Crearemos método que obtendrá la información base para desplegar en el informe
+	//Crearemos mï¿½todo que obtendrï¿½ la informaciï¿½n base para desplegar en el informe
 		public static ArrayList obtenerCierreSemanalInsumos(String fechaActual, String fechaAnterior, String tipoItemInventario, String url)
 		{
 			ConexionBaseDatos con = new ConexionBaseDatos();
@@ -58,8 +58,60 @@ public class ItemInventarioDAO {
 		
 		
 		/**
-		 * Este método tiene como objetivo la generación de la información en un ambiente de reproceso, deberá pedir tambien la información en un ambiente de día siguiente
-		 * con el fin de traer el histótico del día siguiente dado que ya ese día se aperturo.
+		 * MÃ©todo que trae los insumos para realizar reporte de Cierre pero teniendo en cuenta que el lunes no se abriÃ³
+		 * @param fechaActual
+		 * @param fechaAnterior
+		 * @param tipoItemInventario
+		 * @param url
+		 * @return
+		 */
+		public static ArrayList obtenerCierreSemanalInsumosSinLunes(String fechaActual, String fechaAnterior, String preFechaAnterior, String tipoItemInventario, String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			ArrayList itemsInvCierre = new ArrayList();
+			int cantItems = 0;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT a.iditem,a.nombre_item, a.unidad_medida," + 
+						" ifnull((SELECT b.cantidad FROM item_inventario_varianza b, inventario_varianza iv WHERE iv.idinventario_varianza = b.idinventario_varianza and a.iditem = b.iditem AND iv.fecha_sistema = '" + preFechaAnterior + "' order by b.idinventario_varianza desc limit 1),0) AS INVENTARIO_INICIAL " +
+						" ,ifnull( (SELECT SUM(d.cantidad) FROM ingreso_inventario c, ingreso_inventario_detalle d WHERE c.idingreso_inventario = d.idingreso_inventario AND d.iditem = a.iditem AND c.fecha_sistema >= '" + fechaAnterior + "' AND c.fecha_sistema <= '" + fechaActual + "'),0)  AS ENVIADO_A_TIENDA" +
+						" ,ifnull( (select sum(c.cantidad) from retiro_inventario d, retiro_inventario_detalle c where c.idretiro_inventario = d.idretiro_inventario and c.iditem = a.iditem and d.fecha_sistema >= '" + fechaAnterior +"' AND d.fecha_sistema <= '" + fechaActual + "' ),0) AS RETIROS_OTRAS_TIENDAS " + 
+						" , a.cantidad AS INVENTARIO_FINAL   from item_inventario a WHERE " +
+						" a.categoria LIKE '" + tipoItemInventario + "%'";
+				ResultSet rs = stm.executeQuery(consulta);
+				ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
+				int numeroColumnas = rsMd.getColumnCount();
+				while(rs.next()){
+					String [] fila = new String[numeroColumnas];
+					for(int y = 0; y < numeroColumnas; y++)
+					{
+						fila[y] = rs.getString(y+1);
+					}
+					itemsInvCierre.add(fila);
+					
+				}
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				
+			}
+			return(itemsInvCierre);
+		}
+		
+		
+		/**
+		 * Este mï¿½todo tiene como objetivo la generaciï¿½n de la informaciï¿½n en un ambiente de reproceso, deberï¿½ pedir tambien la informaciï¿½n en un ambiente de dï¿½a siguiente
+		 * con el fin de traer el histï¿½tico del dï¿½a siguiente dado que ya ese dï¿½a se aperturo.
 		 * @param fechaActual
 		 * @param fechaAnterior
 		 * @param tipoItemInventario
@@ -113,7 +165,7 @@ public class ItemInventarioDAO {
 		//En este punto vamos a incluir el manejo de Insumos inventarios que para la tienda no tiene el nombre de
 		//item inventario sino insumo
 
-		//Crearemos método que obtendrá la información base para desplegar en el informe
+		//Crearemos mï¿½todo que obtendrï¿½ la informaciï¿½n base para desplegar en el informe
 		public static ArrayList<Insumo> obtenerInfoBasicaInsumos()
 		{
 			ConexionBaseDatos con = new ConexionBaseDatos();
@@ -161,7 +213,7 @@ public class ItemInventarioDAO {
 
 		
 		/**
-		 * Método que desde el proyecto Servicios recupera los consumos de inventario de la tienda en cuestión con el fin de llevarlos
+		 * Mï¿½todo que desde el proyecto Servicios recupera los consumos de inventario de la tienda en cuestiï¿½n con el fin de llevarlos
 		 * hacia el sistema de inventarios de bodega.
 		 * @param fecha
 		 * @param hostBD
@@ -218,6 +270,40 @@ public class ItemInventarioDAO {
 			
 		}
 		
-		
+		/**
+		 * Metodo que valida si un dÃ­a esta abierto o no mirando si dejo restro de inventario antes de abrir.
+		 * @param fecha
+		 * @return
+		 */
+		public static boolean validarSiDiaAbrio(String fecha, String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			boolean respuesta = false;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT * FROM item_inventario_historico where fecha = '" + fecha + "'";
+				ResultSet rs = stm.executeQuery(consulta);
+				while(rs.next()){
+					respuesta = true;
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				
+			}
+			return(respuesta);
+		}		
 		
 }

@@ -70,36 +70,36 @@ public static void main(String[] args)
 public void actualizacionInventarios()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCIÓN DE LA REPLICA DE INVENTARIOS");
+	System.out.println("EMPEZAMOS LA EJECUCIÃ“N DE LA REPLICA DE INVENTARIOS");
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
 	//Debemos de pasar la fecha al formato para consulta
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	String strFechaActual = dateFormat.format(fechaActual);
-	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo en el momento de recepción o error del proceso
+	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo en el momento de recepciÃ³n o error del proceso
 	String exitoso = "", noExitoso = "";
 	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
-	//Obtenemos el listado de correos para cuando hay algún error en el proceso
+	//Obtenemos el listado de correos para cuando hay algÃºn error en el proceso
 	ArrayList correosError = GeneralDAO.obtenerCorreosParametro("ERRORREPLICAINV");
 	ArrayList correosExitoso = GeneralDAO.obtenerCorreosParametro("REPLICAINV");
 	for(Tienda tien : tiendas)
 	{
-			//Realizamos la recuperación de la homologaciones para la tienda que estamos procesando
+			//Realizamos la recuperaciÃ³n de la homologaciones para la tienda que estamos procesando
 			
 			//Verificamos si hay conectividad con el punto de venta
 			 String dirConTact = tien.getHostBD();
 			 int puerto = 3306;
-			 //Variable que nos dirá si hay o no conectividad
+			 //Variable que nos dirÃ¡ si hay o no conectividad
 			 boolean hayConectividad = false;
 			 try{
 				  Socket s = new Socket(dirConTact, puerto);
 				  if(s.isConnected()){
-					  System.out.println("Conexión establecida con la dirección: " +  dirConTact + " a travéz del puerto: " + puerto);
+					  System.out.println("ConexiÃ³n establecida con la direcciÃ³n: " +  dirConTact + " a travÃ©z del puerto: " + puerto);
 					  hayConectividad = true;
 				  }
 			 }catch(Exception e)
 			 {
-				 System.out.println("CONEXIÓN NO establecida con la dirección: " +  dirConTact + " a travéz del puerto: " + puerto);
+				 System.out.println("CONEXIÃ“N NO establecida con la direcciÃ³n: " +  dirConTact + " a travÃ©z del puerto: " + puerto);
 				 hayConectividad = false;
 			 }
 			 if (hayConectividad)
@@ -112,11 +112,11 @@ public void actualizacionInventarios()
 						//Recuperamos los despachos pendientes
 						ArrayList<InsumoDespachoTienda> insumoDespachos = InsumoDespachoTiendaDAO.obtenerInsumoDespachoTienda(tien.getIdTienda(), strFechaActual);
 						//Recorremos los despachos pendientes de la tienda para la fecha
-						//Variable donde almacenamos el resultado de la inserción del encabezado
+						//Variable donde almacenamos el resultado de la inserciÃ³n del encabezado
 						boolean insercionEnc = false;
-						//Vamos llevando un control de la inserción de cada detalle
+						//Vamos llevando un control de la inserciÃ³n de cada detalle
 						boolean insercionDet = false;
-						//Variable para controlar si hubo error en la inserción del despacho en la tienda
+						//Variable para controlar si hubo error en la inserciÃ³n del despacho en la tienda
 						boolean huboError = false;
 						boolean verificarExisteDespacho = false;
 						for(InsumoDespachoTienda encabezadoDespacho : insumoDespachos)
@@ -130,11 +130,11 @@ public void actualizacionInventarios()
 								//Recuperamos los detalles de los insumos del despacho para ser insertados en la tienda.
 								ArrayList<InsumoDespachoTiendaDetalle> detallesDespacho  = InsumoDespachoTiendaDetalleDAO.obtenerDetalleDespachoTienda(encabezadoDespacho.getIdDespacho());
 								//Comenzamos a recorrer el detalle y a insertarlo en tienda.
-								//Verificaremos si hay más de un detalle para insertar
+								//Verificaremos si hay mÃ¡s de un detalle para insertar
 								
 								if(detallesDespacho.size() > 0)
 								{
-									//En este punto hacemos la inserción del encabezado
+									//En este punto hacemos la inserciÃ³n del encabezado
 									insercionEnc = IngresoInventarioTmpDAO.insertarIngresoInventarioTmp(strFechaActual, encabezadoDespacho.getIdDespacho(), tien.getHostBD(), encabezadoDespacho.getObservacion());
 								}
 								for(InsumoDespachoTiendaDetalle detalleDespacho: detallesDespacho)
@@ -142,10 +142,10 @@ public void actualizacionInventarios()
 									//Se valida que se haya insertado el encabezado
 									if(insercionEnc)
 									{
-										//Realizamos la homologación del idInsumo entre bodega y tienda
+										//Realizamos la homologaciÃ³n del idInsumo entre bodega y tienda
 										ModificadorInventario modIngreso = new ModificadorInventario(detalleDespacho.getIdInsumo(), detalleDespacho.getCantidad() );
 										insercionDet = IngresoInventarioDetalleTmpDAO.insertarIngresoInventarioDetTmp(encabezadoDespacho.getIdDespacho(), modIngreso, tien.getHostBD());
-										//Es porque hubo error en la inserción de un detalle, por lo cual devolvemos y notificamos el error
+										//Es porque hubo error en la inserciÃ³n de un detalle, por lo cual devolvemos y notificamos el error
 										if(!insercionDet)
 										{
 											//Borramos los detalles
@@ -157,7 +157,7 @@ public void actualizacionInventarios()
 											CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 											correo.setContrasena(infoCorreo.getClaveCorreo());
 											correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-											correo.setMensaje("A continuación informamos que la tienda " + tien.getNombreTienda() + " tuvo problemas en la creación del detalle del despacho de pedido. ");
+											correo.setMensaje("A continuaciÃ³n informamos que la tienda " + tien.getNombreTienda() + " tuvo problemas en la creaciÃ³n del detalle del despacho de pedido. ");
 											ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correosError);
 											contro.enviarCorreoHTML();
 											huboError = true;
@@ -172,23 +172,23 @@ public void actualizacionInventarios()
 										CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 										correo.setContrasena(infoCorreo.getClaveCorreo());
 										correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-										correo.setMensaje("A continuación informamos que la tienda " + tien.getNombreTienda() + " tuvo problemas en la creación del encabezado del despacho de pedido. ");
+										correo.setMensaje("A continuaciÃ³n informamos que la tienda " + tien.getNombreTienda() + " tuvo problemas en la creaciÃ³n del encabezado del despacho de pedido. ");
 										ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correosError);
 										contro.enviarCorreoHTML();
 										break;
 									}
 								}
-								//En caso de que no hayamos tenido problemas en la inserción del encabezado es posible el envío
+								//En caso de que no hayamos tenido problemas en la inserciÃ³n del encabezado es posible el envÃ­o
 								//del correo
 								if(insercionEnc)
 								{
-									//Validamos si no hubo error en la inserción del despacho y si no es así, enviamos correos con la confirmación
+									//Validamos si no hubo error en la inserciÃ³n del despacho y si no es asÃ­, enviamos correos con la confirmaciÃ³n
 									Correo correo = new Correo();
 									correo.setAsunto("REPLICA DE DESPACHO " + tien.getNombreTienda() + " " + fechaActual.toString());
 									CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 									correo.setContrasena(infoCorreo.getClaveCorreo());
 									correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-									correo.setMensaje("Se ha replicado correctamente en la tienda " + tien.getNombreTienda() + " el despacho de Inventario número " + encabezadoDespacho.getIdDespacho());
+									correo.setMensaje("Se ha replicado correctamente en la tienda " + tien.getNombreTienda() + " el despacho de Inventario nÃºmero " + encabezadoDespacho.getIdDespacho());
 									ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correosExitoso);
 									contro.enviarCorreoHTML();
 									// En este punto debemos de cambiar el estado del despacho para ponerlo en estado preingresado
@@ -196,13 +196,13 @@ public void actualizacionInventarios()
 								}
 							}else
 							{
-								//Enviamos correo indicando que se está intentando ingresar un despacho que ya existe
+								//Enviamos correo indicando que se estÃ¡ intentando ingresar un despacho que ya existe
 								Correo correo = new Correo();
 								correo.setAsunto("ERROR DESPACHO REPETIDO " + tien.getNombreTienda() + " , despacho " + encabezadoDespacho.getIdDespacho()  + fechaActual.toString());
 								CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 								correo.setContrasena(infoCorreo.getClaveCorreo());
 								correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-								correo.setMensaje("A continuación informamos que la tienda " + tien.getNombreTienda() + " tuvo problemas se está intentando ingresar un posible despacho que ya existe. El despacho es el  número " + encabezadoDespacho.getIdDespacho());
+								correo.setMensaje("A continuaciÃ³n informamos que la tienda " + tien.getNombreTienda() + " tuvo problemas se estÃ¡ intentando ingresar un posible despacho que ya existe. El despacho es el  nÃºmero " + encabezadoDespacho.getIdDespacho());
 								ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correosError);
 								contro.enviarCorreoHTML();
 								break;

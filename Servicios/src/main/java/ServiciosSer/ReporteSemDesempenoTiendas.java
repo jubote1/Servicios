@@ -61,7 +61,7 @@ public class ReporteSemDesempenoTiendas {
 		{
 			System.out.println(exc.toString());
 		}
-		//Retormanos el día de la semana actual segun la fecha del calendario
+		//Retormanos el dÃ­a de la semana actual segun la fecha del calendario
 		//OJO
 		//int diaActual = 1;
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -100,12 +100,12 @@ public class ReporteSemDesempenoTiendas {
 			//Si es sabado se resta cinco
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 		}
-		//Llevamos a un string la fecha anterior para el cálculo de la venta
+		//Llevamos a un string la fecha anterior para el cÃ¡lculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
 		fechaAnterior = dateFormat.format(datFechaAnterior);
 		String respuesta = "";
-		//Ahora realizamos el procesamiento de lo que es como tal el corazón del reporte
-		//Vamos a incluir la lógica para traer todas las tiendas y revisar las estadísticas de los domiciliarios en dicho día y
+		//Ahora realizamos el procesamiento de lo que es como tal el corazÃ³n del reporte
+		//Vamos a incluir la lÃ³gica para traer todas las tiendas y revisar las estadÃ­sticas de los domiciliarios en dicho dÃ­a y
 		// de la cocina
 		capaControladorPOS.PedidoCtrl pedCtrl = new PedidoCtrl(false);
 		ArrayList<Tienda> tiendas = capaDAOCC.TiendaDAO.obtenerTiendas();
@@ -116,7 +116,7 @@ public class ReporteSemDesempenoTiendas {
 			if(!tiendaTemp.getHosbd().equals(new String("")))
 			{
 				//Realizamos la labor con cada una de las tiendas
-				respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='6'> DESEMPEÑO DOMICILIARIOS " + tiendaTemp.getNombreTienda()  + "</TH> </tr>";
+				respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='6'> DESEMPEÃ‘O DOMICILIARIOS " + tiendaTemp.getNombreTienda()  + "</TH> </tr>";
 				respuesta = respuesta + "<tr>"
 						+  "<td width='190' nowrap><strong>NOMBRE DOMICILIARIO</strong></td>"
 						+  "<td width='60' nowrap><strong>PEDIDOS INCORRECTOS</strong></td>"
@@ -136,14 +136,14 @@ public class ReporteSemDesempenoTiendas {
 			}
 		}
 		
-		//Generamos el desempeño de las cocinas de las tiendas
+		//Generamos el desempeÃ±o de las cocinas de las tiendas
 		for(int j = 0; j < tiendas.size(); j++)
 		{
 			tiendaTemp = tiendas.get(j);
 			if(!tiendaTemp.getHosbd().equals(new String("")))
 			{
 				//Realizamos la labor con cada una de las tiendas
-				respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='6'> DESEMPEÑO COCINA " + tiendaTemp.getNombreTienda()  + "</TH> </tr>";
+				respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='6'> DESEMPEÃ‘O COCINA " + tiendaTemp.getNombreTienda()  + "</TH> </tr>";
 				respuesta = respuesta + "<tr>"
 						+  "<td width='190' nowrap><strong>TIENDA</strong></td>"
 						+  "<td width='60' nowrap><strong>PEDIDOS INCORRECTOS</strong></td>"
@@ -158,11 +158,11 @@ public class ReporteSemDesempenoTiendas {
 			}	
 		}
 		
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciÃ³n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("DESEMPENOTIENDA");
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-			correo.setAsunto("REPORTE DESEMPEÑO TIENDAS entre fecha " + fechaAnterior + " y " + fechaActual);
+			correo.setAsunto("REPORTE DESEMPEÃ‘O TIENDAS entre fecha " + fechaAnterior + " y " + fechaActual);
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 			correo.setMensaje(respuesta);

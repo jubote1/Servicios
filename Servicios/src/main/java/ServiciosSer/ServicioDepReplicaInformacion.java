@@ -24,8 +24,8 @@ import ModeloSer.Usuario;
 import utilidadesSer.ControladorEnvioCorreo;
 
 /**
- * Este manual tiene como objetivo realizar la replica de la informaciÛn de la tienda, en un sistema 
- * consolidador de contact center, y adicionalmente realizar una depuraciÛn de las tablas en los sistemas de las tiendas
+ * Este manual tiene como objetivo realizar la replica de la informaci√≥n de la tienda, en un sistema 
+ * consolidador de contact center, y adicionalmente realizar una depuraci√≥n de las tablas en los sistemas de las tiendas
  * @author juanb
  *
  */
@@ -59,7 +59,7 @@ public class ServicioDepReplicaInformacion {
 		String fechaActualMenosHora = dateFormatHora.format(datFechaMenosHora);
 		
 		
-		//Realizamos la extracciÛn de los tiempos pedidos
+		//Realizamos la extracci√≥n de los tiempos pedidos
 		String respuesta = "";
 		boolean indicadorCorreo = false;
 		ArrayList<TiempoPedido> tiempos = TiempoPedidoDAO.retornarTiemposPedidosLocal();
@@ -76,12 +76,12 @@ public class ServicioDepReplicaInformacion {
 		
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la informaciÛn
+		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la informaci√≥n
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		//Vamos a recuperar de manera centralizada los valores de las variables de pedido en espera y pedido en ruta
 		int pedidoEmpacado = ParametrosDAO.retornarValorNumericoLocal("EMPACADODOMICILIO");
 		int pedidoEnRuta = ParametrosDAO.retornarValorNumericoLocal("ENRUTADOMICILIO");
-		//Con los valores recuperados con anterioridad se realizar· la consulta a cada una de las tiendas
+		//Con los valores recuperados con anterioridad se realizar√° la consulta a cada una de las tiendas
 		int cantPedEmp = 0;
 		int cantPedPen = 0;
 		int cantPedHora = 0;
@@ -94,18 +94,18 @@ public class ServicioDepReplicaInformacion {
 				respuesta = respuesta + "<table border='2'> <tr>" + tien.getNombreTienda() + " </tr>";
 				respuesta = respuesta + "<tr>"
 						+  "<td><strong>Pedidos Pendientes Salir Tienda</strong></td>"
-						+  "<td><strong>Cantidad de Pedidos ⁄ltima Hora</strong></td>"
-						+  "<td><strong>Tiempo ˙ltimo Pedido Pendiente</strong></td>"
+						+  "<td><strong>Cantidad de Pedidos √öltima Hora</strong></td>"
+						+  "<td><strong>Tiempo √∫ltimo Pedido Pendiente</strong></td>"
 						+  "</tr>";
-				//Comenzamos a validar los par·metros de cada tienda 
-				// LA MEJOR ESTRATEGIA SERÕA TENER UN SOLO M…TODO PARA MEJORAR EL PERFORMANCE
+				//Comenzamos a validar los par√°metros de cada tienda 
+				// LA MEJOR ESTRATEGIA SER√çA TENER UN SOLO M√âTODO PARA MEJORAR EL PERFORMANCE
 				//Cantidad de pedidos pendientes por salir de la tienda
 				cantPedEmp = PedidoDAO.obtenerCantidadPedidoPorEstado(fechaActual, pedidoEmpacado, tien.getHostBD());
 				//Cantidad de pedidos pendientes de la tienda
 				cantPedPen =  cantPedEmp + PedidoDAO.obtenerCantidadPedidoPorEstado(fechaActual, pedidoEnRuta, tien.getHostBD());
-				//Cantidad de pedidos de la ˙ltima hora
+				//Cantidad de pedidos de la √∫ltima hora
 				cantPedHora = PedidoDAO.obtenerCantidadPedidoDespuesHoraDomicilio(fechaActual, fechaActualMenosHora, tien.getHostBD(),0);
-				//Tiempo del ˙ltimo pedimo por salir
+				//Tiempo del √∫ltimo pedimo por salir
 				cantMinutos = PedidoDAO.obtenerTiempoUltimoPedidoEstado(fechaActual, pedidoEmpacado, tien.getHostBD(),"");
 				//Luego de obtenidos los datos pintamos el html
 				respuesta = respuesta + "<tr>"
@@ -123,17 +123,17 @@ public class ServicioDepReplicaInformacion {
 		
 		
 		
-		//Si hay indicador de que se debe enviar correo se recuperar· la variable y se enviar· el pedido
+		//Si hay indicador de que se debe enviar correo se recuperar√° la variable y se enviar√° el pedido
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribuciÛn para este correo
+			//Recuperar la lista de distribuci√≥n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPRESUMENOPERACION");
 			Date fecha = new Date();
 			Correo correo = new Correo();
 			correo.setAsunto("OPERACION GENERAL " + fecha.toString());
 			correo.setContrasena("Pizzaamericana2017");
 			correo.setUsuarioCorreo("alertaspizzaamericana@gmail.com");
-			correo.setMensaje("A continuaciÛn el detalle de la operaciÛn de Pizza Americana: \n" + respuesta);
+			correo.setMensaje("A continuaci√≥n el detalle de la operaci√≥n de Pizza Americana: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}

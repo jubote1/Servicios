@@ -53,12 +53,12 @@ public class ReportePedidosPendientesVirtual {
 		//Comenzamos a traer la fecha actual como un String
 		fechaActual = dateFormat.format(datFechaActual);
 		//Con la fecha actual vamos a realizar la consulta de los pedidos
-		//En este punto ya tenemos las dos fechas de interÈs por el momento nos interesar· retornar las ofertas dadas
+		//En este punto ya tenemos las dos fechas de inter√©s por el momento nos interesar√° retornar las ofertas dadas
 		// y las ofertas redimidas en estos rango de tiempo
-		//Intentamos realizar el envÌo de los pedidos pendientes
+		//Intentamos realizar el env√≠o de los pedidos pendientes
 		//Parametro de la URL Server
 		String urlServerContact = "";
-		//Se crea la variable que se encargar· de la respuesta
+		//Se crea la variable que se encargar√° de la respuesta
 		String respuesta = "";
 		boolean indicadorCorreo = false;
 		respuesta = "";
@@ -90,7 +90,7 @@ public class ReportePedidosPendientesVirtual {
 		
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribuciÛn para este correo
+			//Recuperar la lista de distribuci√≥n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDOPENDIENTE");
 			Date fecha = new Date();
 			Correo correo = new Correo();

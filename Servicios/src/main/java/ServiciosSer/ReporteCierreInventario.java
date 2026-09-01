@@ -75,8 +75,8 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	//Para la ejecuci�n autom�tica asumimos que es un lunes
 	String fechaActual = "";
 	//Variables donde manejaremos la fecha anerior con el fin realizar los c�lculos del cierre de inventarios
-	Date datFechaAnterior;
-	String fechaAnterior = "";
+	Date datFechaAnterior, datPreFechaAnterior;
+	String fechaAnterior = "", preFechaAnterior = "";
 	//Creamos el objeto calendario
 	Calendar calendarioActual = Calendar.getInstance();
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -108,7 +108,10 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	//Llevamos a un string la fecha anterior para el c�lculo de la venta
 	datFechaAnterior = calendarioActual.getTime();
 	fechaAnterior = dateFormat.format(datFechaAnterior);
-	
+	//Obtenemos la fechaPreAnterior que podría necesitarse
+	calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
+	datPreFechaAnterior = calendarioActual.getTime();
+	preFechaAnterior = dateFormat.format(datPreFechaAnterior);
 	//INCLUIMOS LA CONSTRUCCI�N DE LOS CONSUMOS POR TIENDA
 	respuesta =  "<table WIDTH='700' border='2'> <tr> <td colspan='2'> REPORTE DE PORCENTAJE CONSUMO TIENDAS - " + fechaAnterior + "  -  " + fechaActual +  "</td></tr>";
 	respuesta = respuesta + "<tr>"
@@ -164,7 +167,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
 			try
 			{
 				
-					rutasArchivos[fila] = CalcularCierreSemanalTiendaFormatoExcel(tien, fechaActual, fechaAnterior, ventaTotalTiendas);
+					rutasArchivos[fila] = CalcularCierreSemanalTiendaFormatoExcel(tien, fechaActual, fechaAnterior, preFechaAnterior, ventaTotalTiendas);
 			}
 			catch(Exception e)
 			{
@@ -213,7 +216,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
  * @param fecha
  * @return
  */
-public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fechaActual, String fechaAnterior, double ventaTotalTiendas)
+public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fechaActual, String fechaAnterior, String preFechaAnterior, double ventaTotalTiendas)
 {
 	String rutaArchivoGenerado="";
 	String rutaArchivoBD = ParametrosDAO.retornarValorAlfanumericoLocal("RUTACIERREINVENTARIO");
@@ -262,8 +265,18 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 		   	ArrayList cierreInventario = new ArrayList();
 		   	ArrayList cierreInventarioGas = new ArrayList();
 		   	//Llamamos m�todo qeu llenar� el ArrayList con el resumen de la informaci�n
-		   	cierreInventario = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumos(fechaActual, fechaAnterior, "Insumos", tienda.getHostBD());
-		   	cierreInventarioGas = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumos(fechaActual, fechaAnterior, "Bebidas", tienda.getHostBD());
+		   	//Debe haber un condicional para saber como sacamos el cierre inventario de insumos
+		   	boolean seAbrioLunes = CapaDAOSer.ItemInventarioDAO.validarSiDiaAbrio(fechaAnterior, tienda.getHostBD() );
+		   	if(seAbrioLunes)
+		   	{
+		   		cierreInventario = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumos(fechaActual, fechaAnterior, "Insumos", tienda.getHostBD());
+			   	cierreInventarioGas = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumos(fechaActual, fechaAnterior, "Bebidas", tienda.getHostBD());
+		   	}
+		   	else
+		   	{
+		   		cierreInventario = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumosSinLunes(fechaActual, fechaAnterior, preFechaAnterior, "Insumos", tienda.getHostBD());
+			   	cierreInventarioGas = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumosSinLunes(fechaActual, fechaAnterior, preFechaAnterior, "Bebidas", tienda.getHostBD());
+		   	}
 			//Contralaremos la fila en la que vamos con la variable fila
 			int fila = 0;
 			int filasInforme = 0;

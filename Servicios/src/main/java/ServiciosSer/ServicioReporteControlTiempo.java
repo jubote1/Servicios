@@ -33,7 +33,7 @@ public class ServicioReporteControlTiempo {
 	public static void main( String[] args )
 	        
 	{
-		//En respuesta guardaremos el html que guardar· todo lo que se desplegar· en el correo.
+		//En respuesta guardaremos el html que guardar√° todo lo que se desplegar√° en el correo.
 		String respuesta = "";
 		ArrayList<TiempoPedido> tiempos = TiempoPedidoDAO.retornarTiemposPedidos();
 		respuesta = respuesta + "<table border='2'> <tr> RESUMEN ACTUAL DE TIEMPO DE LAS TIENDAS " + " </tr>";
@@ -49,13 +49,13 @@ public class ServicioReporteControlTiempo {
 		
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Recuperar la lista de distribuciÛn para este correo
+		//Recuperar la lista de distribuci√≥n para este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPCONTROLTIEMPOS");
 		
-		//Realizamos la recuperaciÛn de las tiendas para recorrerlas todos.
+		//Realizamos la recuperaci√≥n de las tiendas para recorrerlas todos.
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendas();
 		
-		//Manejaremos un indicador qeu nos dir· si debemos de enviar el correo, dado que hay por lo menos un pedido
+		//Manejaremos un indicador qeu nos dir√° si debemos de enviar el correo, dado que hay por lo menos un pedido
 		boolean indEnvioCorreo = false;
 		
 		//Realizamos un recorrido de las tiendas para de cada uno se recuperan los pedidos.
@@ -78,7 +78,7 @@ public class ServicioReporteControlTiempo {
 						+  "<td><strong>Estado Pedido</strong></td>"
 						+  "<td><strong>Observacion</strong></td>"
 						+  "</tr>";
-				//Recorremos el arreglo para rellenar la informaciÛn de la tabla con los pedidos fuera de tiempo
+				//Recorremos el arreglo para rellenar la informaci√≥n de la tabla con los pedidos fuera de tiempo
 				for(int j = 0; j < pedFueraTiempo.size(); j++)
 				{
 					indEnvioCorreo = true;
@@ -136,11 +136,11 @@ public class ServicioReporteControlTiempo {
 			
 	      System.out.println("My Service Started "
 	                         + new java.util.Date());
-	      //Recuperamos los par·metros con los cuales se ejecutaron
+	      //Recuperamos los par√°metros con los cuales se ejecutaron
 	      
 	      int segundosEje;
-	      //En este punto deberemos de recuperar el n˙mero de minutos en el cual se ejecutar· el proceso
-		  //Traemos de una variable de configuraciÛn el valor de la marcacion domicilios.com
+	      //En este punto deberemos de recuperar el n√∫mero de minutos en el cual se ejecutar√° el proceso
+		  //Traemos de una variable de configuraci√≥n el valor de la marcacion domicilios.com
 		  numMinutos = ParametrosDAO.retornarValorNumerico("REPCONTTIEMPOS");
 		  segundosEje = numMinutos * 60 * 1000;
 		  while(!stopped) {
@@ -149,7 +149,7 @@ public class ServicioReporteControlTiempo {
 	    	  try
 				{
 	    		  Thread.sleep(segundosEje);
-	    		  System.out.println("volviendo a la ejecuciÛn despues de " + segundosEje + " milisegundos");
+	    		  System.out.println("volviendo a la ejecuci√≥n despues de " + segundosEje + " milisegundos");
 				}catch(Exception e)
 				{
 					System.out.println("Problemas en la pausa de 30 minutos");

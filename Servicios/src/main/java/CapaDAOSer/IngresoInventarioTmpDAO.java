@@ -17,7 +17,7 @@ public class IngresoInventarioTmpDAO {
 		boolean resultado = false;
 		try
 		{
-			//Realizamos la inserción del IdInventario
+			//Realizamos la inserciÃ³n del IdInventario
 			Statement stm = con1.createStatement();
 			String insert = "insert into ingreso_inventario_tmp (iddespacho,fecha_sistema, observacion) values (" + idDespacho + ", '" + fecha + "' , '" + observacion +  "')"; 
 			stm.executeUpdate(insert);
@@ -45,7 +45,7 @@ public class IngresoInventarioTmpDAO {
 		boolean resultado = false;
 		try
 		{
-			//Realizamos la inserción del IdInventario
+			//Realizamos la inserciÃ³n del IdInventario
 			Statement stm = con1.createStatement();
 			String delete = "delete from ingreso_inventario_tmp where iddespacho = " + idDespacho; 
 			stm.executeUpdate(delete);
@@ -74,7 +74,7 @@ public class IngresoInventarioTmpDAO {
 		boolean resultado = false;
 		try
 		{
-			//Realizamos la inserción del IdInventario
+			//Realizamos la inserciÃ³n del IdInventario
 			Statement stm = con1.createStatement();
 			String consulta = "select * from ingreso_inventario_tmp where iddespacho = " + idDespacho; 
 			ResultSet rs = stm.executeQuery(consulta);

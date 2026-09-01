@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -38,6 +40,7 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import CapaDAOSer.ExcepcionFidelizacionDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ItemInventarioDAO;
 import CapaDAOSer.ParametrosDAO;
@@ -47,11 +50,13 @@ import CapaDAOSer.UsuarioDAO;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
+import ModeloSer.ExcepcionFidelizacion;
 import ModeloSer.Insumo;
 import ModeloSer.PedidoPlanFidelizacion;
 import ModeloSer.Tienda;
 import ModeloSer.Usuario;
 import capaDAOCC.ClienteFidelizacionDAO;
+import capaDAOCC.ClienteNoFidelizacionDAO;
 import capaDAOCC.FidelizacionTransaccionDAO;
 import capaDAOCC.IntegracionCRMDAO;
 import capaModeloCC.FidelizacionTransaccion;
@@ -98,6 +103,14 @@ public void generarReplicaProgramaFidelidad()
 	{
 		diasVigencia = 180;
 	}
+	//Revisamos si hay excepcion de fidelizacion en la fecha
+	boolean existeExcepcion = false;
+	ExcepcionFidelizacion excepcion = ExcepcionFidelizacionDAO.retornarExcepcionesFidelizacion(fechaActual);
+	if(excepcion.getIdExcepcion() > 0)
+	{
+		existeExcepcion = true;
+	}
+	
 	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocalSinBodega();
 	ArrayList<PedidoPlanFidelizacion> pedidos;
 	PedidoPlanFidelizacion pedidoTemp;
@@ -138,7 +151,26 @@ public void generarReplicaProgramaFidelidad()
 				boolean clienteFideliza = ClienteFidelizacionDAO.existeClienteFidelizacion(pedidoTemp.getCorreo());
 				if(clienteFideliza)
 				{
-					puntosSumar = pedidoTemp.getValorNeto()/valorPuntos;
+					puntosSumar = 0;
+					if(existeExcepcion)
+					{
+						//Debemos hacer la validación que si estemos en el rango de la excepcion
+						String strFechaPedido = pedidoTemp.getFechaInsercion();
+						String strFechaInicioExp = fechaActual + " " + excepcion.getHoraInicio()+":00";
+						String strFechaIFinExp = fechaActual + " " + excepcion.getHoraFin()+":00";
+						DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+						LocalDateTime fechaPedido = LocalDateTime.parse(strFechaPedido, formatter);
+						LocalDateTime fechaInicioExp = LocalDateTime.parse(strFechaInicioExp, formatter);
+						LocalDateTime fechaIFinExp = LocalDateTime.parse(strFechaIFinExp, formatter);
+						if (fechaPedido.isAfter(fechaInicioExp) && fechaPedido.isBefore(fechaIFinExp)) {
+							puntosSumar = pedidoTemp.getValorNeto()/excepcion.getValorPunto();
+				        } else {
+				        	puntosSumar = pedidoTemp.getValorNeto()/valorPuntos;
+				        }
+					}else
+					{
+						puntosSumar = pedidoTemp.getValorNeto()/valorPuntos;
+					}
 					boolean existeTransaccion = FidelizacionTransaccionDAO.existeFidelizacionTransaccion(pedidoTemp.getCorreo(), pedidoTemp.getIdTienda(), pedidoTemp.getIdPedidoTienda());
 					if(!existeTransaccion && puntosSumar > 0)
 					{
@@ -503,6 +535,8 @@ public void generarReplicaProgramaFidelidad()
 	    //FINALIZACION    
 		}
 	}
+	//Al final realizamos la depuración de las no deseos de estar en el plan de fidelizacion
+	ClienteNoFidelizacionDAO.depurarExistenciaClienteNoFidelizacion();
 	
 	if(false)
 	{

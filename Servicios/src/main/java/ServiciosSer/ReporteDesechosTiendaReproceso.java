@@ -25,7 +25,7 @@ public class ReporteDesechosTiendaReproceso {
 
 		// 1. Recuperamos la fecha actual del sistema con la fecha apertura
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los c·lculos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los c√°lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -54,7 +54,7 @@ public class ReporteDesechosTiendaReproceso {
 		{
 			System.out.println(e.toString());
 		}
-		//Retormanos el dÌa de la semana actual segun la fecha del calendario
+		//Retormanos el d√≠a de la semana actual segun la fecha del calendario
 		//OJO
 		//int diaActual = 1;
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -93,19 +93,19 @@ public class ReporteDesechosTiendaReproceso {
 			//Si es sabado se resta cinco
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 		}
-		//Llevamos a un string la fecha anterior para el c·lculo de la venta
+		//Llevamos a un string la fecha anterior para el c√°lculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
 		fechaAnterior = dateFormat.format(datFechaAnterior);
 		
 		
-		// 2. Recuperamos las tiendas de manera tendremos el listado para consultar la informaciÛn de cada una.
+		// 2. Recuperamos las tiendas de manera tendremos el listado para consultar la informaci√≥n de cada una.
 		//Comenzamos por obtener todas las tiendas y realizar un recorrido de cada una
 		ArrayList<Tienda> tiendas = capaDAOCC.TiendaDAO.obtenerTiendas();
 		//Variables para la labor de cada tienda
 		Tienda tiendaTemp;
 		
-		//3. Comenzamos el procesamiento para generar el HTML que se enviar· el correo recorriendo cada tienda y generando una tabla 
-		// con la informaciÛn de los desechos
+		//3. Comenzamos el procesamiento para generar el HTML que se enviar√° el correo recorriendo cada tienda y generando una tabla 
+		// con la informaci√≥n de los desechos
 		String respuesta = "";
 		Double valorDesechoTienda;
 		for(int j = 0; j < tiendas.size(); j++)
@@ -116,7 +116,7 @@ public class ReporteDesechosTiendaReproceso {
 					+  "<th width='50' ><strong>Id Desecho</strong></td>"
 					+  "<th width='70'><strong>Numero Desecho</strong></td>"
 					+  "<th width='80'><strong>Fecha</strong></td>"
-					+  "<th width='200'><strong>DescripciÛn</strong></td>"
+					+  "<th width='200'><strong>Descripci√≥n</strong></td>"
 					+  "<th width='200'><strong>Motivo</strong></td>"
 					+  "<th width='130'><strong>Desecho</strong></td>"
 					+  "<th width='50'><strong>Gramos</strong></td>"
@@ -146,15 +146,15 @@ public class ReporteDesechosTiendaReproceso {
 			respuesta = respuesta + "<tr><td width='600' COLSPAN='5'>TOTAL TIENDA </td><td width='390' COLSPAN='5'>" + formatea.format(valorDesechoTienda) + " </td></tr></table> <br/>";
 		}
 				
-		//Al final el envÌo del correo
-		//Procedemos al envÌo del correo
+		//Al final el env√≠o del correo
+		//Procedemos al env√≠o del correo
 		Correo correo = new Correo();
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto("DESECHOS SEMANALES DESDE " + fechaAnterior + " HASTA "  + fechaActual);
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEDESECHOS");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("A continuaciÛn el detalle y resumen de los desechos por tienda entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+		correo.setMensaje("A continuaci√≥n el detalle y resumen de los desechos por tienda entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 

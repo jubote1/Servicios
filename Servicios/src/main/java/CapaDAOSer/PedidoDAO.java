@@ -2,7 +2,9 @@ package CapaDAOSer;
 
 import java.lang.reflect.Type;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -22,10 +24,14 @@ import CapaDAOSer.TiendaDAO;
 import ConexionSer.ConexionBaseDatos;
 import ModeloSer.ClienteCampana;
 import ModeloSer.ClienteFiel;
+import ModeloSer.NovedadDidi;
 import ModeloSer.Pedido;
+import ModeloSer.PedidoAll;
+import ModeloSer.PedidoAnulado;
 import ModeloSer.PedidoPlanFidelizacion;
 import ModeloSer.Tienda;
 import capaModeloPOS.PedidoFactElectronica;
+import java.sql.Types;
 
 public class PedidoDAO {
 	
@@ -624,7 +630,7 @@ public class PedidoDAO {
 		ArrayList <Pedido> consultaPedidos = new ArrayList();
 		int idtienda = 0;
 		String consulta = "";
-		consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.idlink, a.hora_programado, a.origen from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.idestadopedido = 2 and a.enviadopixel = 2 and a.fechapagovirtual IS NOT NULL ";
+		consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.idlink, a.hora_programado, a.origen, a.fechapagovirtual from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.idestadopedido = 2 and a.enviadopixel = 2 and a.fechapagovirtual IS NOT NULL ";
 		ConexionBaseDatos con = new ConexionBaseDatos();
 		//Llamamos metodo de conexi�n asumiendo que corremos en el servidor de aplicaciones de manera local
 		Connection con1 = con.obtenerConexionBDContactLocal();
@@ -646,6 +652,7 @@ public class PedidoDAO {
 			String url;
 			String stringpixel;
 			String fechainsercion;
+			String fechaPagoVirtual;
 			String usuariopedido;
 			String telefono;
 			String direccion;
@@ -675,6 +682,7 @@ public class PedidoDAO {
 				numposheader = rs.getInt("numposheader");
 				stringpixel = rs.getString("stringpixel");
 				fechainsercion = rs.getString("fechainsercion");
+				fechaPagoVirtual = rs.getString("fechapagovirtual");
 				usuariopedido = rs.getString("usuariopedido");
 				direccion = rs.getString("direccion");
 				telefono = rs.getString("telefono");
@@ -696,6 +704,7 @@ public class PedidoDAO {
 				cadaPedido.setIdLink(idLink);
 				cadaPedido.setHoraProgramado(horaProgramado);
 				cadaPedido.setOrigen(origen);
+				cadaPedido.setFechaPagoVirtual(fechaPagoVirtual);
 				consultaPedidos.add(cadaPedido);
 			}
 			rs.close();
@@ -3104,7 +3113,7 @@ public class PedidoDAO {
 			ArrayList <Pedido> consultaPedidos = new ArrayList();
 			int idtienda = 0;
 			String consulta = "";
-			consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.hora_programado, a.fechapagovirtual from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.programado = 'S'";
+			consulta = "select a.idpedido, b.nombre, a.total_bruto, a.impuesto, a.total_neto, concat (c.nombre , '-' , c.apellido) nombrecliente, c.direccion, c.telefono, d.descripcion, a.fechapedido, c.idcliente, a.enviadopixel, a.numposheader, b.idtienda, b.url, a.stringpixel, a.fechainsercion, a.usuariopedido, e.nombre formapago, e.idforma_pago, a.tiempopedido, f.valorformapago, a.descuento, c.memcode, a.idtienda, a.hora_programado, a.fechapagovirtual, (SELECT GROUP_CONCAT(CONCAT('(',g.cantidad,'-',h.nombre,')') SEPARATOR ',') FROM detalle_pedido g, producto h WHERE g.idproducto = h.idproducto AND g.idpedido = a.idpedido AND h.tipo = 'PIZZA') AS detalle from pedido a, tienda b, cliente c, estado_pedido d, forma_pago e, pedido_forma_pago f where a.idtienda = b.idtienda and a.idcliente = c.idcliente and a.idestadopedido = d.idestadopedido and e.idforma_pago = f.idforma_pago and f.idpedido = a.idpedido and a.fechapedido = '" + fechaPed + "' and a.programado = 'S'";
 			ConexionBaseDatos con = new ConexionBaseDatos();
 			//Llamamos metodo de conexi�n asumiendo que corremos en el servidor de aplicaciones de manera local
 			Connection con1 = con.obtenerConexionBDContactLocal();
@@ -3139,6 +3148,7 @@ public class PedidoDAO {
 				int idTienda;
 				String horaProgramado;
 				String fechaPagoVirtual;
+				String detalle;
 				while(rs.next())
 				{
 					idpedido = rs.getInt("idpedido");
@@ -3168,11 +3178,13 @@ public class PedidoDAO {
 					idTienda = rs.getInt("idtienda");
 					horaProgramado = rs.getString("hora_programado");
 					fechaPagoVirtual = rs.getString("fechapagovirtual");
+					detalle = rs.getString("detalle");
 					Pedido cadaPedido = new Pedido(idpedido,  nombreTienda,totalBruto, impuesto, totalNeto,
 							estadoPedido, fechaPedido, nombreCliente, idcliente, enviadopixel,numposheader, null, stringpixel, fechainsercion, usuariopedido, direccion, telefono, formapago, idformapago, tiempopedido,valorFormaPago, descuento, motivoDescuento, memcode);
 					cadaPedido.setIdtienda(idTienda);
 					cadaPedido.setHoraProgramado(horaProgramado);
 					cadaPedido.setFechaPagoVirtual(fechaPagoVirtual);
+					cadaPedido.setDetalle(detalle);
 					consultaPedidos.add(cadaPedido);
 				}
 				rs.close();
@@ -3467,20 +3479,22 @@ public class PedidoDAO {
 			try
 			{
 				Statement stm = con1.createStatement();
-				String consulta = "SELECT a.idtienda, a.idpedidotienda, a.fechapedido, b.email, a.total_neto, concat(b.nombre,' ', b.apellido) as nombres  FROM pedido a, cliente b where a.idcliente = b.idcliente and a.fechapedido = '" + fecha + "' AND b.email != '' and b.email != 'integration@rappi.com' and b.email != 'NO TIENE' and b.email IS NOT NULL"; 
+				String consulta = "SELECT a.idtienda, a.idpedidotienda, a.fechapedido, b.email, a.total_neto, concat(b.nombre,' ', b.apellido) as nombres, a.fechainsercion  FROM pedido a, cliente b where a.idcliente = b.idcliente and a.fechapedido = '" + fecha + "' AND b.email != '' and b.email != 'integration@rappi.com' and b.email != 'NO TIENE' and b.email IS NOT NULL"; 
 				ResultSet rs = stm.executeQuery(consulta);
 				String correo = "";
 				int idTienda = 0;
 				int idPedidoTienda = 0;
 				double valorNeto = 0;
 				String nombres;
+				String fechaInsercion;
 				while(rs.next()){
 					correo = rs.getString("email");
 					idTienda = rs.getInt("idtienda");
 					idPedidoTienda = rs.getInt("idpedidotienda");
 					valorNeto = rs.getDouble("total_neto");
 					nombres= rs.getString("nombres");
-					pedidoTemp = new PedidoPlanFidelizacion(fecha,correo,idTienda, idPedidoTienda, valorNeto,nombres);
+					fechaInsercion = rs.getString("fechainsercion");
+					pedidoTemp = new PedidoPlanFidelizacion(fecha,correo,idTienda, idPedidoTienda, valorNeto,nombres,fechaInsercion);
 					pedidos.add(pedidoTemp);
 				}
 				rs.close();
@@ -3497,6 +3511,262 @@ public class PedidoDAO {
 				}
 			}
 			return(pedidos);
+		}
+		
+		
+		/**
+		 * Método que retorna las novedades de DIDI de una fecha determinada
+		 * @param fecha
+		 * @param url
+		 * @return
+		 */
+		public static ArrayList<NovedadDidi> obtenerNovedadesDidi(String fecha , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			ArrayList<NovedadDidi> novedades = new ArrayList();
+			NovedadDidi novedadTemp = new NovedadDidi();
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "SELECT a.idpedidotienda, a.novedad, IFNULL((SELECT SUM(b.valortotal) FROM detalle_pedido b WHERE b.idpedidotienda = a.idpedidotienda AND b.idmotivoanulacion IS NOT NULL),0) AS anulacion, IFNULL((SELECT SUM(d.descuentopesos)  FROM pedido_descuento d WHERE d.idpedido = a.idpedidotienda),0) AS descuento, (SELECT e.total_neto FROM pedido e WHERE e.idpedidotienda = a.idpedidotienda) as total_pedido FROM pedido_novedad_plataforma a, pedido z WHERE a.idpedidotienda = z.idpedidotienda AND  novedad = 'PEDIDO DE PLATAFORMA SE QUEDO EN ESTADO ESPERA' AND z.fechapedido = '" + fecha + "' GROUP BY a.idpedidotienda, a.novedad"; 
+				ResultSet rs = stm.executeQuery(consulta);
+				int idPedidoTienda;
+				String novedad;
+				double valorAnulacion;
+				double valorDescuento;
+				double valorTotal;
+				while(rs.next()){
+					idPedidoTienda = rs.getInt("idpedidotienda");
+					novedad = rs.getString("novedad");
+					valorAnulacion = rs.getDouble("anulacion");
+					valorDescuento = rs.getDouble("descuento");
+					valorTotal = rs.getDouble("total_pedido");
+					novedadTemp = new NovedadDidi(idPedidoTienda, novedad, valorAnulacion, valorDescuento, valorTotal);
+					novedades.add(novedadTemp);
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+			}
+			return(novedades);
+		}
+		
+		
+		/**
+		 * Pedidos que están anulados en una fecha determinada en una tienda
+		 * @param fecha
+		 * @param hostBD
+		 * @return
+		 */
+		public static ArrayList<PedidoAnulado> obtenerPedidoAnulado( String fecha, String hostBD) {
+			 Logger logger = Logger.getLogger("log_file");
+			 ConexionBaseDatos con = new ConexionBaseDatos();
+			 Connection con2 = con.obtenerConexionBDTiendaRemota(hostBD);
+			 ArrayList <PedidoAnulado> pedidos = new ArrayList();
+			 PedidoAnulado pedTemp;
+			 int idPedidoTienda, idTienda;
+			try {
+				 Statement stm = con2.createStatement();
+				 String select  = "SELECT a.idpedidotienda, a.idtienda FROM pedido a , detalle_pedido b WHERE a.idpedidotienda = b.idpedidotienda AND a.fechapedido >= '" + fecha +"' AND b.idmotivoanulacion IS NOT NULL AND a.total_neto = 0 GROUP by a.idpedidotienda, a.idtienda";
+				ResultSet rs = stm.executeQuery(select);
+				while(rs.next())
+				{
+					idPedidoTienda = rs.getInt("idpedidotienda");
+					idTienda = rs.getInt("idtienda");
+					pedTemp = new PedidoAnulado(idPedidoTienda, idTienda);
+					pedidos.add(pedTemp);
+				}
+				rs.close();
+				stm.close();
+				con2.close();
+			} catch ( Exception e) {
+				logger.error((Object) e.toString());
+				System.out.println(e.toString());
+				try {
+					con2.close();
+				} catch ( Exception ex) {
+				}
+			}
+			return (pedidos);
+		}
+		
+		
+		/**
+		 * Método construido para captar la información de las tiendas la cual se insertará de manera centralizada
+		 * @param fecha
+		 * @param hostBD
+		 * @return
+		 */
+		public static ArrayList<PedidoAll> recuperarPedidosPorFecha(String fecha, String hostBD) {
+	        ArrayList<PedidoAll> lista = new ArrayList<>();
+	        String sql = "SELECT * FROM pedido WHERE fechapedido = ?";
+	        ConexionSer.ConexionBaseDatos con = new ConexionSer.ConexionBaseDatos();
+	        
+	        try (Connection conn = con.obtenerConexionBDTiendaRemota(hostBD);
+	             PreparedStatement ps = conn.prepareStatement(sql)) {
+	            
+	            ps.setString(1, fecha);
+	            
+	            try (ResultSet rs = ps.executeQuery()) {
+	                while (rs.next()) {
+	                    PedidoAll p = new PedidoAll();
+	                    p.setIdPedidoTienda(rs.getInt("idpedidotienda"));
+	                    p.setIdTienda(rs.getInt("idtienda"));
+	                    p.setTotalBruto(rs.getDouble("total_bruto"));
+	                    p.setTotalImpuesto(rs.getDouble("impuesto"));
+	                    p.setTotalNeto(rs.getDouble("total_neto"));
+	                    p.setIdCliente(rs.getInt("idcliente"));
+	                    p.setFechaPedido(rs.getDate("fechapedido"));
+	                    p.setIdPedidoContact(rs.getInt("idpedidocontact"));
+	                    p.setFechaInsercion(rs.getTimestamp("fechainsercion"));
+	                    p.setUsuarioPedido(rs.getString("usuariopedido"));
+	                    p.setTiempoPedido(rs.getInt("tiempopedido"));
+	                    p.setIdTipoPedido(rs.getInt("idtipopedido"));
+	                    p.setIdEstado(rs.getInt("idestado"));
+	                    p.setIdMotivoAnulacion(rs.getObject("idmotivoanulacion") != null ? rs.getInt("idmotivoanulacion") : null);
+	                    p.setUsuarioAutAnulacion(rs.getString("usuario_aut_anulacion"));
+	                    p.setObsAnulacion(rs.getString("obs_anulacion"));
+	                    p.setIdDomiciliario(rs.getObject("iddomiciliario") != null ? rs.getInt("iddomiciliario") : null);
+	                    p.setObsDomiciliario(rs.getString("obs_domiciliario"));
+	                    p.setEstacion(rs.getString("estacion"));
+	                    p.setIdPedidoAlt(rs.getString("idpedidoalt"));
+	                    p.setImpreso(rs.getBytes("impreso"));
+	                    p.setObservacion(rs.getString("observacion"));
+	                    p.setObsClienteGenerico(rs.getString("obs_cliente_generico"));
+	                    p.setLogistica(rs.getBytes("logistica"));
+	                    p.setProgramado(rs.getString("programado"));
+	                    p.setHoraProgramado(rs.getString("hora_programado"));
+	                    p.setIdEmpleado(rs.getObject("idempleado") != null ? rs.getInt("idempleado") : null);
+	                    p.setNombreEmpleado(rs.getString("nombreempleado"));
+	                    p.setFacturaGenerada(rs.getBoolean("factura_generada"));
+	                    p.setEncuesta(rs.getString("encuesta"));
+	                    p.setNumeroPulsador(rs.getInt("numero_pulsador"));
+	                    
+	                    lista.add(p);
+	                }
+	            }
+	            conn.close();
+	        } catch (SQLException e) {
+	            System.err.println("Error en PedidoDAO: " + e.getMessage());
+	        }
+	        return lista;
+	    }
+
+		/**
+		 * Método que se encargará de la inserción de manera centralizada en el datamart de la información de la tabla pedido
+		 * @param pedidos
+		 * @param connCentral
+		 */
+		public static void insertarLotePedidos(ArrayList<PedidoAll> pedidos) {
+	        String sql = "INSERT INTO pedido (idpedidotienda, idtienda, total_bruto, impuesto, total_neto, " +
+	                     "idcliente, fechapedido, idpedidocontact, fechainsercion, usuariopedido, tiempopedido, " +
+	                     "idtipopedido, idestado, idmotivoanulacion, usuario_aut_anulacion, obs_anulacion, " +
+	                     "iddomiciliario, obs_domiciliario, estacion, idpedidoalt, impreso, observacion, " +
+	                     "obs_cliente_generico, logistica, programado, hora_programado, idempleado, " +
+	                     "nombreempleado, factura_generada, encuesta, numero_pulsador) " +
+	                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+	        ConexionSer.ConexionBaseDatos con = new ConexionSer.ConexionBaseDatos();
+	        Connection conn = con.obtenerConexionBDDatamartLocal();
+	        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+	        	conn.setAutoCommit(false); // Iniciamos transacción manual
+
+	            for (PedidoAll p : pedidos) {
+	                ps.setInt(1, p.getIdPedidoTienda());
+	                ps.setInt(2, p.getIdTienda());
+	                ps.setDouble(3, p.getTotalBruto());
+	                ps.setDouble(4, p.getTotalImpuesto());
+	                ps.setDouble(5, p.getTotalNeto());
+	                ps.setInt(6, p.getIdCliente());
+	                ps.setDate(7, p.getFechaPedido());
+	                ps.setInt(8, p.getIdPedidoContact());
+	                ps.setTimestamp(9, p.getFechaInsercion());
+	                ps.setString(10, p.getUsuarioPedido());
+	                ps.setInt(11, p.getTiempoPedido());
+	                ps.setInt(12, p.getIdTipoPedido());
+	                ps.setInt(13, p.getIdEstado());
+	                
+	                // Manejo de nulos (usando setObject para valores opcionales)
+	                if (p.getIdMotivoAnulacion() != null) ps.setInt(14, p.getIdMotivoAnulacion()); else ps.setNull(14, Types.INTEGER);
+	                
+	                ps.setString(15, p.getUsuarioAutAnulacion());
+	                ps.setString(16, p.getObsAnulacion());
+	                
+	                if (p.getIdDomiciliario() != null) ps.setInt(17, p.getIdDomiciliario()); else ps.setNull(17, Types.INTEGER);
+	                
+	                ps.setString(18, p.getObsDomiciliario());
+	                ps.setString(19, p.getEstacion());
+	                ps.setString(20, p.getIdPedidoAlt());
+	                ps.setBytes(21, p.getImpreso());
+	                ps.setString(22, p.getObservacion());
+	                ps.setString(23, p.getObsClienteGenerico());
+	                ps.setBytes(24, p.getLogistica());
+	                ps.setString(25, p.getProgramado());
+	                ps.setString(26, p.getHoraProgramado());
+	                
+	                if (p.getIdEmpleado() != null) ps.setInt(27, p.getIdEmpleado()); else ps.setNull(27, Types.INTEGER);
+	                
+	                ps.setString(28, p.getNombreEmpleado());
+	                ps.setBoolean(29, p.getFacturaGenerada());
+	                ps.setString(30, p.getEncuesta());
+	                ps.setInt(31, p.getNumeroPulsador());
+
+	                ps.addBatch(); // Acumulamos en buffer
+	            }
+
+	            ps.executeBatch(); // Ejecutamos todos los insert de una vez
+	            conn.commit(); // Confirmamos los cambios en BD
+	            conn.close();
+	            
+	        } catch (SQLException e) {
+	            try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+	            System.err.println("Error en Batch Insert: " + e.getMessage());
+	        } finally {
+	            try { conn.setAutoCommit(true); } catch (SQLException e) { e.printStackTrace(); }
+	        }
+	    }
+		
+		
+		public static boolean existePedidosFecha(String fecha, int idTienda)
+		{
+			
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDDatamartLocal();
+			boolean resultado = false;
+			try
+			{
+				Statement stm = con1.createStatement();
+				String select = "select * from pedido where fechapedido = '" + fecha +"' and idtienda = " + idTienda ;
+				ResultSet rs = stm.executeQuery(select);
+				resultado = false;
+				while(rs.next())
+				{
+					resultado = true;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+			}
+			catch (Exception e){
+				resultado = false;
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+			}
+			return(resultado);
 		}
 			
 }

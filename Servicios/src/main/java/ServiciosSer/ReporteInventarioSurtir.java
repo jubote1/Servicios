@@ -56,18 +56,18 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
 public class ReporteInventarioSurtir {
 	
-	/** ESTE M…TDO ATIENDE LA CAPA DE PRESENTACI”N
-	 * MÈtodo que se encarga de definir la lÛgica de negocio para armar los inventarios de surtir una pizzeria en cuanto
+	/** ESTE M√âTDO ATIENDE LA CAPA DE PRESENTACI√ìN
+	 * M√©todo que se encarga de definir la l√≥gica de negocio para armar los inventarios de surtir una pizzeria en cuanto
 	 * recupera el inventario actual de la tienda y lo cruza contra el deber ser y de esta manera precarga unos valores predifidos
-	 * para ser mostrardos en la capa de presentaciÛn.
+	 * para ser mostrardos en la capa de presentaci√≥n.
 	 * @param idtienda valor con el idtienda de la cual se desea armar el inventario
 	 * @param fecha para la cual se desea surtir con base en esta fecha es que se retorna el valor de los inventarios de la tienda, 
-	 * adicionalmente se c·lcula el dÌa de la semana que se va a surtir, siendo el domingo el primer dÌa de la semana.
-	 * @return Se retornar· un valor string en formato JSON con la base para ser desplegada en la capa de presentaciÛn.
+	 * adicionalmente se c√°lcula el d√≠a de la semana que se va a surtir, siendo el domingo el primer d√≠a de la semana.
+	 * @return Se retornar√° un valor string en formato JSON con la base para ser desplegada en la capa de presentaci√≥n.
 	 */
 	public String CalcularInventarioTienda(int idtienda, String fecha)
 	{
-		//obtenemos dÌa de la semana para recuperar inventario requerido de la tienda
+		//obtenemos d√≠a de la semana para recuperar inventario requerido de la tienda
 		// Creamos una instancia del calendario
 		GregorianCalendar cal = new GregorianCalendar();
 		int diasemana = 0;
@@ -138,7 +138,7 @@ public class ReporteInventarioSurtir {
 	
 	public String CalcularInventarioTiendaSinFecha(int idtienda, String fecha)
 	{
-		//obtenemos dÌa de la semana para recuperar inventario requerido de la tienda
+		//obtenemos d√≠a de la semana para recuperar inventario requerido de la tienda
 		// Creamos una instancia del calendario
 		GregorianCalendar cal = new GregorianCalendar();
 		int diasemana = 0;
@@ -209,7 +209,7 @@ public class ReporteInventarioSurtir {
 	
 	public String verificarExistenciaDespachoTienda(int idtienda, String fecha)
 	{
-		//obtenemos dÌa de la semana para recuperar inventario requerido de la tienda
+		//obtenemos d√≠a de la semana para recuperar inventario requerido de la tienda
 		// Creamos una instancia del calendario
 		GregorianCalendar cal = new GregorianCalendar();
 		int diasemana = 0;
@@ -231,13 +231,13 @@ public class ReporteInventarioSurtir {
 	}
 	
 	/**
-	 * MÈtodo que se encarga de la conformaciÛn del despacho para la modificaciÛn de este en caso de que se requiera
+	 * M√©todo que se encarga de la conformaci√≥n del despacho para la modificaci√≥n de este en caso de que se requiera
 	 * @param idDespacho
 	 * @return
 	 */
 	public String obtenerDespachoModificar(int idDespacho)
 	{
-		//obtenemos dÌa de la semana para recuperar inventario requerido de la tienda
+		//obtenemos d√≠a de la semana para recuperar inventario requerido de la tienda
 		ArrayList<InsumoDespachoTiendaDetalle> insumosDespachados = InsumoDespachoTiendaDetalleDAO.obtenerDetalleDespachoTiendaCompleto(idDespacho);
 		ArrayList<Insumo> insumos = InsumoDAO.retornarInsumos();
 		JSONArray listJSON = new JSONArray();
@@ -247,7 +247,7 @@ public class ReporteInventarioSurtir {
 			//Recorremos el arreglo de insumos para recuperar el insumo
 			for (Insumo cadaInsumo : insumos)
 			{
-				//Coinciden y podemos extraer la informaciÛn de los insumos
+				//Coinciden y podemos extraer la informaci√≥n de los insumos
 				if(cadaInsumo.getIdinsumo() == cadaInsDesp.getIdInsumo())
 				{
 					cadaJSON.put("idinsumo", cadaInsDesp.getIdInsumo());
@@ -305,9 +305,9 @@ public class ReporteInventarioSurtir {
 	}
 	
 	/**
-	 * MÈtodo que se encarga de calgular los inventarios a llevar a una tienda y generar el excel correspondiente
+	 * M√©todo que se encarga de calgular los inventarios a llevar a una tienda y generar el excel correspondiente
 	 * @param idtienda Se recibe el idtienda de la cual se calculara el inventario a llevar
-	 * @param fecha Se recibe par·metro fecha de la cual se c·lcular el inventario
+	 * @param fecha Se recibe par√°metro fecha de la cual se c√°lcular el inventario
 	 * @return
 	 */
 	public String CalcularInventarioTiendaFormatoExcel(int idtienda, String fecha)
@@ -315,7 +315,7 @@ public class ReporteInventarioSurtir {
 		String rutaArchivoGenerado="";
 		String rutaArchivoBD = ParametrosDAO.obtenerParametroTexto("RUTAINV");
 		String rutaImagenReporte = rutaArchivoBD + "LogoPizzaAmericana.png";
-		//obtenemos dÌa de la semana para recuperar inventario requerido de la tienda
+		//obtenemos d√≠a de la semana para recuperar inventario requerido de la tienda
 		// Creamos una instancia del calendario
 		GregorianCalendar cal = new GregorianCalendar();
 		int diasemana = 0;
@@ -331,7 +331,7 @@ public class ReporteInventarioSurtir {
 			System.out.println(e.toString() + e.getMessage() + e.getStackTrace());
 		}
 		String nombreTienda = TiendaDAO.obtenerNombreTienda(idtienda);
-		//Creamos el libro en Excel y la hoja en cuestiÛn, definimos los encabezados.
+		//Creamos el libro en Excel y la hoja en cuesti√≥n, definimos los encabezados.
 		HSSFWorkbook workbook = new HSSFWorkbook();
 		HSSFSheet sheet = workbook.createSheet("inventarioSurtir");
 		sheet.setColumnWidth(0, 7500);
@@ -355,13 +355,13 @@ public class ReporteInventarioSurtir {
 			   FileOutputStream fileOut = new FileOutputStream(rutaArchivoGenerado);
 			   rutaArchivoGenerado = rutaArchivoGenerado + "%&" + "InventarioSurtir"+ nombreTienda +".xls";
 				
-				//Esta parte de recuperaciÛn de los insumos tienda se establece control dado que est· recuperando constantemente
+				//Esta parte de recuperaci√≥n de los insumos tienda se establece control dado que est√° recuperando constantemente
 			   boolean bandRecuperoInsumos = false;
 			   int contadorReintentos = 1;
 			   ArrayList<InsumoTienda> insumosTienda = new ArrayList();
 			   
 			   /**
-			    * Este ciclo while tiene como objetivo realizar reintentos en caso de que no se encuentre informaciÛn en la tabla
+			    * Este ciclo while tiene como objetivo realizar reintentos en caso de que no se encuentre informaci√≥n en la tabla
 			    * esto se puede dar en el momento en que corra al mismo tiempo el reporte de inventarios y el servicio que trae los 
 			    * inventario de una tienda
 			    */
@@ -388,7 +388,7 @@ public class ReporteInventarioSurtir {
 				Object[][] data = new Object[insumorequeridos][5];
 				for (InsumoRequeridoTienda insReqTienda : insRequeridosTienda)
 				{
-					//instanciamos el arreglo donde llevaremos la informaciÛn para el excel
+					//instanciamos el arreglo donde llevaremos la informaci√≥n para el excel
 					//data = new Object[insRequeridosTienda.size()][5];
 					JSONObject cadaJSON = new JSONObject();
 					cadaJSON.put("idinsumo", insReqTienda.getIdinsumo());
@@ -415,8 +415,8 @@ public class ReporteInventarioSurtir {
 								// por cantidad y no por minimo de almacenamiento
 								if(insTienda.getControlCantidad() == 1)
 								{
-									//Si se hace el control por cantidad MÌnima entonces se valida si lo que tiene 
-									//la tienda es menor o igual a lo que se debe tener como cantidad mÌnima
+									//Si se hace el control por cantidad M√≠nima entonces se valida si lo que tiene 
+									//la tienda es menor o igual a lo que se debe tener como cantidad m√≠nima
 									if(insTienda.getCantidad() <= insReqTienda.getCantidadMinima())
 									{
 										//Si esto se cumple se debe llevar el valor de insumo requerido con el valor de cantidad
@@ -424,7 +424,7 @@ public class ReporteInventarioSurtir {
 									}
 									else
 									{
-										// sino se tiene menos del mÌnimo entonces no se debe llevar nada
+										// sino se tiene menos del m√≠nimo entonces no se debe llevar nada
 										cantidadLlevar = 0;
 									}
 								}
@@ -455,8 +455,8 @@ public class ReporteInventarioSurtir {
 								//Validamos si el insumo tienda hace el control cantidad Minima
 								if(insTienda.getControlCantidad() == 1)
 								{
-									//Si se hace el control por cantidad MÌnima entonces se valida si lo que tiene 
-									//la tienda es menor o igual a lo que se debe tener como cantidad mÌnima
+									//Si se hace el control por cantidad M√≠nima entonces se valida si lo que tiene 
+									//la tienda es menor o igual a lo que se debe tener como cantidad m√≠nima
 									if(insTienda.getCantidad() <= insReqTienda.getCantidadMinima())
 									{
 										//Si esto se cumple se debe llevar el valor de insumo requerido con el valor de cantidad
@@ -464,7 +464,7 @@ public class ReporteInventarioSurtir {
 									}
 									else
 									{
-										// sino se tiene menos del mÌnimo entonces no se debe llevar nada
+										// sino se tiene menos del m√≠nimo entonces no se debe llevar nada
 										cantidadLlevar = 0;
 									}
 								}
@@ -508,7 +508,7 @@ public class ReporteInventarioSurtir {
 	            cellheader.setFont(whiteFont);
 	            cellheader.setAlignment(HorizontalAlignment .CENTER);
 	            
-	            //Creamos el estilo para la segunda fila de informaciÛn
+	            //Creamos el estilo para la segunda fila de informaci√≥n
 	            Font fontSegFila = workbook.createFont();
 	            fontSegFila.setColor(IndexedColors.ORANGE.index);
 	            fontSegFila.setFontHeightInPoints((short) 10.00);
@@ -552,7 +552,7 @@ public class ReporteInventarioSurtir {
 	            headerRow.setHeight((short)1000);
 	            cellHeader.setCellStyle(cellheader);
 	            
-	            //Realizamos la adiciÛn de la imagen del logo de pizza americana
+	            //Realizamos la adici√≥n de la imagen del logo de pizza americana
 	            InputStream inputStream = new FileInputStream(rutaImagenReporte);
 	            byte[] imageBytes = IOUtils.toByteArray(inputStream);
 	            int pictureIdx = workbook.addPicture(imageBytes, workbook.PICTURE_TYPE_PNG);
@@ -577,7 +577,7 @@ public class ReporteInventarioSurtir {
 	            //Reset the image to the original size
 	            pict.resize();
 	            
-	            //Aplicamos los bordes a la regiÛn merge
+	            //Aplicamos los bordes a la regi√≥n merge
 	            CellRangeAddress cellRangeAddress = new CellRangeAddress(0, 0, 0, 3);
 	            HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
 	            HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
@@ -586,24 +586,24 @@ public class ReporteInventarioSurtir {
 	            
 	            //Para la imagen
 	            sheet.addMergedRegion(CellRangeAddress.valueOf("$E$1:$G$1"));
-	          //Aplicamos los bordes a la regiÛn merge
+	          //Aplicamos los bordes a la regi√≥n merge
 	            cellRangeAddress = new CellRangeAddress(0, 0, 4, 6);
 	            HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
 	            HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
 	            HSSFRegionUtil.setBorderRight(1, cellRangeAddress, sheet, workbook);
 	            HSSFRegionUtil.setBorderBottom(1, cellRangeAddress, sheet, workbook);
 	            
-	            //Etiquetas de segunda linea de informaicÛn 
+	            //Etiquetas de segunda linea de informaic√≥n 
 	            HSSFRow equitetasInfReporte = sheet.createRow(1);
 	            sheet.addMergedRegion(CellRangeAddress.valueOf("$A$2:$B$2"));
-	            //Aplicamos los bordes a la regiÛn merge
+	            //Aplicamos los bordes a la regi√≥n merge
 	            cellRangeAddress = new CellRangeAddress(1, 1, 0, 1);
 	            HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
 	            HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
 	            HSSFRegionUtil.setBorderRight(1, cellRangeAddress, sheet, workbook);
 	            HSSFRegionUtil.setBorderBottom(1, cellRangeAddress, sheet, workbook);
 	            sheet.addMergedRegion(CellRangeAddress.valueOf("$C$2:$D$2"));
-	          //Aplicamos los bordes a la regiÛn merge
+	          //Aplicamos los bordes a la regi√≥n merge
 	            cellRangeAddress = new CellRangeAddress(1, 1, 2, 3);
 	            HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
 	            HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
@@ -619,7 +619,7 @@ public class ReporteInventarioSurtir {
 	            cellFila2.setCellValue("RESPONSABLE DE \n SEPARAR INSUMOS");
 	            cellFila2.setCellStyle(cellInfoReporte);
 	            cellFila2 = equitetasInfReporte.createCell((short) 5);
-	            cellFila2.setCellValue("REVISION Y \n VERIFICACI”N LIDER \n CALIDAD Y LOG");
+	            cellFila2.setCellValue("REVISION Y \n VERIFICACI√ìN LIDER \n CALIDAD Y LOG");
 	            cellFila2.setCellStyle(cellInfoReporte);
 	            cellFila2 = equitetasInfReporte.createCell((short) 6);
 	            cellFila2.setCellValue("VERIFICADO POR \n ADMON EN PUNTO DE \n VENTA");
@@ -684,8 +684,8 @@ public class ReporteInventarioSurtir {
 		            datos = dataRow.createCell(6);
 		            datos.setCellStyle(styleInfRep);
 		        }
-		        //Agregamos el estilo para el pie de p·gina
-		        //Creamos el estilo para la segunda fila de informaciÛn
+		        //Agregamos el estilo para el pie de p√°gina
+		        //Creamos el estilo para la segunda fila de informaci√≥n
 	            Font fontFinal = workbook.createFont();
 	            fontFinal.setFontHeightInPoints((short) 8.00);
 	            fontFinal.setBold(true);
@@ -796,11 +796,11 @@ public class ReporteInventarioSurtir {
 	}
 	
 	/**
-	 * MÈtodo en la clase controladora que se encarga de realizar la inserciÛn del encabezado del despacho de pedido y de hacer la 
+	 * M√©todo en la clase controladora que se encarga de realizar la inserci√≥n del encabezado del despacho de pedido y de hacer la 
 	 * interface con la capa DAO.
-	 * @param idtienda El id de la tienda a la cual se le guardar· el envÌo de insumos.
-	 * @param fechasurtir Fecha que relaciona el enviÛ del pedido a la tienda
-	 * @return El sistema retornar· el iddespacho que hace las veces de encabezado de despacho de pedido.
+	 * @param idtienda El id de la tienda a la cual se le guardar√° el env√≠o de insumos.
+	 * @param fechasurtir Fecha que relaciona el envi√≥ del pedido a la tienda
+	 * @return El sistema retornar√° el iddespacho que hace las veces de encabezado de despacho de pedido.
 	 */
 	public String InsertarInsumoDespachoTienda(int idtienda, String fechasurtir, String observacion)
 	{
@@ -833,7 +833,7 @@ public class ReporteInventarioSurtir {
 	public String ActualizarDetalleInsumoDespachoTienda(int iddespacho,int idinsumo, double cantidad, String contenedor)
 	{
 		JSONArray listJSON = new JSONArray();
-		int iddespachodetalle = InsumoDespachoTiendaDetalleDAO.ActualizarDetalleInsumoDespachoTienda(iddespacho,idinsumo,cantidad,contenedor, "",0, 0);
+		int iddespachodetalle = InsumoDespachoTiendaDetalleDAO.ActualizarDetalleInsumoDespachoTienda(iddespacho,idinsumo,cantidad,contenedor, "",0, 0, null);
 		JSONObject Respuesta = new JSONObject();
 		Respuesta.put("iddespachodetalle", iddespacho);
 		listJSON.add(Respuesta);
@@ -841,7 +841,7 @@ public class ReporteInventarioSurtir {
 	}
 	
 	/**
-	 * MÈtodo que retorna un JSON con los despachos para ser mostrados en un GRID en Pantalla
+	 * M√©todo que retorna un JSON con los despachos para ser mostrados en un GRID en Pantalla
 	 * @param idTienda
 	 * @param fechaDesde
 	 * @param fechaHasta
@@ -914,7 +914,7 @@ public class ReporteInventarioSurtir {
 	}
 
 	/**
-	 *Este mÈtodo se encarga de recorrer una a un las tiendas y verificar si el dÌa en cuestiÛn se surte y si es el caso 
+	 *Este m√©todo se encarga de recorrer una a un las tiendas y verificar si el d√≠a en cuesti√≥n se surte y si es el caso 
 	 *enviar un correo con el calculo de los viajes en un archivo en formato excel.
 	 */
 	public void CalcularInventariosTiendas()
@@ -956,14 +956,14 @@ public class ReporteInventarioSurtir {
 			
 		}
 		
-		//Realizamos el envÌo del correo electrÛnico con los archivo		
+		//Realizamos el env√≠o del correo electr√≥nico con los archivo		
 		ModeloSer.Correo correo = new ModeloSer.Correo();
 		ModeloSer.CorreoElectronico infoCorreo = utilidadesSer.ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto("INVENTARIOS A SURTIR TIENDAS PIZZA AMERICANA");
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTESURTIR");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("A continuaciÛn todos los inventarios de las tiendas de pizza americana");
+		correo.setMensaje("A continuaci√≥n todos los inventarios de las tiendas de pizza americana");
 		correo.setRutasArchivos(rutasArchivos);
 		utilidadesSer.ControladorEnvioCorreo contro = new utilidadesSer.ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreo();
@@ -1083,19 +1083,19 @@ public InsumoDespachoTienda obtenerInsumoDespacho(int idDespacho)
 }
 
 /**
- * MÈtodo que se encarga de generar un excel con lo despachado para la tienda 
+ * M√©todo que se encarga de generar un excel con lo despachado para la tienda 
  * @param idtienda
  * @param fecha
  * @param idDespacho
  */
 public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int idDespacho)
 {
-	//Obtenemos la informaciÛn del despacho para poner allÌ las observaciones
+	//Obtenemos la informaci√≥n del despacho para poner all√≠ las observaciones
 	InsumoDespachoTienda infoDespacho =  obtenerInsumoDespacho(idDespacho);
 	String rutaArchivoGenerado="";
 	String rutaArchivoBD = ParametrosDAO.obtenerParametroTexto("RUTAINV");
 	String rutaImagenReporte = rutaArchivoBD + "LogoPizzaAmericana.png";
-	//obtenemos dÌa de la semana para recuperar inventario requerido de la tienda
+	//obtenemos d√≠a de la semana para recuperar inventario requerido de la tienda
 	// Creamos una instancia del calendario
 	GregorianCalendar cal = new GregorianCalendar();
 	int diasemana = 0;
@@ -1122,7 +1122,7 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
 		}
 	}
 	String nombreTienda = TiendaDAO.obtenerNombreTienda(idtienda);
-	//Creamos el libro en Excel y la hoja en cuestiÛn, definimos los encabezados.
+	//Creamos el libro en Excel y la hoja en cuesti√≥n, definimos los encabezados.
 	HSSFWorkbook workbook = new HSSFWorkbook();
 	HSSFSheet sheet = workbook.createSheet("inventarioDespachado");
 	sheet.setColumnWidth(0, 7500);
@@ -1146,13 +1146,13 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
 		   FileOutputStream fileOut = new FileOutputStream(rutaArchivoGenerado);
 		   rutaArchivoGenerado = rutaArchivoGenerado + "%&" + "InventarioDespachado"+ nombreTienda +".xls";
 			
-			//Esta parte de recuperaciÛn de los insumos tienda se establece control dado que est· recuperando constantemente
+			//Esta parte de recuperaci√≥n de los insumos tienda se establece control dado que est√° recuperando constantemente
 		   boolean bandRecuperoInsumos = false;
 		   int contadorReintentos = 1;
 		   ArrayList<InsumoTienda> insumosTienda = new ArrayList();
 		   
 		   /**
-		    * Este ciclo while tiene como objetivo realizar reintentos en caso de que no se encuentre informaciÛn en la tabla
+		    * Este ciclo while tiene como objetivo realizar reintentos en caso de que no se encuentre informaci√≥n en la tabla
 		    * esto se puede dar en el momento en que corra al mismo tiempo el reporte de inventarios y el servicio que trae los 
 		    * inventario de una tienda
 		    */
@@ -1173,14 +1173,14 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
 		   	//En este punto obtenemos los insumos que se despacharon para la tienda en el despacho generado con el fin
 			// de en base en estos generar el recorrido y mostrar el formato.
 			ArrayList<InsumoDespachoTiendaDetalle> insumosDespachados = obtenerDetalleDespachoTienda(idDespacho);
-			//System.out.println("INFORMACI”N RECUPERADA INSUMOS TIENDA "  + insumosTienda.size() + " informacÛn despacho " + insumosDespachados.size());
+			//System.out.println("INFORMACI√ìN RECUPERADA INSUMOS TIENDA "  + insumosTienda.size() + " informac√≥n despacho " + insumosDespachados.size());
 			//Contralaremos la fila en la que vamos con la variable fila
 			int fila = 0;
 			int filasInforme = 0;
 			int cantInsumoDespachados = insumosDespachados.size();
 			//Definimos un arreglo donde iremos dejando los datos
 			Object[][] data = new Object[cantInsumoDespachados][5];
-			//con base en insumos despachados es que haremos el recorrido y la generaciÛn del archivo de excel
+			//con base en insumos despachados es que haremos el recorrido y la generaci√≥n del archivo de excel
 			for (InsumoDespachoTiendaDetalle cadaInsumoDespachado : insumosDespachados)
 			{
 				for (InsumoTienda insTienda : insumosTienda)
@@ -1213,7 +1213,7 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
             cellheader.setFont(whiteFont);
             cellheader.setAlignment(HorizontalAlignment .CENTER);
             
-            //Creamos el estilo para la segunda fila de informaciÛn
+            //Creamos el estilo para la segunda fila de informaci√≥n
             Font fontSegFila = workbook.createFont();
             fontSegFila.setColor(IndexedColors.ORANGE.index);
             fontSegFila.setFontHeightInPoints((short) 10.00);
@@ -1257,7 +1257,7 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
             headerRow.setHeight((short)1000);
             cellHeader.setCellStyle(cellheader);
             
-            //Realizamos la adiciÛn de la imagen del logo de pizza americana
+            //Realizamos la adici√≥n de la imagen del logo de pizza americana
             InputStream inputStream = new FileInputStream(rutaImagenReporte);
             byte[] imageBytes = IOUtils.toByteArray(inputStream);
             int pictureIdx = workbook.addPicture(imageBytes, workbook.PICTURE_TYPE_PNG);
@@ -1282,7 +1282,7 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
             //Reset the image to the original size
             pict.resize();
             
-            //Aplicamos los bordes a la regiÛn merge
+            //Aplicamos los bordes a la regi√≥n merge
             CellRangeAddress cellRangeAddress = new CellRangeAddress(0, 0, 0, 3);
             HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
@@ -1291,24 +1291,24 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
             
             //Para la imagen
             sheet.addMergedRegion(CellRangeAddress.valueOf("$E$1:$G$1"));
-          //Aplicamos los bordes a la regiÛn merge
+          //Aplicamos los bordes a la regi√≥n merge
             cellRangeAddress = new CellRangeAddress(0, 0, 4, 6);
             HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderRight(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderBottom(1, cellRangeAddress, sheet, workbook);
             
-            //Etiquetas de segunda linea de informaicÛn 
+            //Etiquetas de segunda linea de informaic√≥n 
             HSSFRow equitetasInfReporte = sheet.createRow(1);
             sheet.addMergedRegion(CellRangeAddress.valueOf("$A$2:$B$2"));
-            //Aplicamos los bordes a la regiÛn merge
+            //Aplicamos los bordes a la regi√≥n merge
             cellRangeAddress = new CellRangeAddress(1, 1, 0, 1);
             HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderRight(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderBottom(1, cellRangeAddress, sheet, workbook);
             sheet.addMergedRegion(CellRangeAddress.valueOf("$C$2:$D$2"));
-          //Aplicamos los bordes a la regiÛn merge
+          //Aplicamos los bordes a la regi√≥n merge
             cellRangeAddress = new CellRangeAddress(1, 1, 2, 3);
             HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
@@ -1324,7 +1324,7 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
             cellFila2.setCellValue("RESPONSABLE DE \n SEPARAR INSUMOS");
             cellFila2.setCellStyle(cellInfoReporte);
             cellFila2 = equitetasInfReporte.createCell((short) 5);
-            cellFila2.setCellValue("REVISION Y \n VERIFICACI”N LIDER \n CALIDAD Y LOG");
+            cellFila2.setCellValue("REVISION Y \n VERIFICACI√ìN LIDER \n CALIDAD Y LOG");
             cellFila2.setCellStyle(cellInfoReporte);
             cellFila2 = equitetasInfReporte.createCell((short) 6);
             cellFila2.setCellValue("VERIFICADO POR \n ADMON EN PUNTO DE \n VENTA");
@@ -1389,8 +1389,8 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
 	            datos = dataRow.createCell(6);
 	            datos.setCellStyle(styleInfRep);
 	        }
-	        //Agregamos el estilo para el pie de p·gina
-	        //Creamos el estilo para la segunda fila de informaciÛn
+	        //Agregamos el estilo para el pie de p√°gina
+	        //Creamos el estilo para la segunda fila de informaci√≥n
             Font fontFinal = workbook.createFont();
             fontFinal.setFontHeightInPoints((short) 8.00);
             fontFinal.setBold(true);
@@ -1493,14 +1493,14 @@ public void GenerarDespachoTiendaFormatoExcel(int idtienda, String fecha, int id
 		fileOut.close();
 		String[] rutasArchivos = new String[1];
 		rutasArchivos[0] = rutaArchivoGenerado;
-		//Luego de cerrado el archivo, realizamos el envÌo al correo del archivo
+		//Luego de cerrado el archivo, realizamos el env√≠o al correo del archivo
 		Correo correo = new Correo();
 		ModeloSer.CorreoElectronico infoCorreo = utilidadesSer.ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto(nombreTienda + "-" + fecha + "ARCHIVO INVENTARIO DESPACHADO");
 		correo.setContrasena("infoCorreo.getClaveCorreo()");
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEDESPACHO");
 		correo.setUsuarioCorreo("infoCorreo.getCuentaCorreo()");
-		correo.setMensaje("A continuaciÛn la informaciÛn ingresada para despacho a la tienda "  +nombreTienda + " en la fecha " + fecha);
+		correo.setMensaje("A continuaci√≥n la informaci√≥n ingresada para despacho a la tienda "  +nombreTienda + " en la fecha " + fecha);
 		correo.setRutasArchivos(rutasArchivos);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreo();

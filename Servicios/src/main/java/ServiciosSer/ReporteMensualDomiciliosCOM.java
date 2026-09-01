@@ -46,7 +46,7 @@ public class ReporteMensualDomiciliosCOM {
 		//Posteriormente realizamos el procesamiento para definir el rango de fechas del cual deseamos procesar el reporte
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los c·lculos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los c√°lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -72,7 +72,7 @@ public class ReporteMensualDomiciliosCOM {
 		{
 			System.out.println(e.toString());
 		}
-		//Obtenemos el mes actual y aÒo actual
+		//Obtenemos el mes actual y a√±o actual
 		int mesActual = calendarioActual.get(Calendar.MONTH);
 		int anoActual = calendarioActual.get(Calendar.YEAR);
 		System.out.println("OJO ANO ACTUAL " + anoActual);
@@ -92,15 +92,15 @@ public class ReporteMensualDomiciliosCOM {
 			anoAnterior = anoActual;
 		}
 
-		//Deberemos de obtener el valor del dÌa, este se tomar· de un par·metro.
+		//Deberemos de obtener el valor del d√≠a, este se tomar√° de un par√°metro.
 		diaAnterior = ParametrosDAO.retornarValorNumericoLocal("DIAMESCORTEDOMICILIOS");
 		porcentajeComision = ParametrosDAO.retornarValorNumericoLocal("PORCENTAJECOMDOMICILIOS");
 		porcentajeIva = ParametrosDAO.retornarValorNumericoLocal("PORCENTAJEIVACOMISION");
 		
-		//Con los datos  objetnidos fijamos la fecha del calendario y de ahÌ obtenemos la fecha anterior
+		//Con los datos  objetnidos fijamos la fecha del calendario y de ah√≠ obtenemos la fecha anterior
 		calendarioActual.set(anoAnterior, mesAnterior, diaAnterior);
 		
-		//Llevamos a un string la fecha anterior para el c·lculo de la venta
+		//Llevamos a un string la fecha anterior para el c√°lculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
 		fechaAnterior = dateFormat.format(datFechaAnterior);
 		
@@ -110,14 +110,14 @@ public class ReporteMensualDomiciliosCOM {
 		for(int i = 0; i < razonesSociales.size(); i++)
 		{
 			razTemp = razonesSociales.get(i);
-			//Con la razÛn social y con la fecha podemos ir a realizar la consulta de los pedidos de domicilios.com
+			//Con la raz√≥n social y con la fecha podemos ir a realizar la consulta de los pedidos de domicilios.com
 			ArrayList pedidosDomCOM = PedidoDAO.obtenerPedidosDomiciliosCOM(razTemp.getIdRazon(), fechaAnterior, fechaActual);
-			//Procedemos a procesar la informaciÛn y a enviar el correo con el reporte
+			//Procedemos a procesar la informaci√≥n y a enviar el correo con el reporte
 			String respuesta = "";
 			respuesta = respuesta + "<table border='2'> <tr> RESUMEN MENSUAL DOMICILIOS.COM RAZON SOCIAL " + razTemp.getNombreRazon() +  " </tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>Total Pedidos del MES</strong></td>"
-					+  "<td><strong>ComisiÛn Aproximada del MES</strong></td>"
+					+  "<td><strong>Comisi√≥n Aproximada del MES</strong></td>"
 					+  "<td><strong>Iva Aproximado del MES</strong></td>"
 					+  "<td><strong>Total Pago a DOMICILIOS del MES</strong></td>"
 					+  "<td><strong>Total Pagos ONLINE del MES</strong></td>"
@@ -172,14 +172,14 @@ public class ReporteMensualDomiciliosCOM {
 			double totalIva = (totalComision*(porcentajeIva/100));
 			respuesta = respuesta + "<tr><td>" + formatea.format(totalPedidosMensual) + "</td><td>" + formatea.format(totalComision) + "</td><td>" + formatea.format(totalIva) + "</td><td>" + formatea.format((totalComision + totalIva)) + "</td><td>" + formatea.format(totalPedidosOnLine) + "</td><td>" + formatea.format(totalDescuentos) + "</td></tr>";
 			respuesta = respuesta + "</table> <br/>";
-			//Procedemos al envÌo del correo
+			//Procedemos al env√≠o del correo
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-			correo.setAsunto("DOMICILIOS.COM REPORTE MENSUAL DE COMISI”N " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion() + " " + fechaActual);
+			correo.setAsunto("DOMICILIOS.COM REPORTE MENSUAL DE COMISI√ìN " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion() + " " + fechaActual);
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEDOMICILIOSCOMMENSUAL");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuaciÛn el reporte Mensual de pedidos tomados para domicilios.com separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+			correo.setMensaje("A continuaci√≥n el reporte Mensual de pedidos tomados para domicilios.com separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 			

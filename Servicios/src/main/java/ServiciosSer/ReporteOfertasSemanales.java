@@ -58,7 +58,7 @@ public class ReporteOfertasSemanales {
 		{
 			System.out.println(e.toString());
 		}
-		//Retormanos el dÌa de la semana actual segun la fecha del calendario
+		//Retormanos el d√≠a de la semana actual segun la fecha del calendario
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
 		//Domingo
 		if(diaActual == 1)
@@ -94,16 +94,16 @@ public class ReporteOfertasSemanales {
 			//Si es sabado se resta cinco
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 		}
-		//Llevamos a un string la fecha anterior para el c·lculo de la venta
+		//Llevamos a un string la fecha anterior para el c√°lculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
 		fechaAnterior = dateFormat.format(datFechaAnterior);
 		System.out.println("LA FECHA ANTERIOR ES " + fechaAnterior);
-		//En este punto ya tenemos las dos fechas de interÈs por el momento nos interesar· retornar las ofertas dadas
+		//En este punto ya tenemos las dos fechas de inter√©s por el momento nos interesar√° retornar las ofertas dadas
 		// y las ofertas redimidas en estos rango de tiempo
 		ArrayList<OfertaCliente> ofertasNuevas = OfertaClienteDAO.obtenerOfertasNuevasSemana(fechaActual, fechaAnterior);
 		ArrayList<OfertaCliente> ofertasRedimidas = OfertaClienteDAO.obtenerOfertasRedimidasSemana(fechaActual, fechaAnterior);
 		
-		//Se crea la variable que se encargar· de la respuesta
+		//Se crea la variable que se encargar√° de la respuesta
 		String respuesta = "";
 		
 		//ESPACIO PARA EXTRAER LAS OFERTAS NUEVAS
@@ -141,15 +141,15 @@ public class ReporteOfertasSemanales {
 		
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Recuperar la lista de distribuciÛn para este correo
+		//Recuperar la lista de distribuci√≥n para este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPUSOOFERTAS");
 		Date fecha = new Date();
 		Correo correo = new Correo();
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-		correo.setAsunto("REPORTE SEMANAL ASIGNACI”N/USO OFERTAS CLIENTES " + fecha.toString() + " ENTRE FECHAS " + fechaAnterior + "-" + fechaActual);
+		correo.setAsunto("REPORTE SEMANAL ASIGNACI√ìN/USO OFERTAS CLIENTES " + fecha.toString() + " ENTRE FECHAS " + fechaAnterior + "-" + fechaActual);
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("Informe semanal para conocer la creaciÛn y uso de ofertas de clientes: \n" + respuesta);
+		correo.setMensaje("Informe semanal para conocer la creaci√≥n y uso de ofertas de clientes: \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 		

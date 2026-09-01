@@ -37,7 +37,7 @@ public class GastoEmpleadoTemporalDAO {
 		}
 	}
 	
-		//Método creado para retornar el valor de variable desde sistema tienda
+		//MÃ©todo creado para retornar el valor de variable desde sistema tienda
 		public static double obtenerValorCalculo(String hostBD, String consulta)
 		{
 			String valor = "";

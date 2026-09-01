@@ -54,8 +54,8 @@ public class ServicioRenovacionTokenRAPPI {
 	
 	
 /**
- * Este programa se encargar· de correr como un servicio todos los dÌas a las 12:50 am, con el fin de revisar
- * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisiÛn.
+ * Este programa se encargar√° de correr como un servicio todos los d√≠as a las 12:50 am, con el fin de revisar
+ * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisi√≥n.
  * @param args
  * @throws IOException 
  */

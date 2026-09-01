@@ -55,12 +55,12 @@ public class ReporteSemanalIfoodReproceso {
 		//Obtenemos las razones sociales que vamos a procesar
 		ArrayList<RazonSocial> razonesSociales = RazonSocialDAO.obtenerTiendas();
 		RazonSocial razTemp;
-		//Recuperamos la relaci髇 Marcaci髇 , tienda comisi髇
+		//Recuperamos la relaci贸n Marcaci贸n , tienda comisi贸n
 		ArrayList<MarcacionComision> marcacionesComision = MarcacionComisionDAO.obtenerMarcacionComision(2);
 		//Posteriormente realizamos el procesamiento para definir el rango de fechas del cual deseamos procesar el reporte
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los c醠culos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los c谩lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -87,7 +87,7 @@ public class ReporteSemanalIfoodReproceso {
 		{
 			System.out.println(e.toString());
 		}
-		//Retormanos el d韆 de la semana actual segun la fecha del calendario
+		//Retormanos el d铆a de la semana actual segun la fecha del calendario
 		//OJO
 		//int diaActual = 1;
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -126,11 +126,11 @@ public class ReporteSemanalIfoodReproceso {
 			//Si es sabado se resta cinco
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 		}
-		//Llevamos a un string la fecha anterior para el c醠culo de la venta
+		//Llevamos a un string la fecha anterior para el c谩lculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
 		fechaAnterior = dateFormat.format(datFechaAnterior);
 		
-		//En este punto ya tenemos FechaActual y fechaAnterior, con estas dos iremos a obtener los pedidos para la presentaci髇 pero esto lo haremos en un ciclo for por raz髇 social.
+		//En este punto ya tenemos FechaActual y fechaAnterior, con estas dos iremos a obtener los pedidos para la presentaci贸n pero esto lo haremos en un ciclo for por raz贸n social.
 		//Recuperamos el idProducto asociado a domicilios.com
 		for(int i = 0; i < razonesSociales.size(); i++)
 		{
@@ -139,16 +139,16 @@ public class ReporteSemanalIfoodReproceso {
 			ArrayList pedidosDomCOMTienda = PedidoDAO.obtenerPedidosPlataformasTiendaFull(razTemp.getIdRazon(), fechaAnterior, fechaActual,1);
 			//Obtenemos totales de pago online por tienda
 			ArrayList pedidosDomCOMONLINETienda = PedidoDAO.obtenerPedidosPlataformasONLINETienda(razTemp.getIdRazon(), fechaAnterior, fechaActual,1);
-			//Procedemos a procesar la informaci髇 y a enviar el correo con el reporte
+			//Procedemos a procesar la informaci贸n y a enviar el correo con el reporte
 			String respuesta = "";
-			//Agregamos en este apartado el total de pedidos por tienda para poder extraer la comisi髇 por tienda
+			//Agregamos en este apartado el total de pedidos por tienda para poder extraer la comisi贸n por tienda
 			respuesta = respuesta + "<table border='2'> <tr>IFOOD TOTAL POR TIENDA " + razTemp.getNombreRazon() +  " </tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>Tienda</strong></td>"
 					+  "<td><strong>Total Pedidos</strong></td>"
 					+  "<td><strong>Total Pedidos en LINEA</strong></td>"
 					+  "<td><strong>Total Descuentos</strong></td>"
-					+  "<td><strong>Comisi髇 Total</strong></td>"
+					+  "<td><strong>Comisi贸n Total</strong></td>"
 					+  "<td><strong>Costo Pagos en Linea</strong></td>"
 					+"</tr>";
 			String[] resTotalTienda;
@@ -195,17 +195,17 @@ public class ReporteSemanalIfoodReproceso {
 			}
 			respuesta = respuesta + "</table> <br/>";
 			totalConsignacion = totalConsignacion - totalComisionFinal - totalGastoPagoONLINEFinal;
-			respuesta = respuesta + "<b>TOTAL GASTO COMISI覰 " + formatea.format(totalComisionFinal) +"</b><br/>";
+			respuesta = respuesta + "<b>TOTAL GASTO COMISI脫N " + formatea.format(totalComisionFinal) +"</b><br/>";
 			respuesta = respuesta + "<b>TOTAL GASTO PAGOS ON LINE " + formatea.format(totalGastoPagoONLINEFinal) +"</b><br/>";
-			respuesta = respuesta + "<b>CONSIGNACI覰 APROXIMADA " + formatea.format(totalConsignacion) +"</b><br/>";
-			//Procedemos al env韔 del correo
+			respuesta = respuesta + "<b>CONSIGNACI脫N APROXIMADA " + formatea.format(totalConsignacion) +"</b><br/>";
+			//Procedemos al env铆o del correo
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-			correo.setAsunto("Reporte Facturaci髇 Semanal IFOOD de la Raz髇 Social " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion());
+			correo.setAsunto("Reporte Facturaci贸n Semanal IFOOD de la Raz贸n Social " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEDOMICILIOSCOM");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuaci髇 el reporte semanal de pedidos tomados para IFOOD separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+			correo.setMensaje("A continuaci贸n el reporte semanal de pedidos tomados para IFOOD separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 			

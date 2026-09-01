@@ -57,21 +57,21 @@ public class ReporteSemanalDatafonos {
 		
 		String respuesta = "";
 		
-		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la información
+		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la informaciÃ³n
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		for(Tienda tien : tiendas)
 		{
 			if(!tien.getHostBD().equals(new String("")))
 			{
-				//Agregamos los datáfonos que se tienen para poder ver
-				respuesta = respuesta + "<table border='2'> <tr><td colspan ='5'>" + tien.getNombreTienda() + " DATÁFONOS  " + fechaActual  + "</td></tr>";
+				//Agregamos los datÃ¡fonos que se tienen para poder ver
+				respuesta = respuesta + "<table border='2'> <tr><td colspan ='5'>" + tien.getNombreTienda() + " DATÃFONOS  " + fechaActual  + "</td></tr>";
 				respuesta = respuesta + "<tr>"
 						+  "<td><strong>id Datafono</strong></td>"
 						+  "<td><strong>Nombre</strong></td>"
 						+  "<td><strong>Placa</strong></td>"
 						+  "<td><strong>Terminal</strong></td>"
 						+  "<td><strong>Funcional</strong></td>"
-						+  "<td><strong>Reporte Daño</strong></td>"
+						+  "<td><strong>Reporte DaÃ±o</strong></td>"
 						+  "</tr>";
 				ArrayList<String[]> datafonos = DatafonoDAO.obtenerDatafonosRemoto(tien.getHostBD(), false);
 				for(String[] filaTemp : datafonos)
@@ -86,22 +86,22 @@ public class ReporteSemanalDatafonos {
 									+ "</tr>";
 				}
 				respuesta = respuesta + "</table> <br/>";
-				//Agregamos el estado actual de los datáfonos
-				respuesta = respuesta + "<table border='2'> <tr><td colspan ='5'>" + tien.getNombreTienda() + " ESTADO ACTUAL DATÁFONOS  " + fechaActual  + "</td></tr>";
+				//Agregamos el estado actual de los datÃ¡fonos
+				respuesta = respuesta + "<table border='2'> <tr><td colspan ='5'>" + tien.getNombreTienda() + " ESTADO ACTUAL DATÃFONOS  " + fechaActual  + "</td></tr>";
 				respuesta = respuesta + "<tr>"
 						+  "<td><strong>DATAFONO</strong></td>"
-						+  "<td><strong>Tipo Datáfono</strong></td>"
-						+  "<td><strong>Costo Datáfono</strong></td>"
+						+  "<td><strong>Tipo DatÃ¡fono</strong></td>"
+						+  "<td><strong>Costo DatÃ¡fono</strong></td>"
 						+  "<td><strong>Min Transacciones</strong></td>"
 						+  "<td><strong>Cantidad Transacciones</strong></td>"
 						+  "</tr>";
-				//Recuperamos los evento de empleados para la semana en cuestión
+				//Recuperamos los evento de empleados para la semana en cuestiÃ³n
 				ArrayList<String[]> datafonosCierre = capaDAOPOS.PedidoDAO.obtenerTransaccionesDatafonoRemoto(tien.getHostBD(), false);
 				double costoDatafono = 0;
 				int cantTranDat = 0;
 				int cantTranDatReal = 0;
 				valorFacturarDat  = 0;
-				//Comenzamos a recorrer para ir presetnando la información
+				//Comenzamos a recorrer para ir presetnando la informaciÃ³n
 				for(String[] filaTemp : datafonosCierre)
 				{
 					respuesta = respuesta + "<tr>"
@@ -110,7 +110,7 @@ public class ReporteSemanalDatafonos {
 							+  "<td>" + filaTemp[2] + "</td>"
 							+  "<td>" + filaTemp[3] + "</td>"
 							+  "<td>" + filaTemp[4] + "</td></tr>";
-					//Vamos a procesar y saber el total que se tiene que pagar por los datáfonos hasta la fecha
+					//Vamos a procesar y saber el total que se tiene que pagar por los datÃ¡fonos hasta la fecha
 					try
 					{
 						cantTranDat = Integer.parseInt(filaTemp[3]);
@@ -145,18 +145,18 @@ public class ReporteSemanalDatafonos {
 			}
 			totalFacturaDat = totalFacturaDat + valorFacturarDat;
 		}
-			//Agregamos el total de facturación
-			respuesta = respuesta + "<table border='2'> <tr><td> TOTAL FACTURA DE DATÁFONOS A LA FECHA  " + fechaActual  + "</td></tr>";
+			//Agregamos el total de facturaciÃ³n
+			respuesta = respuesta + "<table border='2'> <tr><td> TOTAL FACTURA DE DATÃFONOS A LA FECHA  " + fechaActual  + "</td></tr>";
 			respuesta = respuesta + "<tr><td> " + totalFacturaDat + "</td></tr></table> <br/>";
 		
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciÃ³n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("CIERREDATAFONO");
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-			correo.setAsunto("ESTADO ACTUAL DATÁFONOS " + fechaActual);
+			correo.setAsunto("ESTADO ACTUAL DATÃFONOS " + fechaActual);
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación el resumen del estado actual de los datáfonos a  " + fechaActual +": \n" + respuesta);
+			correo.setMensaje("A continuaciÃ³n el resumen del estado actual de los datÃ¡fonos a  " + fechaActual +": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		

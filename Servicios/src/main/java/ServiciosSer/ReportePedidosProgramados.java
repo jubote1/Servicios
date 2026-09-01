@@ -53,12 +53,12 @@ public class ReportePedidosProgramados {
 		//Comenzamos a traer la fecha actual como un String
 		fechaActual = dateFormat.format(datFechaActual);
 		//Con la fecha actual vamos a realizar la consulta de los pedidos
-		//En este punto ya tenemos las dos fechas de interés por el momento nos interesará retornar las ofertas dadas
+		//En este punto ya tenemos las dos fechas de interï¿½s por el momento nos interesarï¿½ retornar las ofertas dadas
 		// y las ofertas redimidas en estos rango de tiempo
-		//Intentamos realizar el envío de los pedidos pendientes
+		//Intentamos realizar el envï¿½o de los pedidos pendientes
 		//Parametro de la URL Server
 		String urlServerContact = "";
-		//Se crea la variable que se encargará de la respuesta
+		//Se crea la variable que se encargarï¿½ de la respuesta
 		String respuesta = "";
 		boolean indicadorCorreo = false;
 		respuesta = "";
@@ -67,7 +67,7 @@ public class ReportePedidosProgramados {
 		//Parametro de la URL Server
 		indicadorCorreo = false;
 		//ESPACIO PARA EXTRAER LAS OFERTAS NUEVAS
-		respuesta = respuesta + "<table border='2'> <tr> PEDIDOS PROGRAMADOS PARA  " + fechaActual + " </tr>";
+		respuesta = respuesta + "<table border='2'> <tr><td colspan='10'> PEDIDOS PROGRAMADOS PARA  " + fechaActual + " </td></tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Id Pedido</strong></td>"
 				+  "<td><strong>Tienda</strong></td>"
@@ -77,11 +77,13 @@ public class ReportePedidosProgramados {
 				+  "<td><strong>Forma Pago</strong></td>"
 				+  "<td><strong>Hora Programado</strong></td>"
 				+  "<td><strong>Pago Virtual</strong></td>"
+				+  "<td><strong>Total Pedido</strong></td>"
+				+  "<td><strong>Detalle</strong></td>"
 				+  "</tr>";
 		for(int i = 0; i < pedidosProgramados.size(); i++)
 		{
 			Pedido pedido = pedidosProgramados.get(i);
-			respuesta = respuesta + "<tr><td>" +  pedido.getIdpedido() + "</td><td>" +  pedido.getNombretienda() + "</td><td>" + pedido.getNombrecliente() + "</td><td>" + pedido.getFechainsercion() + "</td><td>" + pedido.getDireccion() + "</td><td>" + pedido.getFormapago() + "</td><td>" + pedido.getHoraProgramado() + "</td><td>" + pedido.getFechaPagoVirtual() + "</td></tr>";
+			respuesta = respuesta + "<tr><td>" +  pedido.getIdpedido() + "</td><td>" +  pedido.getNombretienda() + "</td><td>" + pedido.getNombrecliente() + "</td><td>" + pedido.getFechainsercion() + "</td><td>" + pedido.getDireccion() + "</td><td>" + pedido.getFormapago() + "</td><td>" + pedido.getHoraProgramado() + "</td><td>" + pedido.getFechaPagoVirtual() + "</td><td>" + pedido.getTotal_neto() + "</td><td>" + pedido.getDetalle() + "</td></tr>";
 			indicadorCorreo = true;
 		}
 		
@@ -89,7 +91,7 @@ public class ReportePedidosProgramados {
 		
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciï¿½n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDOPROGRAMADO");
 			Date fecha = new Date();
 			Correo correo = new Correo();
@@ -97,12 +99,12 @@ public class ReportePedidosProgramados {
 			correo.setAsunto("PEDIDOS PROGRAMADOS PARA " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación lso pedidos programados hasta el momento para: \n" + respuesta);
+			correo.setMensaje("A continuaciï¿½n lso pedidos programados hasta el momento para: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}else
 		{
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciï¿½n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDOPROGRAMADO");
 			Date fecha = new Date();
 			Correo correo = new Correo();

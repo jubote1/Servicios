@@ -10,7 +10,7 @@ import ModeloSer.InsumoDespachoTiendaDetalle;
 
 
 /**
- * Clase que se encarga de implementar todos aquellos métodos que tienen una interacción directa con la base de datos
+ * Clase que se encarga de implementar todos aquellos mÃ©todos que tienen una interacciÃ³n directa con la base de datos
  * @author JuanDavid
  *
  */
@@ -18,7 +18,7 @@ public class InsumoDespachoTiendaDetalleDAO {
 	
 	
 /**
- * Método para retornar el detalle de un despacho de tienda.
+ * MÃ©todo para retornar el detalle de un despacho de tienda.
  * @param idDespacho
  * @return Un ArrayList con el detalle del despacho seleccionado.
  */
@@ -61,7 +61,7 @@ public class InsumoDespachoTiendaDetalleDAO {
 	}
 	
 	/**
-	 * Método que se encarga de realizar la inserción de un detalle de insumo en el sistema de inventarios
+	 * MÃ©todo que se encarga de realizar la inserciÃ³n de un detalle de insumo en el sistema de inventarios
 	 * @param iddespacho
 	 * @param idinsumo
 	 * @param cantidad

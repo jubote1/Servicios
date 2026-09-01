@@ -63,13 +63,13 @@ public static void main(String[] args)
 public void generarReporte()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCIÓN");
+	System.out.println("EMPEZAMOS LA EJECUCIÃ“N");
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	//Formateamos la fecha Actual para consulta
 	String strFechaActual = dateFormat.format(fechaActual);
-	//Vamos a recuperar el día anterior que según esto es el día real de trabajo
+	//Vamos a recuperar el dÃ­a anterior que segÃºn esto es el dÃ­a real de trabajo
 	Calendar calendarioActual = Calendar.getInstance();
 	Date fechaAnterior = new Date();
 	String strFechaAnterior = "";
@@ -110,12 +110,12 @@ public void generarReporte()
 		//Si es sabado se resta cinco
 		calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 	}
-	//Llevamos a un string la fecha anterior para el cálculo de la venta
+	//Llevamos a un string la fecha anterior para el cÃ¡lculo de la venta
 	fechaAnterior = calendarioActual.getTime();
 	strFechaAnterior = dateFormat.format(fechaAnterior);
 	//Con lo anterior ya tenemos las variables para el proceso
 	String respuesta = "";
-	//Cantidad de pedidos tomados en el día
+	//Cantidad de pedidos tomados en el dÃ­a
 	int cantidadPedidos = ReporteContactCenterDAO.obtenerCantidadPedidos(strFechaActual, strFechaActual);
 	int cantidadPedidosVirtual = ReporteContactCenterDAO.obtenerPedidosVirtualTotalDia(strFechaActual);
 	int cantidadPedidosVirtualNueva = ReporteContactCenterDAO.obtenerPedidosVirtualNuevaTotalDia(strFechaActual);
@@ -195,7 +195,7 @@ public void generarReporte()
 	}
 	respuesta = respuesta + "</table> <br/>";
 	
-	//Cantidad de pedidos tomamos en el día
+	//Cantidad de pedidos tomamos en el dÃ­a
 		cantPedPersona = ReporteContactCenterDAO.obtenerPedidosUsuario(strFechaActual, strFechaActual);
 		respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> PEDIDOS TOMADOS HOY "  + "</TH> </tr>";
 		respuesta = respuesta + "<tr>"
@@ -210,7 +210,7 @@ public void generarReporte()
 		}
 		respuesta = respuesta + "</table> <br/>";
 
-	//Vamos a incluir la lógica para traer todas las tiendas y revisar las estadísticas de los domiciliarios en dicho día y
+	//Vamos a incluir la lÃ³gica para traer todas las tiendas y revisar las estadÃ­sticas de los domiciliarios en dicho dÃ­a y
 	// de la cocina
 	capaControladorPOS.PedidoCtrl pedCtrl = new PedidoCtrl(false);
 	ArrayList<Tienda> tiendas = capaDAOCC.TiendaDAO.obtenerTiendas();
@@ -221,7 +221,7 @@ public void generarReporte()
 		if(!tiendaTemp.getHosbd().equals(new String("")))
 		{
 			//Realizamos la labor con cada una de las tiendas
-			respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='6'> DESEMPEÑO DOMICILIARIOS " + tiendaTemp.getNombreTienda()  + "</TH> </tr>";
+			respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='6'> DESEMPEÃ‘O DOMICILIARIOS " + tiendaTemp.getNombreTienda()  + "</TH> </tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td width='190' nowrap><strong>NOMBRE DOMICILIARIO</strong></td>"
 					+  "<td width='60' nowrap><strong>PEDIDOS INCORRECTOS</strong></td>"
@@ -241,14 +241,14 @@ public void generarReporte()
 		}
 	}
 	
-	//Generamos el desempeño de las cocinas de las tiendas
+	//Generamos el desempeÃ±o de las cocinas de las tiendas
 	for(int j = 0; j < tiendas.size(); j++)
 	{
 		tiendaTemp = tiendas.get(j);
 		if(!tiendaTemp.getHosbd().equals(new String("")))
 		{
 			//Realizamos la labor con cada una de las tiendas
-			respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='6'> DESEMPEÑO COCINA " + tiendaTemp.getNombreTienda()  + "</TH> </tr>";
+			respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='6'> DESEMPEÃ‘O COCINA " + tiendaTemp.getNombreTienda()  + "</TH> </tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td width='190' nowrap><strong>TIENDA</strong></td>"
 					+  "<td width='60' nowrap><strong>PEDIDOS INCORRECTOS</strong></td>"
@@ -262,15 +262,15 @@ public void generarReporte()
 			respuesta = respuesta + "</table> <br/>";
 		}	
 	}
-	//Realizamos el envío del correo electrónico con los archivos
+	//Realizamos el envÃ­o del correo electrÃ³nico con los archivos
 	Correo correo = new Correo();
 	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-	correo.setAsunto("REPORTE DESEMPEÑO CONTACT CENTER " + fechaActual.toString());
+	correo.setAsunto("REPORTE DESEMPEÃ‘O CONTACT CENTER " + fechaActual.toString());
 	correo.setContrasena(infoCorreo.getClaveCorreo());
 	//Tendremos que definir los destinatarios de este correo
 	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEDESEMPENOCONTACT");
 	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuación informamos el estado de los cierres de las tiendas  " + respuesta ;
+	String mensaje = "A continuaciÃ³n informamos el estado de los cierres de las tiendas  " + respuesta ;
 	correo.setMensaje(mensaje);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 	contro.enviarCorreoHTML();

@@ -47,7 +47,7 @@ public class ReporteSemanalONLINE {
 		//Posteriormente realizamos el procesamiento para definir el rango de fechas del cual deseamos procesar el reporte
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los cÃ¡lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -76,7 +76,7 @@ public class ReporteSemanalONLINE {
 		
 		//Necesitamos validar si es un martes o un jueves
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
-		//Es día martes
+		//Es dÃ­a martes
 		if(diaActual == 3)
 		{
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
@@ -85,7 +85,7 @@ public class ReporteSemanalONLINE {
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -4);
 			datFechaAnterior = calendarioActual.getTime();
 			fechaAnterior = dateFormat.format(datFechaAnterior);
-		//Es día jueves
+		//Es dÃ­a jueves
 		}else if(diaActual == 5)
 		{
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
@@ -107,9 +107,9 @@ public class ReporteSemanalONLINE {
 		for(int i = 0; i < razonesSociales.size(); i++)
 		{
 			razTemp = razonesSociales.get(i);
-			//Con la razón social y con la fecha podemos ir a realizar la consulta de los pedidos de domicilios.com
+			//Con la razÃ³n social y con la fecha podemos ir a realizar la consulta de los pedidos de domicilios.com
 			ArrayList pedidosDomCOM = PedidoDAO.obtenerPedidosDomiciliosCOM(razTemp.getIdRazon(), fechaAnterior, fechaActual);
-			//Procedemos a procesar la información y a enviar el correo con el reporte
+			//Procedemos a procesar la informaciÃ³n y a enviar el correo con el reporte
 			String respuesta = "";
 			respuesta = respuesta + "<table border='2'> <tr> RESUMEN PEDIDOS ON LINE DE LA SEMANA VENCIDA " + razTemp.getNombreRazon() +  " </tr>";
 			respuesta = respuesta + "<tr>"
@@ -152,14 +152,14 @@ public class ReporteSemanalONLINE {
 			}
 			respuesta = respuesta + "<tr><td>" + formatea.format(cantidadPedidoONLINE) + "</td><td>" + formatea.format(totalPagoONLINE) + "</td></tr>";
 			respuesta = respuesta + "</table> <br/>";
-			//Procedemos al envío del correo
+			//Procedemos al envÃ­o del correo
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setAsunto("DOMICILIOS.COM REPORTE SEMANAL PAGOS ON LINE " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion() + " " + fechaActual);
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTESEMONLINEDOMICILIOS");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación el reporte SEMANAL de PAGOS ONLINE para domicilios.com separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+			correo.setMensaje("A continuaciÃ³n el reporte SEMANAL de PAGOS ONLINE para domicilios.com separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 			

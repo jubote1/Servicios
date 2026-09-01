@@ -49,7 +49,7 @@ public class EmpleadoTemporalDiaDatamartDAO {
 	public static boolean insertarEmpleadoTemporalDiaDatamart(capaModeloPOS.EmpleadoTemporalDia empTemporal, int idTienda) {
 	    ConexionBaseDatos con = new ConexionBaseDatos();
 	    Connection con1 = con.obtenerConexionBDDatamartLocal();
-	    String insert = "insert into empleado_temporal_dia (idtienda, id,identificacion, nombre, telefono, empresa, fecha_sistema, horaingreso, horasalida, idempresa, observacion, pedidos) values (" + idTienda + "," + empTemporal.getId() + " , '" + empTemporal.getIdentificacion() + "' , '" + empTemporal.getNombre() + "' , '" + empTemporal.getTelefono() + "' , '" + empTemporal.getEmpresa() + "' , '" + empTemporal.getFechaSistema() + "' , '" + empTemporal.getHoraIngreso() + "' , '" + empTemporal.getHoraSalida() + "' , " + empTemporal.getIdEmpresa() + " , '" + empTemporal.getObservacion() + "' ," + empTemporal.getPedidos() + ")";
+	    String insert = "insert into empleado_temporal_dia (idtienda, id,identificacion, nombre, telefono, empresa, fecha_sistema, horaingreso, horasalida, idempresa, observacion, pedidos, totalpedidos) values (" + idTienda + "," + empTemporal.getId() + " , '" + empTemporal.getIdentificacion() + "' , '" + empTemporal.getNombre() + "' , '" + empTemporal.getTelefono() + "' , '" + empTemporal.getEmpresa() + "' , '" + empTemporal.getFechaSistema() + "' , '" + empTemporal.getHoraIngreso() + "' , '" + empTemporal.getHoraSalida() + "' , " + empTemporal.getIdEmpresa() + " , '" + empTemporal.getObservacion() + "' ," + empTemporal.getPedidos() + " , " + empTemporal.getTotalPedidos() + ")";
 	    try {
 	      Statement stm = con1.createStatement();
 	      stm.executeUpdate(insert);

@@ -55,7 +55,7 @@ public class ReporteResumenOperacion {
 		String fechaActualMenosHora = dateFormatHora.format(datFechaMenosHora);
 		
 		
-		//Realizamos la extracciÛn de los tiempos pedidos
+		//Realizamos la extracci√≥n de los tiempos pedidos
 		String respuesta = "";
 		boolean indicadorCorreo = false;
 		ArrayList<TiempoPedido> tiempos = TiempoPedidoDAO.retornarTiemposPedidosLocal();
@@ -72,13 +72,13 @@ public class ReporteResumenOperacion {
 		
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la informaciÛn
+		//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la informaci√≥n
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		//Vamos a recuperar de manera centralizada los valores de las variables de pedido en espera y pedido en ruta
 		int pedidoEmpacado = ParametrosDAO.retornarValorNumericoLocal("EMPACADODOMICILIO");
 		int pedidoEnRuta = ParametrosDAO.retornarValorNumericoLocal("ENRUTADOMICILIO");
 		int tipoPedidoDomicilio = ParametrosDAO.retornarValorNumericoLocal("TIPOPEDIDODOMICILIO");
-		//Con los valores recuperados con anterioridad se realizar· la consulta a cada una de las tiendas
+		//Con los valores recuperados con anterioridad se realizar√° la consulta a cada una de las tiendas
 		int cantPedCoc = 0;
 		int cantPedEmp = 0;
 		int cantPedPen = 0;
@@ -126,23 +126,23 @@ public class ReporteResumenOperacion {
 				respuesta = respuesta + "<tr>"
 						+  "<td><strong>Pedidos en COCINA</strong></td>"
 						+  "<td><strong>Ped Pend Salir Tienda</strong></td>"
-						+  "<td><strong>Cant de Ped ⁄lt Hora Domicilio</strong></td>"
-						+  "<td><strong>Cant de Ped ⁄lt Hora No Domicilio</strong></td>"
-						+  "<td><strong>Tiempo ˙ltimo Ped Pend</strong></td>"
+						+  "<td><strong>Cant de Ped √ölt Hora Domicilio</strong></td>"
+						+  "<td><strong>Cant de Ped √ölt Hora No Domicilio</strong></td>"
+						+  "<td><strong>Tiempo √∫ltimo Ped Pend</strong></td>"
 						+  "</tr>";
-				//Comenzamos a validar los par·metros de cada tienda 
-				// LA MEJOR ESTRATEGIA SERÕA TENER UN SOLO M…TODO PARA MEJORAR EL PERFORMANCE
+				//Comenzamos a validar los par√°metros de cada tienda 
+				// LA MEJOR ESTRATEGIA SER√çA TENER UN SOLO M√âTODO PARA MEJORAR EL PERFORMANCE
 				//Cantidad de pedidos en Cocina
 				cantPedCoc = capaDAOPOS.PedidoDAO.obtenerCantidadPedidoCocina(fechaActual, tien.getHostBD());
 				//Cantidad de pedidos pendientes por salir de la tienda
 				cantPedEmp = capaDAOPOS.PedidoDAO.obtenerCantidadPedidoPorEstado(fechaActual, pedidoEmpacado, tien.getHostBD());
 				//Cantidad de pedidos pendientes de la tienda
 				cantPedPen =  cantPedEmp + capaDAOPOS.PedidoDAO.obtenerCantidadPedidoPorEstado(fechaActual, pedidoEnRuta, tien.getHostBD());
-				//Cantidad de pedidos de la ˙ltima hora Domicilio
+				//Cantidad de pedidos de la √∫ltima hora Domicilio
 				cantPedHoraDom = capaDAOPOS.PedidoDAO.obtenerCantidadPedidoDespuesHoraDomicilio(fechaActual, fechaActualMenosHora, tien.getHostBD(),tipoPedidoDomicilio );
-				//Cantidad de pedidos de la ˙ltima hora Domicilio
+				//Cantidad de pedidos de la √∫ltima hora Domicilio
 				cantPedHoraNoDom = capaDAOPOS.PedidoDAO.obtenerCantidadPedidoDespuesHoraNoDomicilio(fechaActual, fechaActualMenosHora, tien.getHostBD(),tipoPedidoDomicilio );
-				//Tiempo del ˙ltimo pedimo por salir
+				//Tiempo del √∫ltimo pedimo por salir
 				cantMinutos = capaDAOPOS.PedidoDAO.obtenerTiempoUltimoPedidoEstado(fechaActual, pedidoEmpacado, strPedidosProg,  tien.getHostBD());
 				//Luego de obtenidos los datos pintamos el html
 				respuesta = respuesta + "<tr>"
@@ -179,7 +179,7 @@ public class ReporteResumenOperacion {
 				{
 					indicadorCorreo = true;
 				}
-				//Incluimos una validaciÛn de diferencias de los pedidos para tener que corregir antes de descuadres
+				//Incluimos una validaci√≥n de diferencias de los pedidos para tener que corregir antes de descuadres
 				int cantPedDescuadrados = pedCtrl.obtenerCantidadPedidosDescuadrados(fechaActual, tien.getHostBD());
 				if(cantPedDescuadrados > 0 )
 				{
@@ -198,10 +198,10 @@ public class ReporteResumenOperacion {
 		
 		
 		
-		//Si hay indicador de que se debe enviar correo se recuperar· la variable y se enviar· el pedido
+		//Si hay indicador de que se debe enviar correo se recuperar√° la variable y se enviar√° el pedido
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribuciÛn para este correo
+			//Recuperar la lista de distribuci√≥n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPRESUMENOPERACION");
 			Date fecha = new Date();
 			Correo correo = new Correo();
@@ -209,7 +209,7 @@ public class ReporteResumenOperacion {
 			correo.setAsunto("OPERACION GENERAL " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuaciÛn el detalle de la operaciÛn de Pizza Americana: \n" + respuesta);
+			correo.setMensaje("A continuaci√≥n el detalle de la operaci√≥n de Pizza Americana: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}

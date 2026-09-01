@@ -4,24 +4,51 @@ plugins {
 	id 'eclipse'
 }
 
-archivesBaseName = 'ServicioReplicaProgramaFidelizacion'
-mainClassName = 'ServicioReplicaProgramaFidelizacion'
+archivesBaseName = 'ServicioPagosVirtualesWompi'
+mainClassName = 'ServicioPagosVirtualesWompi'
 //compileJava.options.fork = true
 //compileJava.options.forkOptions.executable = 'C:/Program Files/Java/jdk-16.0.2/bin/javac.exe'
 
 sourceSets.main.java.srcDirs = ['src/main/java']
 
-repositories {
-	mavenLocal()
-    mavenCentral()
+// Las tareas distTar/distZip del plugin application tropiezan cuando dos jars
+// tienen el mismo nombre. No se usan esas distribuciones (se empaqueta con
+// fatJar), pero asi la tarea build no falla.
+// ArcGIS y JavaFX llegan arrastrados por el central y por el POS, pero ningun
+// proceso de Servicios los usa (0 imports). Sin excluirlos el fatJar pasa de
+// 65535 entradas y no se puede armar. Firebase NO se excluye: cinco procesos
+// usan capaDAOFirebase.CrudFirebase en tiempo de ejecucion.
+configurations.runtimeClasspath {
+    exclude group: 'com.esri.arcgisruntime'
+    exclude group: 'org.openjfx'
 }
 
+tasks.withType(AbstractArchiveTask) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Todos los fuentes de este proyecto estan en UTF-8 (normalizados el 2026-09-01).
+// Se declara explicitamente para no depender de la codificacion por defecto de la
+// maquina: en Windows es Cp1252, y con ella los literales con tildes quedan corruptos.
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    google()
+    maven { url 'https://esri.jfrog.io/artifactory/arcgis' }
+}
 //create a single Jar with all dependencies
 task fatJar(type: Jar) {
+	// poi-ooxml-schemas por si solo trae unas 10.000 clases, y con Jasper y
+	// Firebase el paquete pasa de las 65535 entradas que admite un zip clasico.
+	zip64 = true
 	manifest {
         attributes 'Implementation-Title': 'Servicios Varios',
         	'Class-Path': '.', 
-        	'Main-Class': 'ServiciosSer.ServicioReplicaProgramaFidelizacion'
+        	'Main-Class': 'ServiciosSer.ServicioPagosVirtualesWompi'
         	
         	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
@@ -32,8 +59,10 @@ task fatJar(type: Jar) {
     exclude "META-INF/*.SF"
     exclude "META-INF/*.DSA"
     exclude "META-INF/*.RSA"
-    exclude "javafx/"
-    exclude "swing/"
+    exclude "com/esri/**"
+    exclude "javafx/**"
+    exclude "com/sun/javafx/**"
+    exclude "swing/**"
     
     from('src/main/java') {
 
@@ -51,7 +80,9 @@ task fatJar(type: Jar) {
 dependencies {
    implementation  'log4j:log4j:1.2.16'
    implementation fileTree(dir: 'libs', include: '*.jar')
-   
+   implementation project(':ProyectoPizzaAmericana')
+   implementation project(':ProyectoTiendaAmericanaCliente')
+   implementation project(':ProyectoInventarioAmericana')
    // https://mvnrepository.com/artifact/javax.mail/mail
    //compile group: 'javax.mail', name: 'mail', version: '1.4.7'
    // https://mvnrepository.com/artifact/javax.mail/javax.mail-api
@@ -80,5 +111,14 @@ dependencies {
    implementation 'com.squareup.okhttp3:okhttp:3.14.6'
    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
    implementation("org.slf4j:slf4j-api:1.7.25")
+
+   // Dependencias que antes llegaban dentro de los jars de libs/. Ahora que los
+   // proyectos se referencian por codigo fuente hay que declararlas aqui: las
+   // dependencias marcadas implementation en otro proyecto NO se heredan a quien
+   // lo consume. Las versiones son las mismas que usa el POS, para no mezclar.
+   implementation 'org.json:json:20210307'
+   implementation 'javax.activation:activation:1.1.1'
+   implementation 'com.google.code.gson:gson:2.8.9'
+   implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.4.2'
      
 }

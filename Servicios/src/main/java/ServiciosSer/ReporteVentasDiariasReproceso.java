@@ -53,8 +53,8 @@ public class ReporteVentasDiariasReproceso {
 	
 	
 /**
- * Este programa se encargar· de correr como un servicio todos los dÌas a las 12:50 am, con el fin de revisar
- * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisiÛn.
+ * Este programa se encargar√° de correr como un servicio todos los d√≠as a las 12:50 am, con el fin de revisar
+ * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisi√≥n.
  * @param args
  */
 public static void main(String[] args)
@@ -67,7 +67,7 @@ public static void main(String[] args)
 public void generarRevisionVentas()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCI”N");
+	System.out.println("EMPEZAMOS LA EJECUCI√ìN");
 	String strFechaActual = "";
 	Date fechaActual;
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -82,7 +82,7 @@ public void generarRevisionVentas()
 	
 	//Formateamos la fecha Actual para consulta
 	
-	//Vamos a recuperar el dÌa anterior que seg˙n esto es el dÌa real de trabajo
+	//Vamos a recuperar el d√≠a anterior que seg√∫n esto es el d√≠a real de trabajo
 	Calendar calendarioActual = Calendar.getInstance();
 	//Fijamos el calendario actual con la fecha de reproceso
 	try
@@ -133,16 +133,16 @@ public void generarRevisionVentas()
 		//Si es sabado se resta cinco
 		calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 	}
-	//Llevamos a un string la fecha anterior para el c·lculo de la venta
+	//Llevamos a un string la fecha anterior para el c√°lculo de la venta
 	fechaAnterior = calendarioActual.getTime();
 	strFechaAnterior = dateFormat.format(fechaAnterior);
 	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 	//Retornamos los objetos de empleados y la biometria, primero debemos retornar
 	String respuesta = "";
-	respuesta = respuesta + "<table border='2'> <tr> RESUMEN DE VENTAS DEL DÕA  " + strFechaActual + " </tr>";
+	respuesta = respuesta + "<table border='2'> <tr> RESUMEN DE VENTAS DEL D√çA  " + strFechaActual + " </tr>";
 	respuesta = respuesta + "<tr>"
 			+  "<td><strong>Tienda</strong></td>"
-			+  "<td><strong>Venta del DÌa</strong></td>"
+			+  "<td><strong>Venta del D√≠a</strong></td>"
 			+  "<td><strong>Acumulado Semana</strong></td>"
 			+  "</tr>";
 	double ventaDelDia = 0;
@@ -161,7 +161,7 @@ public void generarRevisionVentas()
 	
 	respuesta = respuesta + "</table> <br/>";
 	
-	//Realizamos el envÌo del correo electrÛnico con los archivos
+	//Realizamos el env√≠o del correo electr√≥nico con los archivos
 	Correo correo = new Correo();
 	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 	correo.setAsunto("REPORTE VENTAS TIENDAS " + strFechaActual);
@@ -169,7 +169,7 @@ public void generarRevisionVentas()
 	//Tendremos que definir los destinatarios de este correo
 	ArrayList correos = GeneralDAO.obtenerCorreosParametro("VENTADIARIA");
 	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuaciÛn informamos las ventas totatales de las tiendas y sus acumulados  " + respuesta ;
+	String mensaje = "A continuaci√≥n informamos las ventas totatales de las tiendas y sus acumulados  " + respuesta ;
 	correo.setMensaje(mensaje);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 	contro.enviarCorreoHTML();

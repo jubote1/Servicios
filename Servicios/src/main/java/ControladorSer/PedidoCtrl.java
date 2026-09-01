@@ -45,7 +45,7 @@ public class PedidoCtrl {
             while ((lineTienda = rdTienda.readLine()) != null) {
             	retornoTienda.append(lineTienda);
             }
-            //En este punto ya tendr韆mos la respuesta de la inserci髇 de la tienda y tendr韆mos que finalizar
+            //En este punto ya tendr铆amos la respuesta de la inserci贸n de la tienda y tendr铆amos que finalizar
             if(retornoTienda.toString().trim().equals(new String("OK")))
             {
             	respuestaProceso = true;
@@ -59,9 +59,9 @@ public class PedidoCtrl {
 	
 	public boolean reenviarPedidoJava(Pedido pedidoReenviar, String urlContactCenter, String tiendaKuno)
 	{
-		//Realizamos la invocaci髇 mediante el uso de HTTPCLIENT
+		//Realizamos la invocaci贸n mediante el uso de HTTPCLIENT
 		HttpClient client = HttpClientBuilder.create().build();
-		//Comenzamos con la finalizaci髇 del pedido en el contact center
+		//Comenzamos con la finalizaci贸n del pedido en el contact center
 		//Este valor es cero si el cliente ya existia y 1 si es creado
 		//Traemos este valor con base en el memcode
 		boolean respuestaProceso = true;
@@ -79,7 +79,7 @@ public class PedidoCtrl {
 		{
 			StringBuffer retorno = new StringBuffer();
 			StringBuffer retornoTienda = new StringBuffer();
-			//Se realiza la ejecuci髇 del servicio de finalizar pedido
+			//Se realiza la ejecuci贸n del servicio de finalizar pedido
 			HttpResponse responseFinPed = client.execute(request);
 			BufferedReader rd = new BufferedReader
 				    (new InputStreamReader(
@@ -91,14 +91,14 @@ public class PedidoCtrl {
 			System.out.println(retorno);
 			//Traemos el valor del JSON con toda la info del pedido
 			String datosJSONArray = retorno.toString();
-			//Los datos vienen en un arreglo, debemos de tomar el primer valor como lo hacemos en la parte gr醘ica
+			//Los datos vienen en un arreglo, debemos de tomar el primer valor como lo hacemos en la parte gr谩fica
 			JSONParser parser = new JSONParser();
 			Object objParser = parser.parse(datosJSONArray);
 			JSONObject jsonObject=(JSONObject) ((JSONArray)objParser).get(0);
 			String datosJSON = jsonObject.toJSONString();
-			//En el anterior punto sacamos el primer objeto del arreglo y lo llevamos a un string para procesarlo en la inserci髇 de la tienda
+			//En el anterior punto sacamos el primer objeto del arreglo y lo llevamos a un string para procesarlo en la inserci贸n de la tienda
 						
-			//En retorno tendremos el resultado de la finalizaci髇 del pedido y continuaremos con el env韔 del pedido a la tienda
+			//En retorno tendremos el resultado de la finalizaci贸n del pedido y continuaremos con el env铆o del pedido a la tienda
 			Tienda tienda = TiendaDAO.obtenerTienda(pedidoReenviar.getIdtienda());
 			//Recordar que este es un llamado POS, del JSON recibido en el anterior
 			String rutaURLTienda = tienda.getUrl() + "FinalizarPedidoPixel";
@@ -116,7 +116,7 @@ public class PedidoCtrl {
 	            while ((lineTienda = rdTienda.readLine()) != null) {
 	            	retornoTienda.append(lineTienda);
 	            }
-	            //En este punto ya tendr韆mos la respuesta de la inserci髇 de la tienda y tendr韆mos que finalizar
+	            //En este punto ya tendr铆amos la respuesta de la inserci贸n de la tienda y tendr铆amos que finalizar
 	            System.out.println(retornoTienda.toString());
 	            //Realizamos el tratamiento de la respuesta final
 	          	JSONParser parserFinal = new JSONParser();
@@ -135,13 +135,13 @@ public class PedidoCtrl {
 					strCreaCliente = "false";
 				}
 	            int idCliente = ((Long)jsonObjectFinal.get("idcliente")).intValue();
-	            //Obtenidos todos los par醡etros realizamos el llamado al servicio
+	            //Obtenidos todos los par谩metros realizamos el llamado al servicio
 	            String rutaURLFinal = urlContactCenter + "ActualizarNumeroPedidoPixel?idpedido=" + idPedido + "&numpedidopixel=" + numeroFactura +  "&creacliente=" + strCreaCliente +  "&membercode=" + memberCode + "&idcliente=" + idCliente;
 	    		HttpGet requestFinal = new HttpGet(rutaURLFinal);
 	    		try
 	    		{
 	    			StringBuffer retornoFinal = new StringBuffer();
-	    			//Se realiza la ejecuci髇 del servicio de finalizar pedido
+	    			//Se realiza la ejecuci贸n del servicio de finalizar pedido
 	    			HttpResponse responseFinal = client.execute(requestFinal);
 	    			BufferedReader rdFinal = new BufferedReader
 	    				    (new InputStreamReader(

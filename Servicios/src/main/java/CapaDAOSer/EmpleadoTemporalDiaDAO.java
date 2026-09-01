@@ -16,7 +16,7 @@ public class EmpleadoTemporalDiaDAO {
 	
 	
 	/**
-	 * Método que retorna un listado de los empleados temporales que se dieron ingreso en un determinado día en el sistema
+	 * MÃ©todo que retorna un listado de los empleados temporales que se dieron ingreso en un determinado dÃ­a en el sistema
 	 * @param fecha
 	 * @param auditoria
 	 * @return

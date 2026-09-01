@@ -56,10 +56,10 @@ public class ReportePedidosPendientesRAPPI {
 		//Comenzamos a traer la fecha actual como un String
 		fechaActual = dateFormat.format(datFechaActual);
 		//Con la fecha actual vamos a realizar la consulta de los pedidos
-		//En este punto ya tenemos las dos fechas de interés por el momento nos interesará retornar las ofertas dadas
+		//En este punto ya tenemos las dos fechas de interÃ©s por el momento nos interesarÃ¡ retornar las ofertas dadas
 		// y las ofertas redimidas en estos rango de tiempo
 		ArrayList<Pedido> pedidosPendientes = PedidoDAO.ConsultarPedidosPendientesRAPPI(fechaActual);
-		//Intentamos realizar el envío de los pedidos pendientes
+		//Intentamos realizar el envÃ­o de los pedidos pendientes
 		respuesta = respuesta + "<table border='2'> <tr> INFORMATIVO PEDIDOS PENDIENTES RAPPI " + " </tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Id Pedido</strong></td>"
@@ -81,16 +81,16 @@ public class ReportePedidosPendientesRAPPI {
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribución para este correo
+			//Recuperar la lista de distribuciÃ³n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDOPENDIENTE");
 			Date fecha = new Date();
 			Correo correo = new Correo();
-			correo.setAsunto("RAPPI PEDIDOS PENDIENTES POR GESTIÓN " + fecha.toString());
+			correo.setAsunto("RAPPI PEDIDOS PENDIENTES POR GESTIÃ“N " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("Pedidos pendientes de rappi por realizar gestión: \n" + respuesta);
+			correo.setMensaje("Pedidos pendientes de rappi por realizar gestiÃ³n: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-			//Documentamos esta parte dado que igual se va a reportar a continuación el pedido pendiente
+			//Documentamos esta parte dado que igual se va a reportar a continuaciÃ³n el pedido pendiente
 			contro.enviarCorreoHTML();
 		}
 	}

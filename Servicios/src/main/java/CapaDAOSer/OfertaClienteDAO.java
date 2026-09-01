@@ -15,7 +15,7 @@ import ModeloSer.OfertaCliente;
 
 
 /**
- * Clase que implementa todos los métodos de acceso a la base de datos para la administración de la entidad Excepcion de Precio.
+ * Clase que implementa todos los mÃ©todos de acceso a la base de datos para la administraciÃ³n de la entidad Excepcion de Precio.
  * @author JuanDavid
  *
  */
@@ -74,8 +74,8 @@ public class OfertaClienteDAO {
 	}
 	
 	/**
-	 * Método que retornará un ArrayList con objetos de tipo oferta Cliente, con todas las ofertas redimidas dentro del  rango de fechas 
-	 * enviadas como parámetro.
+	 * MÃ©todo que retornarÃ¡ un ArrayList con objetos de tipo oferta Cliente, con todas las ofertas redimidas dentro del  rango de fechas 
+	 * enviadas como parÃ¡metro.
 	 * @param fechaSuperior
 	 * @param fechaInferior
 	 * @return
@@ -138,7 +138,7 @@ public class OfertaClienteDAO {
 		consulta = "SELECT c.nombre,COUNT(*)  FROM oferta_cliente a, cliente b, tienda c WHERE a.idcliente = b.idcliente and b.idtienda = c.idtienda and a.ingreso_oferta >= '" + fecha +" 00:00:00' AND " + 
 				"a.ingreso_oferta <= '" + fecha + " 23:59:00' group by c.nombre";
 		ConexionBaseDatos con = new ConexionBaseDatos();
-		//Llamamos metodo de conexión asumiendo que corremos en el servidor de aplicaciones de manera local
+		//Llamamos metodo de conexiÃ³n asumiendo que corremos en el servidor de aplicaciones de manera local
 		Connection con1 = con.obtenerConexionBDContactLocal();
 		try
 		{

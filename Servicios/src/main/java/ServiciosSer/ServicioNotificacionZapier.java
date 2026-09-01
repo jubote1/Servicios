@@ -47,18 +47,18 @@ public void generarNotificacionZapier(String telefono, String nombre,  String co
 	datos.put("nombre", nombre);
 	datos.put("codigo", codigo);
 	String jsonString = datos.toJSONString();
-	//Realizamos la invocaci髇 mediante el uso de HTTPCLIENT
+	//Realizamos la invocaci贸n mediante el uso de HTTPCLIENT
 	HttpClient client = HttpClientBuilder.create().build();
 	String rutaURLNotif = "https://hooks.zapier.com/hooks/catch/3150747/bf2084f/";
 	HttpPost request = new HttpPost(rutaURLNotif);
 	try
 	{
 		//Fijamos el header con el token
-		//NO HAY SEGURIDAD TODAV虯
+		//NO HAY SEGURIDAD TODAV脥A
 		//request.setHeader("Authorization", "Bearer " + "prv_prod_Qdb2HcV6AkbkvCKr9UWbhFs6L73IFCkT");
 		request.setHeader("Accept", "application/json");
 		request.setHeader("Content-type", "application/json");
-		//Fijamos los par醡etros
+		//Fijamos los par谩metros
 		//pass the json string request in the entity
 	    HttpEntity entity = new ByteArrayEntity(jsonString.getBytes("UTF-8"));
 	    request.setEntity(entity);
@@ -84,8 +84,8 @@ public void generarNotificacionZapier(String telefono, String nombre,  String co
 public void generarNotificacionesZapier()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCI覰 PROCESO DE PROMOCIONES");
-	//Capturamos el par醡etro del proceso que se va a ejecutar
+	System.out.println("EMPEZAMOS LA EJECUCI脫N PROCESO DE PROMOCIONES");
+	//Capturamos el par谩metro del proceso que se va a ejecutar
 	int idProcesoOferta = 0;
 	try
 	{
@@ -110,7 +110,7 @@ public void generarNotificacionesZapier()
 	
 
 	
-	//Debemos recuperar la informaci髇 de las tiendas codigos promocionales
+	//Debemos recuperar la informaci贸n de las tiendas codigos promocionales
 	ArrayList<ClienteZapier> clientesZapier = OfertaClienteDAO.obtenerClientesNotificacionZapier(idProcesoOferta, strFechaActual);
 	for(ClienteZapier clienteTemp : clientesZapier)
 	{
@@ -118,15 +118,15 @@ public void generarNotificacionesZapier()
 	}
 	respuesta = respuesta + " Se han enviado " + clientesZapier.size() + " notificaciones.";
 
-	//Realizamos el env韔 del correo electr髇ico con los archivos
+	//Realizamos el env铆o del correo electr贸nico con los archivos
 	Correo correo = new Correo();
-	correo.setAsunto(" RENOTIFICACI覰 ZAPIER " + fechaActual.toString());
+	correo.setAsunto(" RENOTIFICACI脫N ZAPIER " + fechaActual.toString());
 	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 	correo.setContrasena(infoCorreo.getClaveCorreo());
 	//Tendremos que definir los destinatarios de este correo
 	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPGENERACIONPROMOCIONES");
 	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuaci髇 se informaci髇 del proceso de NOTIFICACION ZAPIER " + respuesta;
+	String mensaje = "A continuaci贸n se informaci贸n del proceso de NOTIFICACION ZAPIER " + respuesta;
 	correo.setMensaje(mensaje);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 	contro.enviarCorreoHTML();

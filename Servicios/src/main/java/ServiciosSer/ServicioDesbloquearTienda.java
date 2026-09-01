@@ -34,15 +34,15 @@ public class ServicioDesbloquearTienda {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		SimpleDateFormat dateFormatHora = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		PedidoCtrl pedCtrl = new PedidoCtrl(false);
-		//Obtenemos las tiendas que est醤 bloqueadas
+		//Obtenemos las tiendas que est谩n bloqueadas
 		TiendaBloqueadaCtrl tienBloCtrl = new TiendaBloqueadaCtrl();
 		ArrayList<TiendaBloqueada> tiendasBlo = TiendaBloqueadaDAO.retornarTiendasBloqueadas();
 		//Recorremos el ArrayList con las tiendas bloqueadas
 		for(TiendaBloqueada tiendaBloTemp: tiendasBlo)
 		{
-			//Debemos de recorrer el 鷏timo registro de bloqueo de la tienda en cuesti髇
+			//Debemos de recorrer el 煤ltimo registro de bloqueo de la tienda en cuesti贸n
 			LogBloqueoTienda logBloqueo = LogBloqueoTiendaDAO.obtenerUltimoBloqueoTienda(tiendaBloTemp.getIdtienda());
-			//Realizamos la conversi髇 del campo tiempo para saber si debemos o no realizar el desbloqueo
+			//Realizamos la conversi贸n del campo tiempo para saber si debemos o no realizar el desbloqueo
 			int tiempoDesbloqueo = 0;
 			try {
 				tiempoDesbloqueo = Integer.parseInt(logBloqueo.getDebloqueoEn());
@@ -62,19 +62,19 @@ public class ServicioDesbloquearTienda {
 				{
 					fechaHoraBloqueo = new Date();
 				}
-				//Necesitamos calcular la diferencia en minutos de 2 fechas para tomar la decisi髇 del desbloqueo
+				//Necesitamos calcular la diferencia en minutos de 2 fechas para tomar la decisi贸n del desbloqueo
 				long dif = fechaActual.getTime() - fechaHoraBloqueo.getTime();
 				long difMinutos = TimeUnit.MILLISECONDS.toMinutes(dif);
 				if(difMinutos > tiempoDesbloqueo)
 				{
 					System.out.println("debo desbloquear");
 					tienBloCtrl.eliminarTiendaBloqueada(tiendaBloTemp.getIdtienda());
-					//Posteriormenente deberemos de realizar la ejecuci髇 del servicio en la tienda para el desbloqueo
+					//Posteriormenente deberemos de realizar la ejecuci贸n del servicio en la tienda para el desbloqueo
 					//
 					
 					String rutaURL = logBloqueo.getUrlTienda() + "DesbloquearTienda";
 					URL url=null;
-					//Realizamos la invocaci髇 mediante el uso de HTTPCLIENT
+					//Realizamos la invocaci贸n mediante el uso de HTTPCLIENT
 					HttpClient client = HttpClientBuilder.create().build();
 					HttpGet request = new HttpGet(rutaURL);
 					try

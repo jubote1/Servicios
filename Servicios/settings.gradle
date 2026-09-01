@@ -1,1 +1,71 @@
-//include ':ProyectoTiendaAmericanaCliente'
+rootProject.name = 'Servicios'
+
+/*
+ * Servicios se compila contra el codigo fuente de otros tres proyectos.
+ *
+ * Las rutas NO se escriben en este archivo: cada quien tiene los repositorios
+ * en carpetas distintas y este archivo se comparte por git. Poner rutas aqui
+ * obliga a todo el equipo a usar la misma estructura de carpetas.
+ *
+ * Cada desarrollador las declara UNA sola vez por maquina, en su archivo
+ * personal de Gradle, que nunca se sube al repositorio:
+ *
+ *     Windows: C:\Users\<usuario>\.gradle\gradle.properties
+ *     Linux:   ~/.gradle/gradle.properties
+ *
+ * Contenido (usar barras normales / incluso en Windows):
+ *
+ *     rutaPizzaAmericana=D:/ECLIPSE_WORKSPACE/ProyectoPizzaAmericana
+ *     rutaTiendaAmericanaCliente=C:/Users/ASUS/git/ProyectoTiendaAmericanaCliente
+ *     rutaInventarioAmericana=C:/Users/ASUS/git/ProyectoInventarioAmericana/ProyectoInventarioAmericana
+ *
+ * Si alguien no declara una ruta, se intentan las rutas por convencion (los
+ * repositorios como hermanos del workspace) y solo entonces se falla.
+ *
+ * Nota: en este archivo no se usan barras invertidas dentro de cadenas, porque
+ * Groovy las interpreta como secuencias de escape y rompe la compilacion.
+ */
+
+def faltantes = []
+
+def referenciar = { String nombre, String propiedad, List<String> porConvencion ->
+    def candidatas = []
+    if (settings.hasProperty(propiedad)) {
+        candidatas << new File(settings.getProperty(propiedad).toString().trim())
+    }
+    porConvencion.each { candidatas << new File(settingsDir, it) }
+
+    // Se identifica el proyecto por su build.gradle. Si projectDir apunta a una
+    // carpeta que no existe, Gradle crea en silencio un proyecto vacio y el error
+    // sale mucho despues como "None of the consumable configurations have
+    // attributes", que no dice nada util. Por eso se valida aqui.
+    def dir = candidatas.find { new File(it, 'build.gradle').isFile() }
+    if (dir == null) {
+        faltantes << nombre
+        candidatas.each { faltantes << '      se busco en: ' + it.absolutePath }
+        return
+    }
+
+    include ':' + nombre
+    project(':' + nombre).projectDir = dir
+    println 'Servicios referencia ' + nombre + ' -> ' + dir.canonicalPath
+}
+
+referenciar('ProyectoPizzaAmericana', 'rutaPizzaAmericana',
+        ['../../ProyectoPizzaAmericana'])
+
+referenciar('ProyectoTiendaAmericanaCliente', 'rutaTiendaAmericanaCliente',
+        ['../../ProyectoTiendaAmericanaCliente'])
+
+// El proyecto Gradle de inventarios esta anidado dentro del repositorio, por eso
+// se intentan las dos profundidades.
+referenciar('ProyectoInventarioAmericana', 'rutaInventarioAmericana',
+        ['../../ProyectoInventarioAmericana/ProyectoInventarioAmericana',
+         '../../ProyectoInventarioAmericana'])
+
+if (!faltantes.isEmpty()) {
+    throw new GradleException('No se pudo ubicar el codigo de estos proyectos: '
+            + faltantes.join(' | ')
+            + ' -- declare la ruta en su gradle.properties personal, ver el'
+            + ' comentario al inicio de settings.gradle')
+}

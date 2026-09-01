@@ -12,9 +12,9 @@ public class PedidoPOSPMDAO {
 	
 	
 	/**
-	 * MÈtodo en la capa de acceso a datos que se encarga de lanzar la consulta para conocer los estados de los pedidos de una
-	 * tienda en el dÌa en curso, retorma la informaciÛn de estos pedidos en un ArrayList con objetos de tipo EstadoPedidoTienda
-	 * @param dsnODBC Se recibe como par·metro el string con dsn para la conexiÛn a la tienda.
+	 * M√©todo en la capa de acceso a datos que se encarga de lanzar la consulta para conocer los estados de los pedidos de una
+	 * tienda en el d√≠a en curso, retorma la informaci√≥n de estos pedidos en un ArrayList con objetos de tipo EstadoPedidoTienda
+	 * @param dsnODBC Se recibe como par√°metro el string con dsn para la conexi√≥n a la tienda.
 	 * @return Se retorna un arrayList con objetos tipo EstadoPedidoTienda.
 	 */
 	public static ArrayList<PedidoPixel> obtenerPedidosPOSPM()

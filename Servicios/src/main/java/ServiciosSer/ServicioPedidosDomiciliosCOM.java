@@ -34,22 +34,22 @@ public class ServicioPedidosDomiciliosCOM {
 	    //obtenenemos la tienda donde estamos corriendo
 		int idTienda = TiendaDAO.ObtenerTienda();
 		String tienda = TiendaDAO.obtenerNombreTienda();
-		//Traemos de una variable de configuraciÛn el valor de la marcacion domicilios.com
+		//Traemos de una variable de configuraci√≥n el valor de la marcacion domicilios.com
 		int idMarDomiciliosCOM = ParametrosDAO.retornarValorNumerico("MARCADORDOMICILIOSCOM");
-	    //Obtenemos los pedidos de domicilios.com para la tienda  en cuestiÛn en la semana en cuestiÛn
+	    //Obtenemos los pedidos de domicilios.com para la tienda  en cuesti√≥n en la semana en cuesti√≥n
 		ArrayList<Pedido> pedidosDOMCOM = PedidoDAO.ConsultaDomiciosCOMSemana(idTienda, idMarDomiciliosCOM);
 		//Teniendo los pedidos de la semana y la tienda la idea es comenzar a recorrerlos uno a uno y 
 		//tener dos arreglos uno con posibles anulacioes y otro con posibles cambios de precio,
 		//cuando los detectamos llenamos un par de tablas de control en el contact center
 		
-		//De la tienda en cuestion es necesario saber que POS est· manejando para saber como lanzar la consulta
+		//De la tienda en cuestion es necesario saber que POS est√° manejando para saber como lanzar la consulta
 		int pos = TiendaDAO.ObtenerTipoPOSTienda(idTienda);
 		System.out.println("POS RECUPERADO " + pos);
 		for(Pedido pedTemp : pedidosDOMCOM)
 		{
 			double valorPedContact = pedTemp.getTotal_neto();
 			int numPosHeader = pedTemp.getNumposheader();
-			//Vamos a recuperar el valor del pedido con el fin de hacer la comparaciÛn
+			//Vamos a recuperar el valor del pedido con el fin de hacer la comparaci√≥n
 			double valorTotalTienda = 0;
 			if(pos == 2)
 			{
@@ -60,12 +60,12 @@ public class ServicioPedidosDomiciliosCOM {
 			}
 			if(valorTotalTienda == 0)
 			{
-				//Realiza la inserciÛn en la tabla de marcacion_anulacion_pedido
+				//Realiza la inserci√≥n en la tabla de marcacion_anulacion_pedido
 				MarcacionAnulacionPedido marAnulacion = new MarcacionAnulacionPedido(0, idMarDomiciliosCOM,pedTemp.getIdpedido(), numPosHeader, pedTemp.getFechapedido(),valorPedContact);
 				MarcacionAnulacionPedidoDAO.insertarMarcacionAnulacion(marAnulacion);
 			}else if(valorTotalTienda != valorPedContact)
 			{
-				//Realiza la inserciÛn en la tabla marcacion_cambio_pedido
+				//Realiza la inserci√≥n en la tabla marcacion_cambio_pedido
 				MarcacionCambioPedido marCambio = new MarcacionCambioPedido(0, idMarDomiciliosCOM,pedTemp.getIdpedido(), numPosHeader, pedTemp.getFechapedido(),valorPedContact, valorTotalTienda );
 				MarcacionCambioPedidoDAO.insertarMarcacionCambio(marCambio);
 			}

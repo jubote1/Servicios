@@ -39,7 +39,7 @@ public class ReporteSemanalAPPReproceso {
 		//TRABAJO CON LAS FECHAS///////
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 				String fechaActual = "";
-				//Variables donde manejaremos la fecha anerior con el fin realizar los c·lculos de ventas
+				//Variables donde manejaremos la fecha anerior con el fin realizar los c√°lculos de ventas
 				Date datFechaAnterior;
 				String fechaAnterior = "";
 				//Creamos el objeto calendario
@@ -64,7 +64,7 @@ public class ReporteSemanalAPPReproceso {
 				{
 					System.out.println(e.toString());
 				}
-				//Retormanos el dÌa de la semana actual segun la fecha del calendario
+				//Retormanos el d√≠a de la semana actual segun la fecha del calendario
 				//OJO
 				//int diaActual = 1;
 				int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -103,12 +103,12 @@ public class ReporteSemanalAPPReproceso {
 					//Si es sabado se resta cinco
 					calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 				}
-				//Llevamos a un string la fecha anterior para el c·lculo de la venta
+				//Llevamos a un string la fecha anterior para el c√°lculo de la venta
 				datFechaAnterior = calendarioActual.getTime();
 				fechaAnterior = dateFormat.format(datFechaAnterior);
 		///////////////////////////////
 		DecimalFormat formatea = new DecimalFormat("###,###");
-		//En respuesta guardaremos el html que guardar· todo lo que se desplegar· en el correo.
+		//En respuesta guardaremos el html que guardar√° todo lo que se desplegar√° en el correo.
 		String respuesta = "";
 		
 		
@@ -145,7 +145,7 @@ public class ReporteSemanalAPPReproceso {
 		respuesta = respuesta + "</table> <br/>";
 		try
 		{
-			//Recuperar la lista de distribuciÛn para este correo
+			//Recuperar la lista de distribuci√≥n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTESEMANALAPP");
 			Date fecha = new Date();
 			Correo correo = new Correo();

@@ -30,8 +30,8 @@ public static void main(String[] args)
 public void generarPromociones()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCIÓN PROCESO DE PROMOCIONES");
-	//Capturamos el parámetro del proceso que se va a ejecutar
+	System.out.println("EMPEZAMOS LA EJECUCIï¿½N PROCESO DE PROMOCIONES");
+	//Capturamos el parï¿½metro del proceso que se va a ejecutar
 	int idProcesoPromocion = 0;
 	try
 	{
@@ -56,14 +56,14 @@ public void generarPromociones()
 	Calendar calendarioActual = Calendar.getInstance();
 	int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
 	
-	//Debemos recuperar la información de las tiendas codigos promocionales
+	//Debemos recuperar la informaciï¿½n de las tiendas codigos promocionales
 	ArrayList<TiendaCodigoPromocional> tiendaCodPromos = TiendaCodigoPromocionalDAO.retornarTiendaCodigoPromocional(idProcesoPromocion);
 
 	//Las variables temporales para el procesamiento
 	int idTiendaTemp;
 	int codPromosTemp;
 	PromocionesCtrl promoCtrl = new PromocionesCtrl();
-	//Realizamos el recorrido de esta promoción con el fin de realizar las actividades por cada promoción
+	//Realizamos el recorrido de esta promociï¿½n con el fin de realizar las actividades por cada promociï¿½n
 	for(int i = 0; i < tiendaCodPromos.size(); i++)
 	{
 		TiendaCodigoPromocional tiendaCodTemp = tiendaCodPromos.get(i);
@@ -91,15 +91,15 @@ public void generarPromociones()
 		{
 			codPromosTemp = tiendaCodTemp.getDomClientes();
 		}
-		//Posteriormente realizamos la consulta para recuperar los clientes que interesarían
+		//Posteriormente realizamos la consulta para recuperar los clientes que interesarï¿½an
 		ArrayList clientesPromos = PedidoDAO.obtenerClientesCodPromoTienda(idTiendaTemp, tiendaCodTemp.getFechaInicial(), tiendaCodTemp.getFechaFinal(), codPromosTemp);
 		
 		//Por cada clientes debemos de realizar una serie de acciones hasta incluso crear la oferta
 		for(int j = 0; j < clientesPromos.size(); j++)
 		{
 			String[] clientePromoTemp =(String[]) clientesPromos.get(j);
-			//Realizaremos una serie de controles con los datos, el primero será verificar si no tiene celular
-			// pero lo tiene en el campo de telefono, en cuyo caso realizaremos una actualización para llevarlo también
+			//Realizaremos una serie de controles con los datos, el primero serï¿½ verificar si no tiene celular
+			// pero lo tiene en el campo de telefono, en cuyo caso realizaremos una actualizaciï¿½n para llevarlo tambiï¿½n
 			// telefono celular
 			if(clientePromoTemp[2].equals(new String("")))
 			{
@@ -113,18 +113,18 @@ public void generarPromociones()
 			
 			promoCtrl.insertarOfertaCliente(ofertaCli);
 		}
-		promoCtrl.enviarMensajesOferta(tiendaCodTemp.getIdOferta());
-		respuesta = respuesta + " <p> Id Tienda enviada " + tiendaCodTemp.getIdTienda() + " EXITOSO con " + codPromosTemp + " códigos." + " </p>";
+		promoCtrl.enviarMensajesOfertaBrevo(tiendaCodTemp.getIdOferta());
+		respuesta = respuesta + " <p> Id Tienda enviada " + tiendaCodTemp.getIdTienda() + " EXITOSO con " + codPromosTemp + " cï¿½digos." + " </p>";
 	}
-	//Realizamos el envío del correo electrónico con los archivos
+	//Realizamos el envï¿½o del correo electrï¿½nico con los archivos
 	Correo correo = new Correo();
-	correo.setAsunto("GENERACIÓN AUTOMÁTICO CÓDIGOS PROMOCIONALES " + fechaActual.toString());
+	correo.setAsunto("GENERACIï¿½N AUTOMï¿½TICO Cï¿½DIGOS PROMOCIONALES " + fechaActual.toString());
 	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 	correo.setContrasena(infoCorreo.getClaveCorreo());
 	//Tendremos que definir los destinatarios de este correo
 	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPGENERACIONPROMOCIONES");
 	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuación se información del proceso de replica de consumo de tiendas " + respuesta;
+	String mensaje = "A continuaciï¿½n se informaciï¿½n del proceso de replica de consumo de tiendas " + respuesta;
 	correo.setMensaje(mensaje);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 	contro.enviarCorreoHTML();

@@ -1,6 +1,6 @@
 package ServiciosSer;
-/*Este proceos deber· correr los lunes asÌ sea reproceso
- * y no se deber· de sobreescribir cuando se cambie el proceso titular.
+/*Este proceos deber√° correr los lunes as√≠ sea reproceso
+ * y no se deber√° de sobreescribir cuando se cambie el proceso titular.
  */
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -68,16 +68,16 @@ public static void main(String[] args)
 public void generarReporteSemanalCierreInventarioTiendas()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCI”N");
+	System.out.println("EMPEZAMOS LA EJECUCI√ìN");
 	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 	//Arreglo donde dejaremos la ruta de cada uno de los archivos generados.
 	String[] rutasArchivos = new String[tiendas.size()];
 	//Obtenemos la fecha actual, con base en la cual realizaremos el recorrido
 	// En el String fecha guardaremos el contenido de la fecha
-	//Para la ejecuciÛn autom·tica asumimos que es un lunes
+	//Para la ejecuci√≥n autom√°tica asumimos que es un lunes
 	String fechaActual = "";
 	String fechaPosActual = "";
-	//Variables donde manejaremos la fecha anerior con el fin realizar los c·lculos del cierre de inventarios
+	//Variables donde manejaremos la fecha anerior con el fin realizar los c√°lculos del cierre de inventarios
 	Date datFechaAnterior;
 	Date datFechaActual;
 	String fechaAnterior = "";
@@ -103,19 +103,19 @@ public void generarReporteSemanalCierreInventarioTiendas()
 	{
 		System.out.println(e.toString());
 	}
-	//Podemos validaciÛn si el proceso no se corre un dÌa lunes no deberÌa de correr
-	//validamos que sea un dÌa lunes
+	//Podemos validaci√≥n si el proceso no se corre un d√≠a lunes no deber√≠a de correr
+	//validamos que sea un d√≠a lunes
 	if(diaActual == 2)
 	{
 		calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
 		datFechaActual = calendarioActual.getTime();
 		fechaActual =  dateFormat.format(datFechaActual);
 		calendarioActual.add(Calendar.DAY_OF_YEAR, -6);
-		//Llevamos a un string la fecha anterior para el c·lculo de la venta
+		//Llevamos a un string la fecha anterior para el c√°lculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
 		fechaAnterior = dateFormat.format(datFechaAnterior);
 		
-		//INCLUIMOS LA CONSTRUCCI”N DE LOS CONSUMOS POR TIENDA
+		//INCLUIMOS LA CONSTRUCCI√ìN DE LOS CONSUMOS POR TIENDA
 		respuesta =  "<table WIDTH='700' border='2'> <tr> <td colspan='2'> REPORTE DE PORCENTAJE CONSUMO TIENDAS - " + fechaAnterior + "  -  " + fechaActual +  "</td></tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td WIDTH='100'><strong>TIENDA</strong></td>"
@@ -129,9 +129,9 @@ public void generarReporteSemanalCierreInventarioTiendas()
 				+  "<td WIDTH='50'><strong>TOTAL DESCUENTOS</strong></td>"
 				+  "<td WIDTH='50'><strong>PORCENTAJE CON DESCUENTOS</strong></td>"
 				+  "</tr>";
-		//-- En este punto finalizamos la fijaciÛn de las tiendas
+		//-- En este punto finalizamos la fijaci√≥n de las tiendas
 		
-		//Vamos a realizar una modificaciÛn para calcular la venta total de la semana para tienda
+		//Vamos a realizar una modificaci√≥n para calcular la venta total de la semana para tienda
 		//Definimos la variable en donde vamos a almacenar dicho total
 		double ventaTotalTiendas = 0;
 		double ventaTienda = 0;
@@ -139,7 +139,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
 		{
 			if(!tien.getHostBD().equals(new String("")))
 			{
-				//Realizamos la acumulaciÛn despues de cada iteraciÛn
+				//Realizamos la acumulaci√≥n despues de cada iteraci√≥n
 				ventaTienda = PedidoDAO.obtenerTotalesPedidosSemana(fechaAnterior, fechaActual, tien.getHostBD());
 				ventaTotalTiendas  = ventaTotalTiendas + ventaTienda;
 				VentaSemanalTienda ventSemanal = new VentaSemanalTienda(tien.getIdTienda(),fechaActual,ventaTienda, tien.getMeta());
@@ -166,7 +166,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
 			}
 		}
 		
-		//Realizamos el envÌo del correo electrÛnico con los archivos
+		//Realizamos el env√≠o del correo electr√≥nico con los archivos
 		Correo correo = new Correo();
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto("CIERRE SEMANAL DE INVENTARIO" + fechaActual + " " + fechaAnterior);
@@ -174,7 +174,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
 		//Tendremos que definir los destinatarios de este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPCIERREINVENTARIO");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("A continuaciÛn todos los CIERRES de inventarios de las tiendas de pizza americana");
+		correo.setMensaje("A continuaci√≥n todos los CIERRES de inventarios de las tiendas de pizza americana");
 		correo.setRutasArchivos(rutasArchivos);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreo();
@@ -184,7 +184,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
 		respuestaConDescuentos = respuestaConDescuentos + "</table> <br/>";
 		correo.setAsunto("RESUMEN SEMANAL PORCENTAJE CONSUMO TIENDAS " + fechaActual + " " + fechaAnterior);
 		correos = GeneralDAO.obtenerCorreosParametro("RESUMENPORCOMIDA");
-		correo.setMensaje("A continuaciÛn se anexan los resultados de porcentaje de comidas en la semana que finaliza. " + respuesta);
+		correo.setMensaje("A continuaci√≥n se anexan los resultados de porcentaje de comidas en la semana que finaliza. " + respuesta);
 		correo.setRutasArchivos(null);
 		contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
@@ -192,7 +192,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
 		//ENVIO DE CORREO CON DESCUENTO
 		correo.setAsunto("RESUMEN SEMANAL PORCENTAJE CONSUMO TIENDAS CON DESCUENTO " + fechaActual + " " + fechaAnterior);
 		correos = GeneralDAO.obtenerCorreosParametro("RESUMENPORCOMIDADESCUENTO");
-		correo.setMensaje("A continuaciÛn se anexan los resultados de porcentaje de comidas en la semana que finaliza. " + respuestaConDescuentos);
+		correo.setMensaje("A continuaci√≥n se anexan los resultados de porcentaje de comidas en la semana que finaliza. " + respuestaConDescuentos);
 		correo.setRutasArchivos(null);
 		contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
@@ -202,7 +202,7 @@ public void generarReporteSemanalCierreInventarioTiendas()
 
 
 /**
- * MÈtodo grueso para la generaciÛn del formato de cierre de inventarios semanales
+ * M√©todo grueso para la generaci√≥n del formato de cierre de inventarios semanales
  * @param idtienda
  * @param fecha
  * @return
@@ -212,12 +212,12 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	String rutaArchivoGenerado="";
 	String rutaArchivoBD = ParametrosDAO.retornarValorAlfanumericoLocal("RUTACIERREINVENTARIO");
 	String rutaImagenReporte = rutaArchivoBD + "LogoPizzaAmericana.png";
-	//obtenemos dÌa de la semana para recuperar inventario requerido de la tienda
+	//obtenemos d√≠a de la semana para recuperar inventario requerido de la tienda
 	// Creamos una instancia del calendario
 	GregorianCalendar cal = new GregorianCalendar();
 	int diasemana = 0;
 	String nombreTienda = tienda.getNombreTienda();
-	//Creamos el libro en Excel y la hoja en cuestiÛn, definimos los encabezados.
+	//Creamos el libro en Excel y la hoja en cuesti√≥n, definimos los encabezados.
 	HSSFWorkbook workbook = new HSSFWorkbook();
 	HSSFSheet sheet = workbook.createSheet(tienda.getNombreTienda());
 	sheet.setColumnWidth(0, 7500);
@@ -250,12 +250,12 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 		   FileOutputStream fileOut = new FileOutputStream(rutaArchivoGenerado);
 		   rutaArchivoGenerado = rutaArchivoGenerado + "%&" + "CierreInventario"+ nombreTienda + "--" + fechaAnterior + "-" + fechaActual +".xls";
 		   System.out.println(rutaArchivoGenerado);
-		   //Deberemos de recuperar la informaciÛn para el informe
+		   //Deberemos de recuperar la informaci√≥n para el informe
 			
-			//Esta parte de recuperaciÛn de los insumos tienda se establece control dado que est· recuperando constantemente
+			//Esta parte de recuperaci√≥n de los insumos tienda se establece control dado que est√° recuperando constantemente
 		   	ArrayList cierreInventario = new ArrayList();
 		   	ArrayList cierreInventarioGas = new ArrayList();
-		   	//Llamamos mÈtodo qeu llenar· el ArrayList con el resumen de la informaciÛn
+		   	//Llamamos m√©todo qeu llenar√° el ArrayList con el resumen de la informaci√≥n
 		   	cierreInventario = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumosReproceso(fechaActual, fechaAnterior, "Insumos", tienda.getHostBD(), fechaPosActual);
 		   	cierreInventarioGas = CapaDAOSer.ItemInventarioDAO.obtenerCierreSemanalInsumosReproceso(fechaActual, fechaAnterior, "Bebidas", tienda.getHostBD(), fechaPosActual);
 			//Contralaremos la fila en la que vamos con la variable fila
@@ -275,7 +275,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             cellheader.setFont(whiteFont);
             cellheader.setAlignment(HorizontalAlignment .CENTER);
             
-            //Creamos el estilo para la segunda fila de informaciÛn
+            //Creamos el estilo para la segunda fila de informaci√≥n
             Font fontSegFila = workbook.createFont();
             fontSegFila.setColor(IndexedColors.ORANGE.index);
             fontSegFila.setFontHeightInPoints((short) 10.00);
@@ -319,7 +319,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             headerRow.setHeight((short)1000);
             cellHeader.setCellStyle(cellheader);
             
-            //Realizamos la adiciÛn de la imagen del logo de pizza americana
+            //Realizamos la adici√≥n de la imagen del logo de pizza americana
             InputStream inputStream = new FileInputStream(rutaImagenReporte);
             byte[] imageBytes = IOUtils.toByteArray(inputStream);
             int pictureIdx = workbook.addPicture(imageBytes, workbook.PICTURE_TYPE_PNG);
@@ -344,7 +344,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             //Reset the image to the original size
             pict.resize();
             
-            //Aplicamos los bordes a la regiÛn merge
+            //Aplicamos los bordes a la regi√≥n merge
             CellRangeAddress cellRangeAddress = new CellRangeAddress(0, 0, 0, 3);
             HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
@@ -354,7 +354,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             //Para la imagen
             sheet.addMergedRegion(CellRangeAddress.valueOf("$E$1:$G$1"));
             sheet.addMergedRegion(CellRangeAddress.valueOf("$E$2:$G$2"));
-          //Aplicamos los bordes a la regiÛn merge
+          //Aplicamos los bordes a la regi√≥n merge
             cellRangeAddress = new CellRangeAddress(0, 0, 4, 6);
             HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
@@ -367,17 +367,17 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             HSSFRegionUtil.setBorderRight(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderBottom(1, cellRangeAddress, sheet, workbook);
             
-            //Etiquetas de segunda linea de informaicÛn 
+            //Etiquetas de segunda linea de informaic√≥n 
             HSSFRow equitetasInfReporte = sheet.createRow(1);
             sheet.addMergedRegion(CellRangeAddress.valueOf("$A$2:$B$2"));
-            //Aplicamos los bordes a la regiÛn merge
+            //Aplicamos los bordes a la regi√≥n merge
             cellRangeAddress = new CellRangeAddress(1, 1, 0, 1);
             HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderRight(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderBottom(1, cellRangeAddress, sheet, workbook);
             sheet.addMergedRegion(CellRangeAddress.valueOf("$C$2:$D$2"));
-          //Aplicamos los bordes a la regiÛn merge
+          //Aplicamos los bordes a la regi√≥n merge
             cellRangeAddress = new CellRangeAddress(1, 1, 2, 3);
             HSSFRegionUtil.setBorderTop(1, cellRangeAddress, sheet, workbook);
             HSSFRegionUtil.setBorderLeft(1, cellRangeAddress, sheet, workbook);
@@ -483,7 +483,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            		break;
 	            	}
 	            }
-	            //Hacemos la inserciÛn en la tabla
+	            //Hacemos la inserci√≥n en la tabla
 	            CierreInventarioSemanalDAO.insertarCierreInventarioSemanal(cierreInv);
 	            //Buscamos el valor inicial
 	            datos = dataRow.createCell(0);
@@ -532,7 +532,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             cierreInv = new CierreInventarioSemanal();
 	        cierreInv.setIdTienda(tienda.getIdTienda());
 	        cierreInv.setFecha(fechaActual);
-            //Continuamos con la inclusiÛn de la informaciÛn de los consumos de gaseosa
+            //Continuamos con la inclusi√≥n de la informaci√≥n de los consumos de gaseosa
 	        for (int y = 0 ; y < cierreInventarioGas.size(); y++) {
 	            HSSFRow dataRow = sheet.createRow(filasInforme+4);
 	            
@@ -575,7 +575,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            		break;
 	            	}
 	            }
-	            //Hacemos la inserciÛn en la tabla
+	            //Hacemos la inserci√≥n en la tabla
 	            CierreInventarioSemanalDAO.insertarCierreInventarioSemanal(cierreInv);
 	            //Buscamos el valor inicial
 	            datos = dataRow.createCell(0);
@@ -620,7 +620,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             porcentajeComida = (costoTotalComida/totalVentaSemana)*100;
             //En este punto tenemos el porcentaje de comida total con GASEOSA para la tienda
             respuesta = respuesta + "<tr><td>" + tienda.getNombreTienda() +  "</td><td>" + Double.toString(porcentajeComida) + "</td></tr>";
-            //Generamos otro correo con informaciÛn m·s detallada
+            //Generamos otro correo con informaci√≥n m√°s detallada
             double porcentajeComidaConDes = (costoTotalComida/(totalVentaSemana+totalDescuentosReembolsables))*100;
             respuestaConDescuentos = respuestaConDescuentos + "<tr><td>" + tienda.getNombreTienda() +  "</td><td>" + Double.toString(porcentajeComida) + "</td><td>" + formatea.format(totalVentaSemana+totalDescuentosReembolsables) + "</td><td>" + formatea.format(totalDescuentosReembolsables) + "</td><td>" + Double.toString(porcentajeComidaConDes) + "</td></tr>";
             datos.setCellValue(porcentajeComida);

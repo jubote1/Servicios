@@ -1,0 +1,10 @@
+# Salidas de compilacion: nunca van al repositorio.
+Servicios/build/
+Servicios/bin/
+Servicios/.gradle/
+
+# Los jars de los otros proyectos ya NO van aqui: desde 2026-09-01 se referencian
+# por codigo fuente en settings.gradle. Ademas PizzaAmericanaCliente.jar pesa
+# 274 MB y GitHub rechaza cualquier archivo de mas de 100 MB, lo que hacia fallar
+# el push con "pre-receive hook declined".
+Servicios/libs/*.jar

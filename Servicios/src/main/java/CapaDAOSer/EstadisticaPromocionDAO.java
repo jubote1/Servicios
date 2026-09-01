@@ -11,7 +11,7 @@ import ModeloSer.EstadisticaPromocion;
 import ModeloSer.TicketPromedio;
 
 /**
- * Clase que implementa todos los métodos de acceso a la base de datos para la administración de la entidad Excepcion de Precio.
+ * Clase que implementa todos los mÃ©todos de acceso a la base de datos para la administraciÃ³n de la entidad Excepcion de Precio.
  * @author JuanDavid
  *
  */

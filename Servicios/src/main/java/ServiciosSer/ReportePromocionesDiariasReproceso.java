@@ -53,8 +53,8 @@ import ModeloSer.Usuario;
 import utilidadesSer.ControladorEnvioCorreo;
 
 /**
- * Proceso que se encargar· diariamente de extraer la informaciÛn de las ventas de promociones de una forma que tendr· que conectarse
- * a cada tienda y extraer la informaciÛn
+ * Proceso que se encargar√° diariamente de extraer la informaci√≥n de las ventas de promociones de una forma que tendr√° que conectarse
+ * a cada tienda y extraer la informaci√≥n
  * @author juanb
  *
  */
@@ -63,8 +63,8 @@ public class ReportePromocionesDiariasReproceso {
 	
 	
 /**
- * Este programa se encargar· de correr como un servicio todos los dÌas a las 12:50 am, con el fin de revisar
- * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisiÛn.
+ * Este programa se encargar√° de correr como un servicio todos los d√≠as a las 12:50 am, con el fin de revisar
+ * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisi√≥n.
  * @param args
  */
 public static void main(String[] args)
@@ -77,14 +77,14 @@ public static void main(String[] args)
 public void generarInfoPromociones()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCI”N");
+	System.out.println("EMPEZAMOS LA EJECUCI√ìN");
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	//Formateamos la fecha Actual para consulta
 	String strFechaActual = ParametrosDAO.retornarValorAlfanumerico("FECHAREPROCESO");
 	//String strFechaActual = "2020-08-10";
-	//Vamos a recuperar el dÌa anterior que seg˙n esto es el dÌa real de trabajo
+	//Vamos a recuperar el d√≠a anterior que seg√∫n esto es el d√≠a real de trabajo
 	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 	DecimalFormat formatea = new DecimalFormat("###,###");
 	
@@ -93,7 +93,7 @@ public void generarInfoPromociones()
 	int cantidadPedidosTiendaVirtualNueva = ReporteContactCenterDAO.obtenerPedidosVirtualNuevaTotalDia(strFechaActual);
 	int cantidadPedidosAPP = ReporteContactCenterDAO.obtenerPedidosAPP(strFechaActual);
 	EstadisticaPromocion est = new EstadisticaPromocion("",0,0,0,0,0);
-	//PROMOCI”N DE MEDIANAS
+	//PROMOCI√ìN DE MEDIANAS
 	//Creamos el String temporal para las medianas
 	String respuestaMediana = "";
 	respuestaMediana = respuestaMediana + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  Combo 2 Medianas  " + fechaActual + " </tr>";
@@ -105,7 +105,7 @@ public void generarInfoPromociones()
 	double totalPromoMedianaContact = 0;
 	double totalPromoMedianaTV = 0;
 	double totalFinalMediana = 0;
-	//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+	//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 	boolean indicadorMedianas = false;
 	for(Tienda tien : tiendas)
 	{
@@ -114,7 +114,7 @@ public void generarInfoPromociones()
 			totalPromoMediana  = PedidoDAO.obtenerTotalesPromoMediana(strFechaActual, tien.getHostBD());
 			totalPromoMedianaContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 20, "C", tien.getIdTienda());
 			totalPromoMedianaTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 20, "TK", tien.getIdTienda());
-			//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+			//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 			if(totalPromoMediana > 0)
 			{
 				indicadorMedianas = true;
@@ -139,7 +139,7 @@ public void generarInfoPromociones()
 		respuesta = respuesta + respuestaMediana;
 	}
 	
-	//PROMOCI”N DE EL MEJOR COMBO 19900
+	//PROMOCI√ìN DE EL MEJOR COMBO 19900
 	String respuestaMejorCombo = "";
 	respuestaMejorCombo = respuestaMejorCombo + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES COMBO DELI GRANDE   " + fechaActual + " </tr>";
 	respuestaMejorCombo = respuestaMejorCombo + "<tr>"
@@ -150,7 +150,7 @@ public void generarInfoPromociones()
 	double totalPromoMejorComboContact = 0;
 	double totalPromoMejorComboTV = 0;
 	double totalFinalMejorCombo = 0;
-	//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+	//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 	boolean indicadorMejorCombo = false;
 	for(Tienda tien : tiendas)
 	{
@@ -159,7 +159,7 @@ public void generarInfoPromociones()
 			totalPromoMejorCombo  = PedidoDAO.obtenerTotalesPromoMejorCombo(strFechaActual, tien.getHostBD());
 			totalPromoMejorComboContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 24, "C", tien.getIdTienda());
 			totalPromoMejorComboTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 24, "TK", tien.getIdTienda());
-			//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+			//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 			if(totalPromoMejorCombo > 0)
 			{
 				indicadorMejorCombo = true;
@@ -186,7 +186,7 @@ public void generarInfoPromociones()
 	}
 	
 	
-		//PROMOCI”N DE EL CODIGO FLASH
+		//PROMOCI√ìN DE EL CODIGO FLASH
 		String respuestaCodigoFlash = "";
 		respuestaCodigoFlash = respuestaCodigoFlash + "<table border='2'> <tr> REPORTE DE VENTA DE CODIGO FLASH   " + fechaActual + " </tr>";
 		respuestaCodigoFlash = respuestaCodigoFlash + "<tr>"
@@ -197,7 +197,7 @@ public void generarInfoPromociones()
 		double totalPromoCodigoFlashContact = 0;
 		double totalPromoCodigoFlashTV = 0;
 		double totalFinalCodigoFlash = 0;
-		//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+		//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 		boolean indicadorCodigoFlash = false;
 		for(Tienda tien : tiendas)
 		{
@@ -206,7 +206,7 @@ public void generarInfoPromociones()
 				totalPromoCodigoFlash  = PedidoDAO.obtenerTotalesCodigoFlash(strFechaActual, tien.getHostBD());
 				totalPromoCodigoFlashContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 40, "C", tien.getIdTienda());
 				totalPromoCodigoFlashTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 40, "TK", tien.getIdTienda());
-				//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+				//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 				if(totalPromoCodigoFlash > 0)
 				{
 					indicadorCodigoFlash = true;
@@ -232,7 +232,7 @@ public void generarInfoPromociones()
 		}
 	
 	
-	//PROMOCI”N DE MD Promo mediana plus
+	//PROMOCI√ìN DE MD Promo mediana plus
 		String respuestaMDPizzaton = "";
 		respuestaMDPizzaton = respuestaMDPizzaton + "<table border='2'> <tr> REPORTE DE VENTA DE Promo mediana plus   " + fechaActual + " </tr>";
 		respuestaMDPizzaton = respuestaMDPizzaton + "<tr>"
@@ -243,7 +243,7 @@ public void generarInfoPromociones()
 		double totalPromoMDPizzatonContact = 0;
 		double totalPromoMDPizzatonTV = 0;
 		double totalFinalMDPizzaton = 0;
-		//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+		//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 		boolean indicadorMDPizzaton = false;
 		for(Tienda tien : tiendas)
 		{
@@ -252,7 +252,7 @@ public void generarInfoPromociones()
 				totalPromoMDPizzaton  = PedidoDAO.obtenerTotalesPromoMDPizzaton(strFechaActual, tien.getHostBD());
 				totalPromoMDPizzatonContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 41, "C", tien.getIdTienda());
 				totalPromoMDPizzatonTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 41, "TK", tien.getIdTienda());
-				//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+				//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 				if(totalPromoMDPizzaton > 0)
 				{
 					indicadorMDPizzaton = true;
@@ -278,7 +278,7 @@ public void generarInfoPromociones()
 		}
 	
 	
-	//PROMOCI”N DE MEDIANAS 19990
+	//PROMOCI√ìN DE MEDIANAS 19990
 	//Creamos el String temporal para las medianas
 	String respuestaMediana20 = "";
 	respuestaMediana20 = respuestaMediana20 + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  MEDIANAx19990   " + fechaActual + " </tr>";
@@ -290,7 +290,7 @@ public void generarInfoPromociones()
 	double totalPromoMediana20Contact = 0;
 	double totalPromoMediana20TV = 0;
 	double totalFinalMediana20 = 0;
-	//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+	//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 	boolean indicadorMedianas20 = false;
 	for(Tienda tien : tiendas)
 	{
@@ -299,7 +299,7 @@ public void generarInfoPromociones()
 			totalPromoMediana20  = PedidoDAO.obtenerTotalesPromoMediana20(strFechaActual, tien.getHostBD());
 			totalPromoMediana20Contact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 27, "C", tien.getIdTienda());
 			totalPromoMediana20TV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 27, "TK", tien.getIdTienda());
-			//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+			//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 			if(totalPromoMediana20 > 0)
 			{
 				indicadorMedianas20 = true;
@@ -324,7 +324,7 @@ public void generarInfoPromociones()
 		respuesta = respuesta + respuestaMediana20;
 	}
 	
-	//PROMOCI”N DE MEDIANAS 14900
+	//PROMOCI√ìN DE MEDIANAS 14900
 	//Creamos el String temporal para las medianas
 	String respuestaMediana14 = "";
 	respuestaMediana14 = respuestaMediana14 + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  MEDIANAx 19.900   " + fechaActual + " </tr>";
@@ -336,7 +336,7 @@ public void generarInfoPromociones()
 	double totalPromoMediana14Contact = 0;
 	double totalPromoMediana14TV = 0;
 	double totalFinalMediana14 = 0;
-	//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+	//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 	boolean indicadorMedianas14 = false;
 	for(Tienda tien : tiendas)
 	{
@@ -345,7 +345,7 @@ public void generarInfoPromociones()
 			totalPromoMediana14  = PedidoDAO.obtenerTotalesPromoMediana19(strFechaActual, tien.getHostBD());
 			totalPromoMediana14Contact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 11, "C", tien.getIdTienda());
 			totalPromoMediana14TV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 11, "TK", tien.getIdTienda());
-			//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+			//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 			if(totalPromoMediana14 > 0)
 			{
 				indicadorMedianas14 = true;
@@ -371,7 +371,7 @@ public void generarInfoPromociones()
 	}
 	
 	
-	//PROMOCI”N DE PIZZETAS
+	//PROMOCI√ìN DE PIZZETAS
 	//Creamos el String temporal para las medianas
 	String respuestaPizzeta20 = "";
 	respuestaPizzeta20 = respuestaPizzeta20 + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  PIZZETAS 2X19.990   " + fechaActual + " </tr>";
@@ -383,7 +383,7 @@ public void generarInfoPromociones()
 	double totalPromoPizzeta20Contact = 0;
 	double totalPromoPizzeta20TV = 0;
 	double totalFinalPizzeta20 = 0;
-	//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+	//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 	boolean indicadorPizzeta20 = false;
 	for(Tienda tien : tiendas)
 	{
@@ -392,7 +392,7 @@ public void generarInfoPromociones()
 			totalPromoPizzeta20  = PedidoDAO.obtenerTotalesPromoPizzeta20(strFechaActual, tien.getHostBD());
 			totalPromoPizzeta20Contact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 26, "C", tien.getIdTienda());
 			totalPromoPizzeta20TV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 26, "TK", tien.getIdTienda());
-			//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+			//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 			if(totalPromoPizzeta20 > 0)
 			{
 				indicadorPizzeta20 = true;
@@ -417,7 +417,7 @@ public void generarInfoPromociones()
 		respuesta = respuesta + respuestaPizzeta20;
 	}
 	
-	//PROMOCI”N DE EXTRAGRANDES COMBO PARA TODOS
+	//PROMOCI√ìN DE EXTRAGRANDES COMBO PARA TODOS
 	//Creamos el String temporal para las extragrandes
 	String respuestaExtraCompartir = "";
 	respuestaExtraCompartir =  respuestaExtraCompartir + "<table border='2'> <tr> REPORTE DE VENTA DE COMBO PARA TODOS   " + fechaActual + " </tr>";
@@ -429,7 +429,7 @@ public void generarInfoPromociones()
 	double totalPromoExtraCompContact = 0;
 	double totalPromoExtraCompTV = 0;
 	double totalFinalExtraComp = 0;
-	//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+	//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 	boolean indicadorExtrasComp = false;
 	for(Tienda tien : tiendas)
 	{
@@ -438,7 +438,7 @@ public void generarInfoPromociones()
 			totalPromoExtraComp  = PedidoDAO.obtenerTotalesPromoFamiliar(strFechaActual, tien.getHostBD());
 			totalPromoExtraCompContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 29, "C", tien.getIdTienda()) + PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 34, "C", tien.getIdTienda());
 			totalPromoExtraCompTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 29, "TK", tien.getIdTienda()) + PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 34, "TK", tien.getIdTienda());
-			//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+			//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 			if(totalPromoExtraComp > 0)
 			{
 				indicadorExtrasComp = true;
@@ -464,7 +464,7 @@ public void generarInfoPromociones()
 	}
 	
 	
-	//PROMOCI”N DE EXTRAGRANDES SALVA UNA VIDA
+	//PROMOCI√ìN DE EXTRAGRANDES SALVA UNA VIDA
 		//Creamos el String temporal para las extragrandes
 		String respuesta40K = "";
 		respuesta40K =  respuesta40K + "<table border='2'> <tr> REPORTE DE VENTA DE COMBO SALVA UNA VIDA  " + fechaActual + " </tr>";
@@ -476,7 +476,7 @@ public void generarInfoPromociones()
 		double totalPromo40KContact = 0;
 		double totalPromo40KTV = 0;
 		double totalFinal40K = 0;
-		//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+		//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 		boolean indicador40K = false;
 		for(Tienda tien : tiendas)
 		{
@@ -485,7 +485,7 @@ public void generarInfoPromociones()
 				totalPromo40K  = PedidoDAO.obtenerTotales40K(strFechaActual, tien.getHostBD());
 				totalPromo40KContact = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 39, "C", tien.getIdTienda());
 				totalPromo40KTV = PedidoDAO.obtenerTotalesPromoTienda(strFechaActual, 39, "TK", tien.getIdTienda());
-				//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+				//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 				if(totalPromo40K > 0)
 				{
 					indicador40K = true;
@@ -510,7 +510,7 @@ public void generarInfoPromociones()
 			respuesta = respuesta + respuesta40K;
 		}
 	
-		//Resumen de promociones de volante fÌsico, se engloban los tamaÒos de MD, GD y XL.
+		//Resumen de promociones de volante f√≠sico, se engloban los tama√±os de MD, GD y XL.
 		//Creamos el String temporal para las extragrandes
 		String respuestaVolante = "";
 		respuestaVolante =  respuestaVolante + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES MEDIANA  VOLANTE   " + fechaActual + " </tr>";
@@ -520,14 +520,14 @@ public void generarInfoPromociones()
 				+  "</tr>";
 		double totalPromoVola = 0;
 		double totalFinalVola = 0;
-		//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+		//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 		boolean indicadorVolantes = false;
 		for(Tienda tien : tiendas)
 		{
 			if(!tien.getHostBD().equals(new String("")))
 			{
 				totalPromoVola  = PedidoDAO.obtenerTotalesPromoVolante(strFechaActual, tien.getHostBD());
-				//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+				//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 				if(totalPromoVola > 0)
 				{
 					indicadorVolantes = true;
@@ -549,7 +549,7 @@ public void generarInfoPromociones()
 	
 	
 	
-	//Resumen de promociones de Rappi, se engloban los tamaÒos de MD, GD y XL.
+	//Resumen de promociones de Rappi, se engloban los tama√±os de MD, GD y XL.
 		String respuestaRappi = "";
 		respuestaRappi =  respuestaRappi + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCIONES  RAPPI   " + fechaActual + " </tr>";
 		respuestaRappi =  respuestaRappi + "<tr>"
@@ -558,14 +558,14 @@ public void generarInfoPromociones()
 				+  "</tr>";
 		double totalPromoRappi = 0;
 		double totalFinalRappi = 0;
-		//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+		//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 		boolean indicadorRappi = false;
 		for(Tienda tien : tiendas)
 		{
 			if(!tien.getHostBD().equals(new String("")))
 			{
 				totalPromoRappi  = PedidoDAO.obtenerTotalesPromoRappi(strFechaActual, tien.getHostBD());
-				//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+				//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 				if(totalPromoRappi > 0)
 				{
 					indicadorRappi = true;
@@ -584,17 +584,17 @@ public void generarInfoPromociones()
 		}
 	
 	
-	//Resumen de los cÛdigos promocionales enviados por Tienda
+	//Resumen de los c√≥digos promocionales enviados por Tienda
 	String respuestaCodigosEnviados = "";
 	respuestaCodigosEnviados =  respuestaCodigosEnviados + "<table border='2'> <tr> CODIGOS PROMOCIONALES ENVIADOS   " + fechaActual + " </tr>";
 	respuestaCodigosEnviados = respuestaCodigosEnviados + "<tr>"
 			+  "<td><strong>TIENDA</strong></td>"
-			+  "<td><strong>CANT C”DIGOS ENVIADOS</strong></td>"
+			+  "<td><strong>CANT C√ìDIGOS ENVIADOS</strong></td>"
 			+  "</tr>";
-	//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+	//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 	boolean indicadorPromocionalEnv = false;
 	ArrayList<String[]> codigosPorTiendaEnv  = OfertaClienteDAO.consultarCodigosPromocionalesEnviados(strFechaActual);
-	//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+	//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 	if(codigosPorTiendaEnv.size() > 0)
 	{
 		indicadorPromocionalEnv = true;
@@ -614,19 +614,19 @@ public void generarInfoPromociones()
 	}
 	
 	
-	//USO DE C”DIGOS PROMOCIONALES
-	//Creamos el String temporal para cÛdigos promocionales
+	//USO DE C√ìDIGOS PROMOCIONALES
+	//Creamos el String temporal para c√≥digos promocionales
 	String respuestaCodigos = "";
-	respuestaCodigos =  respuestaCodigos + "<table border='2'> <tr> REPORTE USO DE C”DIGOS PROMOCIONALES   " + fechaActual + " </tr>";
+	respuestaCodigos =  respuestaCodigos + "<table border='2'> <tr> REPORTE USO DE C√ìDIGOS PROMOCIONALES   " + fechaActual + " </tr>";
 	respuestaCodigos = respuestaCodigos + "<tr>"
-			+  "<td><strong>CÛdigo Promocional</strong></td>"
+			+  "<td><strong>C√≥digo Promocional</strong></td>"
 			+  "<td><strong>Cant de usos</strong></td>"
 			+  "<td><strong>TIENDA</strong></td>"
 			+  "</tr>";
-	//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+	//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 	boolean indicadorPromocional = false;
 	ArrayList<String[]> codigosPorTienda  = PedidoDAO.consultarUsoCodigosPromocionales(strFechaActual);
-	//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+	//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 	if(codigosPorTienda.size() > 0)
 	{
 		indicadorPromocional = true;
@@ -635,7 +635,7 @@ public void generarInfoPromociones()
 	for(int z = 0; z < codigosPorTienda.size(); z++)
 	{
 		String[] filaTemp = codigosPorTienda.get(z);
-		respuestaCodigos = respuestaCodigos + "<tr><td>CÛdigos redimidos</td><td>" + filaTemp[0] + "</td><td>" + filaTemp[1]  + "</td></tr>";
+		respuestaCodigos = respuestaCodigos + "<tr><td>C√≥digos redimidos</td><td>" + filaTemp[0] + "</td><td>" + filaTemp[1]  + "</td></tr>";
 	}
 	respuestaCodigos = respuestaCodigos + "</table> <br/>";
 	
@@ -647,7 +647,7 @@ public void generarInfoPromociones()
 	
 	
 	//Reporte de estofadas
-	//PROMOCI”N DE EL MEJOR COMBO 19900
+	//PROMOCI√ìN DE EL MEJOR COMBO 19900
 		String respuestaEstofada= "";
 		respuestaEstofada = respuestaEstofada + "<table border='2'> <tr> REPORTE DE VENTA DE ESTOFADAS  " + fechaActual + " </tr>";
 		respuestaEstofada = respuestaEstofada + "<tr>"
@@ -658,7 +658,7 @@ public void generarInfoPromociones()
 		double totalEstofadasContact = 0;
 		double totalEstofadasTV = 0;
 		double totalFinalEstofadas = 0;
-		//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+		//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 		boolean indicadorEstofada = false;
 		for(Tienda tien : tiendas)
 		{
@@ -667,7 +667,7 @@ public void generarInfoPromociones()
 				totalEstofadas  = PedidoDAO.obtenerTotalesEstofada(strFechaActual, tien.getHostBD());
 				totalEstofadasContact = PedidoDAO.obtenerTotalesProductoTienda(strFechaActual, 311,312, "C", tien.getIdTienda());
 				totalEstofadasTV = PedidoDAO.obtenerTotalesProductoTienda(strFechaActual, 311, 312, "TK", tien.getIdTienda());
-				//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+				//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 				if(totalEstofadas > 0)
 				{
 					indicadorEstofada = true;
@@ -690,26 +690,26 @@ public void generarInfoPromociones()
 			respuesta = respuesta + respuestaEstofada;
 		}
 	
-	//PROMOCI”N DE DIRECTORIO
+	//PROMOCI√ìN DE DIRECTORIO
 	//Creamos el String temporal para domicilios
 	String respuestaDirectorio = "";
 	respuestaDirectorio =  respuestaDirectorio + "<table border='2'> <tr> CANTIDAD VENDIDA DE PROMOCIONES DIRECTORIO PUBLICAR   " + fechaActual + " </tr>";
 	respuestaDirectorio = respuestaDirectorio + "<tr>"
-			+  "<td><strong>PROMOCI”N</strong></td>"
+			+  "<td><strong>PROMOCI√ìN</strong></td>"
 			+  "<td><strong>Cant de usos</strong></td>"
 			+  "</tr>";
 	//OJO double totalDirectorio = 0;
 	double totalDirectorio = 0;
-	//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+	//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 	//OJO boolean indicadorDomicilios = false;
 	boolean indicadorDirectorio = false;
 	totalDirectorio = PedidoDAO.consultarPedidosDirectorioPublicar(strFechaActual);
-	//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+	//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 	if(totalDirectorio > 0)
 	{
 		indicadorDirectorio = true;
 	}
-	respuestaDirectorio = respuestaDirectorio + "<tr><td>PROMOS DIRECTORIO TELEF”NICO</td><td>" + formatea.format(totalDirectorio) + "</td></tr>";
+	respuestaDirectorio = respuestaDirectorio + "<tr><td>PROMOS DIRECTORIO TELEF√ìNICO</td><td>" + formatea.format(totalDirectorio) + "</td></tr>";
 	
 	respuestaDirectorio = respuestaDirectorio + "</table> <br/>";
 	
@@ -719,15 +719,15 @@ public void generarInfoPromociones()
 		respuesta = respuesta + respuestaDirectorio;
 	}
 	
-	//Agregaremos la informaciÛn de las promociones vendidas por tienda virtual y contact center
+	//Agregaremos la informaci√≥n de las promociones vendidas por tienda virtual y contact center
 	int cantVirtualTienda = 0;
 	int cantNoFisicosTienda = 0;
 	double porcVirtualTienda = 0;
-	respuesta = respuesta + "<table border='2'> <tr> AN¡LISIS DE VENTA POR CANALES NO FÕSICOS  " + fechaActual + " </tr>";
+	respuesta = respuesta + "<table border='2'> <tr> AN√ÅLISIS DE VENTA POR CANALES NO F√çSICOS  " + fechaActual + " </tr>";
 	respuesta = respuesta + "<tr>"
 			+  "<td><strong>Tienda</strong></td>"
 			+  "<td><strong>Ped Tienda Virtual</strong></td>"
-			+  "<td><strong>Ped Canales No FÌsicos</strong></td>"
+			+  "<td><strong>Ped Canales No F√≠sicos</strong></td>"
 			+  "<td><strong>% Tienda Virtual</strong></td>"
 			+  "</tr>";
 	for(Tienda tien : tiendas)
@@ -742,7 +742,7 @@ public void generarInfoPromociones()
 	}
 	respuesta = respuesta + "</table> <br/>";
 	
-	//Realizamos inclusiÛn de informaciÛn DEDITOS LOCOS SAN ANTONIO
+	//Realizamos inclusi√≥n de informaci√≥n DEDITOS LOCOS SAN ANTONIO
 	String respuestaDeditosLocos = "";
 	respuestaDeditosLocos =  respuestaDeditosLocos + "<table border='2'> <tr> REPORTE DE VENTA DE PROMOCION DEDITOS LOCOS   " + fechaActual + " </tr>";
 	respuestaDeditosLocos =  respuestaDeditosLocos + "<tr>"
@@ -751,14 +751,14 @@ public void generarInfoPromociones()
 			+  "</tr>";
 	double totalPromoDeditosLocos = 0;
 	double totalFinalDeditosLocos = 0;
-	//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+	//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 	boolean indicadorDeditosLocos = false;
 	for(Tienda tien : tiendas)
 	{
 		if(!tien.getHostBD().equals(new String("")))
 		{
 			totalPromoDeditosLocos  = PedidoDAO.obtenerTotalesPromoDeditosLocos(strFechaActual, tien.getHostBD());
-			//Si por lo menos en alguna se tuvo venta se prender· el indicador de promociÛn de medianas
+			//Si por lo menos en alguna se tuvo venta se prender√° el indicador de promoci√≥n de medianas
 			if(totalPromoDeditosLocos > 0)
 			{
 				indicadorDeditosLocos = true;
@@ -776,13 +776,13 @@ public void generarInfoPromociones()
 		respuesta = respuesta + respuestaDeditosLocos;
 	}
 	
-	//Al finalizar verificamos si hay informaciÛn para enviar
+	//Al finalizar verificamos si hay informaci√≥n para enviar
 	if(respuesta.trim().equals(new String("")))
 	{
 		
 	}else
 	{
-		//Realizamos el envÌo del correo electrÛnico con los archivos
+		//Realizamos el env√≠o del correo electr√≥nico con los archivos
 		Correo correo = new Correo();
 		correo.setAsunto("REPORTE DIARIO DE PROMOCIONES " + strFechaActual);
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
@@ -790,7 +790,7 @@ public void generarInfoPromociones()
 		//Tendremos que definir los destinatarios de este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("PROMODIARIA");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		String mensaje = "A continuaciÛn la informaciÛn del movimiento de las promociones en el dÌa en particular  " + respuesta ;
+		String mensaje = "A continuaci√≥n la informaci√≥n del movimiento de las promociones en el d√≠a en particular  " + respuesta ;
 		correo.setMensaje(mensaje);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();

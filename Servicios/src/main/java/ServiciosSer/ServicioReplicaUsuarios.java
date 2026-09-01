@@ -62,7 +62,7 @@ public static void main(String[] args)
 public void generarReplicaUsuarios()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCI覰");
+	System.out.println("EMPEZAMOS LA EJECUCI脫N");
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
 	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo.
@@ -84,7 +84,7 @@ public void generarReplicaUsuarios()
 			boolean respuestaEliminacion = UsuarioDAO.eliminarInfoEmpleadoLocal(tien.getHostBD());
 			if(respuestaEliminacion)
 			{
-				//Realizamos el recorrido para la inserci髇 de todos los empleados
+				//Realizamos el recorrido para la inserci贸n de todos los empleados
 				for(Usuario usuTemp: usuarios)
 				{
 					idUsuarioIns = UsuarioDAO.insertarEmpleadoLocal(usuTemp, tien.getHostBD());
@@ -93,8 +93,8 @@ public void generarReplicaUsuarios()
 						noExitoso = noExitoso + " " + tien.getNombreTienda();
 						break;
 					}
-					//En la inserci髇 de cada usuario local se debe validar si se debe insertar o actualizar el usaurio ya existente
-					//Validamos si el usuario tiene asignada clave r醦ida 
+					//En la inserci贸n de cada usuario local se debe validar si se debe insertar o actualizar el usaurio ya existente
+					//Validamos si el usuario tiene asignada clave r谩pida 
 					if((usuTemp.getClaveRapida() != null) && (!usuTemp.getClaveRapida().equals(new String("null"))))
 					{
 						if(usuTemp.getClaveRapida().length() > 0)
@@ -118,7 +118,7 @@ public void generarReplicaUsuarios()
 						UsuarioDAO.insertarEmpleadoBiometriaLocal(empBioTemp, tien.getHostBD());
 					}
 				}
-				//Continuamos con la verificaci髇 de eliminaci髇 de los empleados inactivos
+				//Continuamos con la verificaci贸n de eliminaci贸n de los empleados inactivos
 				for(Usuario usuTemp: usuariosIna)
 				{
 					if(usuTemp.getClaveRapida() != null)
@@ -144,7 +144,7 @@ public void generarReplicaUsuarios()
 	
 	if(!noExitoso.equals(new String("")))
 	{
-		//Realizamos el env韔 del correo electr髇ico con los archivos
+		//Realizamos el env铆o del correo electr贸nico con los archivos
 		Correo correo = new Correo();
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto("PROBLEMAS REPLICA DE USUARIOS EN TIENDAS " + fechaActual.toString());
@@ -152,7 +152,7 @@ public void generarReplicaUsuarios()
 		//Tendremos que definir los destinatarios de este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		String mensaje = "Las tiendas que no lograron la actualizaci髇 fueron " + noExitoso;
+		String mensaje = "Las tiendas que no lograron la actualizaci贸n fueron " + noExitoso;
 		correo.setMensaje(mensaje);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();

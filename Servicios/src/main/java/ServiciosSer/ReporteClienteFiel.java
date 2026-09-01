@@ -39,12 +39,12 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 public class ReporteClienteFiel {
 	
 	
-	//LÛgica de Negocio para sacar los clientes fieles
+	//L√≥gica de Negocio para sacar los clientes fieles
 	
 		
 	public void extraerClientesFieles()
 	{
-		//RECUPERACION DE PAR¡METROS PARA EJECUCI”N DEL REPORTE
+		//RECUPERACION DE PAR√ÅMETROS PARA EJECUCI√ìN DEL REPORTE
 		String rutaArchivoGenerado="";
 		String rutaArchivoBD = ParametrosDAO.retornarValorAlfanumerico("RUTACLIFIEL");
 		String[] rutasArchivos = new String[1];
@@ -87,7 +87,7 @@ public class ReporteClienteFiel {
 		
 		
 		ArrayList<ClienteFiel> clientesNoFieles = PedidoDAO.obtenerClientesNoFieles(diasNoPedido, diasNoPedidoInferior);
-		//RECUPERAMOS DE LA CAPA DAO LA INFORMACI”N BASE DEL REPORTE
+		//RECUPERAMOS DE LA CAPA DAO LA INFORMACI√ìN BASE DEL REPORTE
 		
 		ArrayList<ClienteFiel> clientesFieles = PedidoDAO.obtenerClientesFielesPedido(diasPedido, cantidadPedidos);
 		//Se debe realizar el llenado 
@@ -156,7 +156,7 @@ public class ReporteClienteFiel {
         styleInfRep.setBorderRight(BorderStyle.THIN);
         styleInfRep.setWrapText(true);
 		
-		//PROCESAMOS LA INFORMACI”N PARA Y LA FORMATEAMOS EN EL EXCEL
+		//PROCESAMOS LA INFORMACI√ìN PARA Y LA FORMATEAMOS EN EL EXCEL
 		try
 		{
 			   rutaArchivoGenerado = rutaArchivoBD + "ClientesFieles" +".xls";
@@ -283,7 +283,7 @@ public class ReporteClienteFiel {
 			System.out.println("problemas en la generacion del archivo " + e.toString() + e.getMessage() );
 		}
 		
-		//RECUPERAMOS PAR¡METROS Y ENVIAMOS CORREO ELECTR”NICO
+		//RECUPERAMOS PAR√ÅMETROS Y ENVIAMOS CORREO ELECTR√ìNICO
 		rutasArchivos[0] = rutaArchivoGenerado;
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		Correo correo = new Correo();
@@ -291,7 +291,7 @@ public class ReporteClienteFiel {
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTECLIFIEL");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("A continuaciÛn el reporte de Clientes Fieles");
+		correo.setMensaje("A continuaci√≥n el reporte de Clientes Fieles");
 		correo.setRutasArchivos(rutasArchivos);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreo();

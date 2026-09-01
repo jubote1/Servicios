@@ -9,7 +9,7 @@ import ConexionSer.ConexionBaseDatos;
 public class ConsumoInventarioDAO {
 	
 	/**
-	 * Método que se encarga de la inserción del consumo inventario de manera masiva.
+	 * MÃ©todo que se encarga de la inserciÃ³n del consumo inventario de manera masiva.
 	 * @param fecha
 	 * @param idTienda
 	 * @param idInsumo

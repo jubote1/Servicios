@@ -75,7 +75,7 @@ public class ServicioDepuracionMensual {
 		{
 			System.out.println(e.toString());
 		}
-		//Obtenemos el mes actual y año actual
+		//Obtenemos el mes actual y aÃ±o actual
 		int mesActual = calendarioActual.get(Calendar.MONTH)+1;
 		int anoActual = calendarioActual.get(Calendar.YEAR);
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_MONTH);
@@ -105,14 +105,14 @@ public class ServicioDepuracionMensual {
 					
 				}
 			}
-			//Posteriormente realizamos el envío del correo
+			//Posteriormente realizamos el envÃ­o del correo
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setAsunto("ESTADO PROCESO DEPURACION MENSUAL " + fechaActual);
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEPAGOSVIRTUAL");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación el reporte Mensual de cantidad de pedidos - " + fechaActual +  ": \n" + respuesta);
+			correo.setMensaje("A continuaciÃ³n el reporte Mensual de cantidad de pedidos - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}

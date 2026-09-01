@@ -52,7 +52,7 @@ public class ReporteResumenVentasMensualReproceso {
 		//Posteriormente realizamos el procesamiento para definir el rango de fechas del cual deseamos procesar el reporte
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los c醠culos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los c谩lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -77,7 +77,7 @@ public class ReporteResumenVentasMensualReproceso {
 		{
 			System.out.println(e.toString());
 		}
-		//Obtenemos el mes actual y a駉 actual
+		//Obtenemos el mes actual y a帽o actual
 		int mesActual = calendarioActual.get(Calendar.MONTH)+1;
 		int anoActual = calendarioActual.get(Calendar.YEAR);
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_MONTH);
@@ -103,14 +103,14 @@ public class ReporteResumenVentasMensualReproceso {
 					respuestaCantFacturas = respuestaCantFacturas + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + cantidadFacturas + "</td></tr>";
 				}
 			}
-			//Posteriormente realizamos el env韔 del correo
+			//Posteriormente realizamos el env铆o del correo
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setAsunto("RESUMEN CANTIDAD PEDIDOS PIZZA AMERICANA DEL "  + fechaAnterior + " al " + fechaActual);
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTECANTPEDIDOS");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuaci髇 el reporte Mensual de cantidad de pedidos " + fechaAnterior + " - " + fechaActual +  ": \n" + respuestaCantFacturas);
+			correo.setMensaje("A continuaci贸n el reporte Mensual de cantidad de pedidos " + fechaAnterior + " - " + fechaActual +  ": \n" + respuestaCantFacturas);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 			
@@ -128,7 +128,7 @@ public class ReporteResumenVentasMensualReproceso {
 				{
 					ventaTienda = PedidoDAO.obtenerTotalesPedidosSemana(fechaAnterior, fechaActual, tien.getHostBD());
 					respuesta = respuesta + "<tr><td>" +  tien.getNombreTienda() + "</td><td>" + formatea.format(ventaTienda) + "</td></tr>";
-					//Realizamos la acumulaci髇 despues de cada iteraci髇
+					//Realizamos la acumulaci贸n despues de cada iteraci贸n
 					ventaTotalTiendas  = ventaTotalTiendas + ventaTienda;
 				}
 			}
@@ -154,7 +154,7 @@ public class ReporteResumenVentasMensualReproceso {
 			respuesta = respuesta + "<tr><td>TOTAL PAGO WOMPI MES</td><td>" + formatea.format(ventaTotalWompi) + "</td></tr>";
 			respuesta = respuesta + "</table> <br/>";
 			
-			//Obtenemos el total de pago con dat醘ono
+			//Obtenemos el total de pago con dat谩fono
 			respuesta = respuesta + "<table border='2'> <tr> <td colspan='2'> TOTAL POR TIENDA EN FORMA DE PAGO TARJETA MES </td></tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>Nombre Tienda</strong></td>"
@@ -166,13 +166,13 @@ public class ReporteResumenVentasMensualReproceso {
 			{
 				if(!tien.getHostBD().equals(new String("")))
 				{
-					//Realizamos la acumulaci髇 despues de cada iteraci髇
+					//Realizamos la acumulaci贸n despues de cada iteraci贸n
 					ventaTotalTarjeta = PedidoDAO.obtenerTotalesPedidosSemanaTarjeta(fechaAnterior, fechaActual, tien.getHostBD());
 					ventaTotalTarjetaMes = ventaTotalTarjetaMes + ventaTotalTarjeta; 
 					respuesta = respuesta + "<tr><td>" + tien.getNombreTienda()+  "</td><td>" + formatea.format(ventaTotalTarjeta) + "</td></tr>";
 				}
 			}
-			respuesta = respuesta + "<tr><td>TOTAL VENTA CON DAT罠ONO</td><td>" + formatea.format(ventaTotalTarjetaMes) + "</td></tr>";
+			respuesta = respuesta + "<tr><td>TOTAL VENTA CON DAT脕FONO</td><td>" + formatea.format(ventaTotalTarjetaMes) + "</td></tr>";
 			respuesta = respuesta + "</table><br/>";
 			
 			//TOTAL DE VENTAS DE PAYU
@@ -194,10 +194,10 @@ public class ReporteResumenVentasMensualReproceso {
 			respuesta = respuesta + "</table> <br/>";
 			
 			
-			//Incluimos la informaci髇 mensual de RAPPI
+			//Incluimos la informaci贸n mensual de RAPPI
 			//Obtenemos un total por tienda de los pedidos
 			ArrayList pedidosRappiTienda = capaDAOCC.PedidoDAO.obtenerPedidosPlataformasTienda(1, fechaAnterior, fechaActual,2);
-			//Agregamos en este apartado el total de pedidos por tienda para poder extraer la comisi髇 por tienda
+			//Agregamos en este apartado el total de pedidos por tienda para poder extraer la comisi贸n por tienda
 			respuesta = respuesta + "<table border='2'> <tr> RAPPI TOTAL POR TIENDA " + fechaAnterior + "  -  " + fechaActual +  " </tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>Tienda</strong></td>"
@@ -216,10 +216,10 @@ public class ReporteResumenVentasMensualReproceso {
 			
 			
 			
-			//Incluimos la informaci髇 mensual de DDI
+			//Incluimos la informaci贸n mensual de DDI
 			//Obtenemos un total por tienda de los pedidos
 			ArrayList pedidosDIDITienda = capaDAOCC.PedidoDAO.obtenerPedidosPlataformasTienda(1, fechaAnterior, fechaActual,1);
-			//Agregamos en este apartado el total de pedidos por tienda para poder extraer la comisi髇 por tienda
+			//Agregamos en este apartado el total de pedidos por tienda para poder extraer la comisi贸n por tienda
 			respuesta = respuesta + "<table border='2'> <tr> DIDI TOTAL POR TIENDA " + fechaAnterior + "  -  " + fechaActual +  " </tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>Tienda</strong></td>"
@@ -259,7 +259,7 @@ public class ReporteResumenVentasMensualReproceso {
 					+"</tr>";
 			
 			
-			//Vamos a agregar la l骻ica para la generaci髇 de los tickets promedios
+			//Vamos a agregar la l贸gica para la generaci贸n de los tickets promedios
 			PedidoCtrl pedCtrl = new PedidoCtrl(false);
 			for(Tienda tien : tiendas)
 			{
@@ -279,7 +279,7 @@ public class ReporteResumenVentasMensualReproceso {
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correos = GeneralDAO.obtenerCorreosParametro("REPORTERESUMENVENTAS");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuaci髇 el reporte Mensual de ventas entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+			correo.setMensaje("A continuaci贸n el reporte Mensual de ventas entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 			contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}

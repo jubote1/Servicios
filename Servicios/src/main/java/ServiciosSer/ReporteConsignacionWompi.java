@@ -192,7 +192,7 @@ public class ReporteConsignacionWompi {
 			}
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>TOTAL GENERAL</strong></td>"
-					+  "<td><strong> " + totalGeneral +"</strong></td>"
+					+  "<td><strong> " + String.format("%,.2f", totalGeneral) +"</strong></td>"
 					+  "</tr>";
 			respuesta = respuesta + "</table> <br/>";
 			

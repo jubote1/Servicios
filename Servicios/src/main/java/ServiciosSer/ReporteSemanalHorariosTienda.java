@@ -295,18 +295,18 @@ public class ReporteSemanalHorariosTienda {
 				        	  horas =(horas)/3600;
 				        	  //Realizamos modificaciones para llenar el valor de recargo nocturno
 				        	  recargoNocturno = 0;
-				        	  // Si la hora inicial es mayor a las 9 de la noche, pues entonces el comienzo no es las 21
-				        	  if(horaInicial >= 21)
+				        	  // Si la hora inicial es mayor a las 7 de la noche, pues entonces el comienzo no es las 19
+				        	  if(horaInicial >= 19)
 				        	  {
 				        		  recargoNocturno = ((fechaFinal.getTime()-fechaInicial.getTime())/1000);
 				        	  }else
 				        	  {
-				        		  if((horaFinal >= 21) || (horaFinal >= 0 && horaFinal <= 4))
+				        		  if((horaFinal >= 19) || (horaFinal >= 0 && horaFinal <= 4))
 				        		  {
 				        			//yyyy-MM-dd HH:mm:ss
 				        			  try
 				        			  {
-				        				  Date fechaHoraRecargo = dateFormatHora.parse(dateFormat.format(fechaInicial)+ " 21:00:00");
+				        				  Date fechaHoraRecargo = dateFormatHora.parse(dateFormat.format(fechaInicial)+ " 19:00:00");
 						        		  recargoNocturno = ((fechaFinal.getTime() - fechaHoraRecargo.getTime())/1000);
 						        		  recargoNocturno =(recargoNocturno)/3600;
 				        			  }catch(Exception e)
@@ -393,10 +393,10 @@ public class ReporteSemanalHorariosTienda {
 						//En este punto realizamos los c�lculos
 						if(tieneFestivo)
 						{
-							horasExtResiduales = acumuladoHoras - horasFestivas - 37;	 
+							horasExtResiduales = acumuladoHoras - horasFestivas - 35;	 
 						}else
 						{
-							horasExtResiduales = acumuladoHoras - horasFestivas - 44;	
+							horasExtResiduales = acumuladoHoras - horasFestivas - 42;	
 						}
 						//El tratamiento no es diferencial en esta parte
 						horasExtrasDominicales = horasTrabDomingos - 8;
@@ -523,10 +523,10 @@ public class ReporteSemanalHorariosTienda {
 				//En este punto realizamos los c�lculos
 				if(tieneFestivo)
 				{
-					horasExtResiduales = acumuladoHoras - horasFestivas - 37;	 
+					horasExtResiduales = acumuladoHoras - horasFestivas - 35;	 
 				}else
 				{
-					horasExtResiduales = acumuladoHoras - horasFestivas - 44;	
+					horasExtResiduales = acumuladoHoras - horasFestivas - 42;	
 				}
 				//El tratamiento no es diferencial en esta parte
 				horasExtrasDominicales = horasTrabDomingos - 8;

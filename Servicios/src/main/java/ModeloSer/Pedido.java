@@ -38,9 +38,15 @@ public class Pedido {
 	private String horaProgramado;
 	private String origen;
 	private String fechaPagoVirtual;
+	private String detalle;
 	
 	
-	
+	public String getDetalle() {
+		return detalle;
+	}
+	public void setDetalle(String detalle) {
+		this.detalle = detalle;
+	}
 	public String getFechaPagoVirtual() {
 		return fechaPagoVirtual;
 	}

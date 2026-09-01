@@ -52,8 +52,8 @@ public class ServicioRevisionCierres {
 	
 	
 /**
- * Este programa se encargar· de correr como un servicio todos los dÌas a las 12:50 am, con el fin de revisar
- * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisiÛn.
+ * Este programa se encargar√° de correr como un servicio todos los d√≠as a las 12:50 am, con el fin de revisar
+ * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisi√≥n.
  * @param args
  */
 public static void main(String[] args)
@@ -66,13 +66,13 @@ public static void main(String[] args)
 public void generarRevisionCierres()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCI”N");
+	System.out.println("EMPEZAMOS LA EJECUCI√ìN");
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	//Formateamos la fecha Actual para consulta
 	String strFechaActual = dateFormat.format(fechaActual);
-	//Vamos a recuperar el dÌa anterior que seg˙n esto es el dÌa real de trabajo
+	//Vamos a recuperar el d√≠a anterior que seg√∫n esto es el d√≠a real de trabajo
 	Calendar calendarioActual = Calendar.getInstance();
 	calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
 	Date fechaAnterior = calendarioActual.getTime();
@@ -91,39 +91,39 @@ public void generarRevisionCierres()
 			String indicadorCierre = ParametrosDAO.retornarValorAlfanumericoTienda(tien.getHostBD(), "INDICADORCIERRE");
 			if(indicadorCierre.equals(new String("ERROR")))
 			{
-				noExitoso = noExitoso + " " + tien.getNombreTienda() + " no se tuvo conexiÛn.";
+				noExitoso = noExitoso + " " + tien.getNombreTienda() + " no se tuvo conexi√≥n.";
 			}else
 			{
 				//Recuperaremos el valor de la fecha del sistema para compararla	
 				String fechaApertura = TiendaDAO.retornarFechaTiendaRemota(tien.getHostBD());
-				//Hacemos la comparaciÛn de las fechas
+				//Hacemos la comparaci√≥n de las fechas
 				if(fechaApertura.equals(new String(indicadorCierre)))
 				{
 					
 				}else if(fechaApertura.trim().equals(new String(strFechaAnterior.trim())))
 				{
-					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema est· abierto al dÌa anterior." + "</p>";
+					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema est√° abierto al d√≠a anterior." + "</p>";
 				}else if(fechaApertura.trim().equals(new String(strFechaActual.trim())))
 				{
-					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema est· abierto al dÌa siguiente." + "</p>";
+					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema est√° abierto al d√≠a siguiente." + "</p>";
 				}else
 				{
-					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema est· abierto a una fecha no explicable." + "</p>";
+					noExitoso = noExitoso + " <p>" + tien.getNombreTienda() + " NOK el sistema est√° abierto a una fecha no explicable." + "</p>";
 				}
 			}
 		}
 	}
 	if(!noExitoso.equals(new String("")))
 	{
-		//Realizamos el envÌo del correo electrÛnico con los archivos
+		//Realizamos el env√≠o del correo electr√≥nico con los archivos
 		Correo correo = new Correo();
-		correo.setAsunto("PROBLEMA REVISI”N CIERRE DIARIO TIENDAS " + fechaAnterior.toString());
+		correo.setAsunto("PROBLEMA REVISI√ìN CIERRE DIARIO TIENDAS " + fechaAnterior.toString());
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		//Tendremos que definir los destinatarios de este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REVISIONCIERRE");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		String mensaje = "A continuaciÛn informamos las tiendas que presentan problemas con la revisiÛn del cierre  " + noExitoso ;
+		String mensaje = "A continuaci√≥n informamos las tiendas que presentan problemas con la revisi√≥n del cierre  " + noExitoso ;
 		correo.setMensaje(mensaje);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();

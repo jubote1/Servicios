@@ -47,7 +47,7 @@ public class ReporteSemanalDescDomiciliosCOM {
 		//Posteriormente realizamos el procesamiento para definir el rango de fechas del cual deseamos procesar el reporte
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los cÃ¡lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -73,8 +73,8 @@ public class ReporteSemanalDescDomiciliosCOM {
 		{
 			System.out.println(e.toString());
 		}
-		//Partiremos de la base de que el proceso corre el proceso los viernes toma los pedidos del día viernes de la semana pasada
-		// al día jueves, de la semana en curso.
+		//Partiremos de la base de que el proceso corre el proceso los viernes toma los pedidos del dÃ­a viernes de la semana pasada
+		// al dÃ­a jueves, de la semana en curso.
 		
 		//Vamos a fijar la fechaActual
 		calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
@@ -94,9 +94,9 @@ public class ReporteSemanalDescDomiciliosCOM {
 		for(int i = 0; i < razonesSociales.size(); i++)
 		{
 			razTemp = razonesSociales.get(i);
-			//Con la razón social y con la fecha podemos ir a realizar la consulta de los pedidos de domicilios.com
+			//Con la razÃ³n social y con la fecha podemos ir a realizar la consulta de los pedidos de domicilios.com
 			ArrayList pedidosDomCOM = PedidoDAO.obtenerPedidosDomiciliosCOM(razTemp.getIdRazon(), fechaAnterior, fechaActual);
-			//Procedemos a procesar la información y a enviar el correo con el reporte
+			//Procedemos a procesar la informaciÃ³n y a enviar el correo con el reporte
 			String respuesta = "";
 			respuesta = respuesta + "<table border='2'> <tr> RESUMEN DESCUENTOS DE LA SEMANA VENCIDA " + razTemp.getNombreRazon() +  " </tr>";
 			respuesta = respuesta + "<tr>"
@@ -130,14 +130,14 @@ public class ReporteSemanalDescDomiciliosCOM {
 			}
 			respuesta = respuesta + "<tr><td>" + formatea.format(cantidadDescuentos) + "</td><td>" + formatea.format(totalDescuentos) + "</td></tr>";
 			respuesta = respuesta + "</table> <br/>";
-			//Procedemos al envío del correo
+			//Procedemos al envÃ­o del correo
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setAsunto("DOMICILIOS.COM REPORTE SEMANAL DESCUENTOS " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion() + " " + fechaActual);
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTESEMDESCUENTOSDOMICILIOS");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación el reporte SEMANAL de descuentos otorgados para domicilios.com separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+			correo.setMensaje("A continuaciÃ³n el reporte SEMANAL de descuentos otorgados para domicilios.com separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 			

@@ -29,7 +29,7 @@ public class ReporteConsignacionPAYU {
 		Date datFechaActual = new Date();
 		//Comenzamos a traer la fecha actual como un String
 		fechaActual = dateFormat.format(datFechaActual);
-		//Tomamos estas dos variables que nos ayudar·n a fijar la fecha anterior para las operaciones
+		//Tomamos estas dos variables que nos ayudar√°n a fijar la fecha anterior para las operaciones
 		int mesActual = 0;
 		int diaActual = 0;
 		int anoActual = 0;
@@ -44,7 +44,7 @@ public class ReporteConsignacionPAYU {
 		{
 			//OJO
 			fechaActual = dateFormat.format(calendarioActual.getTime());
-			//Fijamos los n˙meros para el mes actual y dia actual del mes
+			//Fijamos los n√∫meros para el mes actual y dia actual del mes
 			mesActual = calendarioActual.get(Calendar.MONTH) + 1;
 			diaActual = calendarioActual.get(Calendar.DAY_OF_MONTH);
 			anoActual = calendarioActual.get(Calendar.YEAR);
@@ -62,7 +62,7 @@ public class ReporteConsignacionPAYU {
 		{
 			System.out.println(e.toString());
 		}
-		//Procedemos a tener la lÛgica para fijar la fecha anterior
+		//Procedemos a tener la l√≥gica para fijar la fecha anterior
 		if(diaActual >=1 && diaActual<= 15)
 		{
 			diaActual= 16;
@@ -85,15 +85,15 @@ public class ReporteConsignacionPAYU {
 		
 		fechaAnterior = anoActual+"-"+mesActual+"-"+diaActual;
 
-		//Antes de realizamos la actualizaciÛn de los pedidos
+		//Antes de realizamos la actualizaci√≥n de los pedidos
 		PedidoDAO.actualizarPedidosPayu(fechaAnterior);
 		
 		String respuesta = "";
-		respuesta = respuesta + "<table border='2'> <tr> <td colspan='6'> RESUMEN GENERAL PARA CONSIGNACI”N DE PAYU ENTRE " + fechaAnterior + "  " + fechaActual + " </td></tr>";
+		respuesta = respuesta + "<table border='2'> <tr> <td colspan='6'> RESUMEN GENERAL PARA CONSIGNACI√ìN DE PAYU ENTRE " + fechaAnterior + "  " + fechaActual + " </td></tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Total Valor a Consignar</strong></td>"
 				+  "<td><strong>Total Pedidos</strong></td>"
-				+  "<td><strong>Total ComisiÛn</strong></td>"
+				+  "<td><strong>Total Comisi√≥n</strong></td>"
 				+  "<td><strong>Iva Comision</strong></td>"
 				+  "<td><strong>Retencion en la Fuente</strong></td>"
 				+  "<td><strong>ReteICA</strong></td>"
@@ -173,15 +173,15 @@ public class ReporteConsignacionPAYU {
 				+  "</tr>";
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Al final el envÌo del correo
-		//Procedemos al envÌo del correo
+		//Al final el env√≠o del correo
+		//Procedemos al env√≠o del correo
 		Correo correo = new Correo();
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto("CONSIGNACION SEMANAL PAYU DESDE " + fechaAnterior + " HASTA "  + fechaActual);
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTECONSIGNACIONWOMPI");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("A continuaciÛn el detalle DE LA CONSIGNACI”N QUE REALIZAR¡ PAYU por los pedidos con forma de pago virtual entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+		correo.setMensaje("A continuaci√≥n el detalle DE LA CONSIGNACI√ìN QUE REALIZAR√Å PAYU por los pedidos con forma de pago virtual entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 	}

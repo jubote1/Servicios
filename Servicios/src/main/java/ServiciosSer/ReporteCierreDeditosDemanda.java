@@ -78,7 +78,7 @@ public class ReporteCierreDeditosDemanda {
 		}
 		String fechaInicial = "";
 		String fechaFinal = "";
-		//Obtenemos el mes actual y año actual
+		//Obtenemos el mes actual y aÃ±o actual
 		int mesActual = calendarioActual.get(Calendar.MONTH)+1;
 		int anoActual = calendarioActual.get(Calendar.YEAR);
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_MONTH);
@@ -99,7 +99,7 @@ public class ReporteCierreDeditosDemanda {
 		{
 			if(!tien.getHostBD().equals(new String("")))
 			{
-				respuesta = respuesta + "<table border='2'> <tr> LIQUIDACIÓN DEDITOS QUINCENAL " + tien.getNombreTienda() +"  </tr>";
+				respuesta = respuesta + "<table border='2'> <tr> LIQUIDACIÃ“N DEDITOS QUINCENAL " + tien.getNombreTienda() +"  </tr>";
 				respuesta = respuesta + "<tr>"
 						+  "<td><strong>NOMBRE EMPLEADO</strong></td>"
 						+  "<td><strong>PRODUCTO</strong></td>"
@@ -116,14 +116,14 @@ public class ReporteCierreDeditosDemanda {
 				
 			}
 		}
-		//Posteriormente realizamos el envío del correo
+		//Posteriormente realizamos el envÃ­o del correo
 		Correo correo = new Correo();
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-		correo.setAsunto("LIQUIDACIÓN QUINCENAL DEDITOS " + fechaInicial  + " - " + fechaFinal);
+		correo.setAsunto("LIQUIDACIÃ“N QUINCENAL DEDITOS " + fechaInicial  + " - " + fechaFinal);
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTECIERREDEDITOS");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("A continuación el reporte quincenal de los deditos - " + fechaActual +  ": \n" + respuesta);
+		correo.setMensaje("A continuaciÃ³n el reporte quincenal de los deditos - " + fechaActual +  ": \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 	}

@@ -38,7 +38,7 @@ public class ServicioReporteContactCenter {
 		//TRABAJO CON LAS FECHAS///////
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 				String fechaActual = "";
-				//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos de ventas
+				//Variables donde manejaremos la fecha anerior con el fin realizar los cÃ¡lculos de ventas
 				Date datFechaAnterior;
 				String fechaAnterior = "";
 				//Creamos el objeto calendario
@@ -63,7 +63,7 @@ public class ServicioReporteContactCenter {
 				{
 					System.out.println(e.toString());
 				}
-				//Retormanos el día de la semana actual segun la fecha del calendario
+				//Retormanos el dÃ­a de la semana actual segun la fecha del calendario
 				//OJO
 				//int diaActual = 1;
 				int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -102,12 +102,12 @@ public class ServicioReporteContactCenter {
 					//Si es sabado se resta cinco
 					calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 				}
-				//Llevamos a un string la fecha anterior para el cálculo de la venta
+				//Llevamos a un string la fecha anterior para el cÃ¡lculo de la venta
 				datFechaAnterior = calendarioActual.getTime();
 				fechaAnterior = dateFormat.format(datFechaAnterior);
 		///////////////////////////////
 		DecimalFormat formatea = new DecimalFormat("###,###");
-		//En respuesta guardaremos el html que guardará todo lo que se desplegará en el correo.
+		//En respuesta guardaremos el html que guardarÃ¡ todo lo que se desplegarÃ¡ en el correo.
 		String respuesta = "";
 		
 		//Cantidad de pedidos tomados en la SEMANA
@@ -165,11 +165,11 @@ public class ServicioReporteContactCenter {
 		}
 		respuesta = respuesta + "</table> <br/>";		
 
-		//Cantidad de Pedidos por mes de los últimos 18 meses
+		//Cantidad de Pedidos por mes de los Ãºltimos 18 meses
 		ArrayList cantPedMes = ReporteContactCenterDAO.obtenerCantidadPedidosMes();
-		respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS DE LOS ÚLTIMOS MESES "  + "</TH> </tr>";
+		respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS DE LOS ÃšLTIMOS MESES "  + "</TH> </tr>";
 		respuesta = respuesta + "<tr>"
-				+  "<td width='140' nowrap><strong>AÑO - MES</strong></td>"
+				+  "<td width='140' nowrap><strong>AÃ‘O - MES</strong></td>"
 				+  "<td width='60' nowrap><strong>CANTIDAD</strong></td>"
 				+  "</tr>";
 		int contador = 1;
@@ -185,11 +185,11 @@ public class ServicioReporteContactCenter {
 		}
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Agregamos la información de tienda virtual
+		//Agregamos la informaciÃ³n de tienda virtual
 		ArrayList cantVirtualPersona = ReporteContactCenterDAO.obtenerPedidosVirtualPorUsuario(fechaAnterior, fechaActual);
 		respuesta = respuesta + "<table WIDTH='250' border='2'> <TH COLSPAN='2'> CANTIDAD PEDIDOS TIENDA VIRTUAL POR USUARIO "  + "</TH> </tr>";
 		respuesta = respuesta + "<tr>"
-				+  "<td width='140' nowrap><strong>USUARIO QUE REALIZÓ ENVIO</strong></td>"
+				+  "<td width='140' nowrap><strong>USUARIO QUE REALIZÃ“ ENVIO</strong></td>"
 				+  "<td width='60' nowrap><strong>CANTIDAD</strong></td>"
 				+  "</tr>";
 		for(int y = 0; y < cantVirtualPersona.size();y++)
@@ -202,7 +202,7 @@ public class ServicioReporteContactCenter {
 		
 		
 	
-		//Recuperar la lista de distribución para este correo
+		//Recuperar la lista de distribuciÃ³n para este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTESEMANALCONTACT");
 		Date fecha = new Date();
 		Correo correo = new Correo();
@@ -210,7 +210,7 @@ public class ServicioReporteContactCenter {
 		correo.setAsunto("CONTACT CENTER SEMANAL DE " + fechaAnterior + " HASTA " + fechaActual);
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("Resumen Semanal de estadísticas Contact Center: \n" + respuesta);
+		correo.setMensaje("Resumen Semanal de estadÃ­sticas Contact Center: \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 

@@ -52,8 +52,8 @@ import capaControladorPOS.PedidoCtrl;
 import utilidadesSer.ControladorEnvioCorreo;
 
 /**
- * Proceso que se encargar· diariamente de extraer la informaciÛn de las ventas de promociones de una forma que tendr· que conectarse
- * a cada tienda y extraer la informaciÛn
+ * Proceso que se encargar√° diariamente de extraer la informaci√≥n de las ventas de promociones de una forma que tendr√° que conectarse
+ * a cada tienda y extraer la informaci√≥n
  * @author juanb
  *
  */
@@ -62,8 +62,8 @@ public class ReporteUsoAppLogisticaMensual {
 	
 	
 /**
- * Este programa se encargar· de correr como un servicio todos los dÌas a las 12:50 am, con el fin de revisar
- * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisiÛn.
+ * Este programa se encargar√° de correr como un servicio todos los d√≠as a las 12:50 am, con el fin de revisar
+ * si los sistemas se encuentran cerrados y enviar un mensaje al correo con la revisi√≥n.
  * @param args
  */
 public static void main(String[] args)
@@ -92,11 +92,11 @@ public void generarUsoApp()
 		//Formateamos la fecha Actual para consulta
 		String strFechaActual = dateFormat.format(fechaActual);
 		//String strFechaActual = "2020-08-10";
-		//Vamos a recuperar el dÌa anterior que seg˙n esto es el dÌa real de trabajo
+		//Vamos a recuperar el d√≠a anterior que seg√∫n esto es el d√≠a real de trabajo
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		
 		
-		//Vamos a obtener los domiciliarios para con base en estos recorrer los dÌas y saber la situaciÛn
+		//Vamos a obtener los domiciliarios para con base en estos recorrer los d√≠as y saber la situaci√≥n
 //		ArrayList<Usuario> domiciliarios = UsuarioDAO.obtenerTrabajoDomiciliariosFecha(fechaAnterior, strFechaActual);
 //		int totPedDom = 0;
 //		int totPedDomLog = 0;
@@ -115,12 +115,12 @@ public void generarUsoApp()
 		
 		DecimalFormat formatea = new DecimalFormat("###,###");
 		String respuesta = "";
-		respuesta = respuesta + "<table border='2'> <tr> REPORTE DE USO APP LOGÕSTICA POR TIENDA DE " + fechaAnterior + " A " + strFechaActual + " </tr>";
+		respuesta = respuesta + "<table border='2'> <tr> REPORTE DE USO APP LOG√çSTICA POR TIENDA DE " + fechaAnterior + " A " + strFechaActual + " </tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Tienda</strong></td>"
 				+  "<td><strong>PORCENTAJE DE USO</strong></td>"
 				+  "</tr>";
-		//Tendremos un indicador para saber si hubo venta de promociÛn de medianas
+		//Tendremos un indicador para saber si hubo venta de promoci√≥n de medianas
 		double porcentajeUso = 0;
 		PedidoCtrl pedCtrl = new PedidoCtrl(false);
 		for(Tienda tien : tiendas)
@@ -161,15 +161,15 @@ public void generarUsoApp()
 			
 		}else
 		{
-			//Realizamos el envÌo del correo electrÛnico con los archivos
+			//Realizamos el env√≠o del correo electr√≥nico con los archivos
 			Correo correo = new Correo();
-			correo.setAsunto("USO APP LOGÕSTICA MENSUAL DEL " + fechaAnterior + " AL " + strFechaActual);
+			correo.setAsunto("USO APP LOG√çSTICA MENSUAL DEL " + fechaAnterior + " AL " + strFechaActual);
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			//Tendremos que definir los destinatarios de este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("APPLOGISTICA");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			String mensaje = "A continuaciÛn los indicadores para la fecha del uso de la APP de logÌstica Pizza Americana  " + respuesta ;
+			String mensaje = "A continuaci√≥n los indicadores para la fecha del uso de la APP de log√≠stica Pizza Americana  " + respuesta ;
 			correo.setMensaje(mensaje);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();

@@ -40,7 +40,7 @@ public class ReporteBloqueosTienda {
 	{
 		
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los cÃ¡lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -68,7 +68,7 @@ public class ReporteBloqueosTienda {
 		{
 			System.out.println(e.toString());
 		}
-		//Retormanos el día de la semana actual segun la fecha del calendario
+		//Retormanos el dÃ­a de la semana actual segun la fecha del calendario
 		//OJO
 		//int diaActual = 1;
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -107,7 +107,7 @@ public class ReporteBloqueosTienda {
 			//Si es sabado se resta cinco
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
 		}
-		//Llevamos a un string la fecha anterior para el cálculo de la venta
+		//Llevamos a un string la fecha anterior para el cÃ¡lculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
 		fechaAnterior = dateFormat.format(datFechaAnterior);
 		//Comenzamos por obtener todas las tiendas y realizar un recorrido de cada una
@@ -173,7 +173,7 @@ public class ReporteBloqueosTienda {
 					{
 						fechaDesbloqueo = new Date();
 					}
-					//Necesitamos calcular la diferencia en minutos de 2 fechas para tomar la decisión del desbloqueo
+					//Necesitamos calcular la diferencia en minutos de 2 fechas para tomar la decisiÃ³n del desbloqueo
 					long dif;
 					try
 					{
@@ -185,7 +185,7 @@ public class ReporteBloqueosTienda {
 					
 					long difMinutos = TimeUnit.MILLISECONDS.toMinutes(dif);
 					minutosBloqueo = minutosBloqueo + difMinutos;
-					//Generamos el registro para la información y su presentación
+					//Generamos el registro para la informaciÃ³n y su presentaciÃ³n
 					try
 					{
 						respuesta = respuesta + "<tr><td>" + dateFormat.format(fechaInicial) +  "</td><td>" + dateFormatHora.format(fechaBloqueo) + "</td><td>" + dateFormatHora.format(fechaDesbloqueo) + "</td><td>" + motivo + "</td><td>" + observacion + "</td><td>" + Long.toString(difMinutos)  + "</td></tr>";
@@ -209,16 +209,16 @@ public class ReporteBloqueosTienda {
 			minutosBloqueo = 0;
 			horasBloqueo = 0;
 		}
-		//Realizamos el envío del correo electrónico
-		//Al final el envío del correo
-		//Procedemos al envío del correo
+		//Realizamos el envÃ­o del correo electrÃ³nico
+		//Al final el envÃ­o del correo
+		//Procedemos al envÃ­o del correo
 		Correo correo = new Correo();
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		correo.setAsunto("REPORTE BLOQUEO TIENDAS " + fechaAnterior + " HASTA "  + fechaActual);
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEBLOQUEOTIENDAS");
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("A continuación el reporte de bloqueo de las tiendas entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+		correo.setMensaje("A continuaciÃ³n el reporte de bloqueo de las tiendas entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 		contro.enviarCorreoHTML();
 

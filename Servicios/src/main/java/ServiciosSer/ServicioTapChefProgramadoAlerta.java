@@ -98,7 +98,7 @@ public class ServicioTapChefProgramadoAlerta {
 	      System.out.println("My Service Started "
 	                         + new java.util.Date());
 	      
-	    //Al arrancar el servicio verificaremos si la variable comanda electrónica esta o no habilitada
+	    //Al arrancar el servicio verificaremos si la variable comanda electrÃ³nica esta o no habilitada
 		String comandaElec = capaDAOPOS.ParametrosDAO.retornarValorAlfanumerico("COMANDAELECTRONICA", false);
 		capaControladorPOS.PedidoCtrl pedCtrl = new PedidoCtrl(false);
 	      while(!stopped) {

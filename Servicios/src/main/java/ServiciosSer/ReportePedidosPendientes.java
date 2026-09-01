@@ -53,13 +53,13 @@ public class ReportePedidosPendientes {
 		//Comenzamos a traer la fecha actual como un String
 		fechaActual = dateFormat.format(datFechaActual);
 		//Con la fecha actual vamos a realizar la consulta de los pedidos
-		//En este punto ya tenemos las dos fechas de interÈs por el momento nos interesar· retornar las ofertas dadas
+		//En este punto ya tenemos las dos fechas de inter√©s por el momento nos interesar√° retornar las ofertas dadas
 		// y las ofertas redimidas en estos rango de tiempo
 		ArrayList<Pedido> pedidosPendientes = PedidoDAO.ConsultarPedidosPendientes(fechaActual);
-		//Intentamos realizar el envÌo de los pedidos pendientes
+		//Intentamos realizar el env√≠o de los pedidos pendientes
 		//Parametro de la URL Server
 		String urlServerContact = "";
-		//Se crea la variable que se encargar· de la respuesta
+		//Se crea la variable que se encargar√° de la respuesta
 		String respuesta = "";
 		boolean indicadorCorreo = false;
 		//Variable para definir si el pedido es de tienda Kuno
@@ -91,16 +91,16 @@ public class ReportePedidosPendientes {
 			{
 				urlServerContact = ParametrosDAO.retornarValorAlfanumericoLocal("URLCONTACTCENTER");
 			}
-			//La idea es que en este punto se va a intentar reenviar el pedido y se notificar· el resultado en el correo
+			//La idea es que en este punto se va a intentar reenviar el pedido y se notificar√° el resultado en el correo
 			PedidoCtrl pedCtrl = new PedidoCtrl();
 			boolean respReenvio = pedCtrl.reenviarPedidoJava(pedido, urlServerContact, tiendaKuno);
 			String strRespReenvio = "";
 			if(respReenvio)
 			{
-				strRespReenvio = "Se reenviÛ y OK";
+				strRespReenvio = "Se reenvi√≥ y OK";
 			}else
 			{
-				strRespReenvio = "Se reenviÛ y NOK";
+				strRespReenvio = "Se reenvi√≥ y NOK";
 				seTuvoError = true;
 			}
 			respuesta = respuesta + "<tr><td>" +  pedido.getIdpedido() + "</td><td>" +  pedido.getNombretienda() + "</td><td>" + pedido.getNombrecliente() + "</td><td>" + pedido.getFechainsercion() + "</td><td>" + pedido.getUsuariopedido() + "</td><td>" + strRespReenvio + "</td></tr>";
@@ -110,16 +110,16 @@ public class ReportePedidosPendientes {
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 		if(indicadorCorreo && seTuvoError)
 		{
-			//Recuperar la lista de distribuciÛn para este correo
+			//Recuperar la lista de distribuci√≥n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDOPENDIENTE");
 			Date fecha = new Date();
 			Correo correo = new Correo();
 			correo.setAsunto("INFORMATIVO PEDIDOS PENDIENTES ENVIADOS " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("ExistÌan pedidos pendientes, los cuales se intentaron reenviar con los siguientes detalles y resultados: \n" + respuesta);
+			correo.setMensaje("Exist√≠an pedidos pendientes, los cuales se intentaron reenviar con los siguientes detalles y resultados: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-			//Documentamos esta parte dado que igual se va a reportar a continuaciÛn el pedido pendiente
+			//Documentamos esta parte dado que igual se va a reportar a continuaci√≥n el pedido pendiente
 			//contro.enviarCorreoHTML();
 		}
 		
@@ -153,7 +153,7 @@ public class ReportePedidosPendientes {
 		
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribuciÛn para este correo
+			//Recuperar la lista de distribuci√≥n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDOPENDIENTE");
 			Date fecha = new Date();
 			Correo correo = new Correo();
@@ -166,20 +166,20 @@ public class ReportePedidosPendientes {
 		}
 		
 		
-		//Incluiremos la lÛgica para los PC pedidos en curso.
-		//Obtenemos los pedidos que est·n en curso que llevan m·s de 7 minutos
+		//Incluiremos la l√≥gica para los PC pedidos en curso.
+		//Obtenemos los pedidos que est√°n en curso que llevan m√°s de 7 minutos
 		ArrayList<Pedido> pedidosEnCurso = PedidoDAO.ConsultarPedidosEnCurso(fechaActual);
-		//Se crea la variable que se encargar· de la respuesta
+		//Se crea la variable que se encargar√° de la respuesta
 		respuesta = "";
 		indicadorCorreo = false;
 		
 		
-		respuesta = respuesta + "<table border='2'> <tr><td colspan = '5'> CUIDADO PEDIDOS EN CURSO QUE LLEVAN M¡S DE 7 MINUTOS Y NO SE HAN FINALIZADO " + "</td> </tr>";
+		respuesta = respuesta + "<table border='2'> <tr><td colspan = '5'> CUIDADO PEDIDOS EN CURSO QUE LLEVAN M√ÅS DE 7 MINUTOS Y NO SE HAN FINALIZADO " + "</td> </tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Id Pedido</strong></td>"
 				+  "<td><strong>Tienda</strong></td>"
 				+  "<td><strong>Nombre Cliente</strong></td>"
-				+  "<td><strong>Fecha/Hora iniciÛ Pedido</strong></td>"
+				+  "<td><strong>Fecha/Hora inici√≥ Pedido</strong></td>"
 				+  "<td><strong>Usuario</strong></td>"
 				+  "</tr>";
 		for(int i = 0; i < pedidosEnCurso.size(); i++)
@@ -196,14 +196,14 @@ public class ReportePedidosPendientes {
 		
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribuciÛn para este correo
+			//Recuperar la lista de distribuci√≥n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPPEDIDOPENDIENTE");
 			Date fecha = new Date();
 			Correo correo = new Correo();
-			correo.setAsunto("ATENCI”N PEDIDOS QUE SE EST¡N TOMANDO HACE M¡S DE 7 MINUTOS " + fecha.toString());
+			correo.setAsunto("ATENCI√ìN PEDIDOS QUE SE EST√ÅN TOMANDO HACE M√ÅS DE 7 MINUTOS " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("CUIDADO! Existen pedidos que se est·n tomando hace m·s de 7 minutos y no se han enviado a la tienda: \n" + respuesta);
+			correo.setMensaje("CUIDADO! Existen pedidos que se est√°n tomando hace m√°s de 7 minutos y no se han enviado a la tienda: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}

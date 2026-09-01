@@ -19,6 +19,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.json.simple.JSONObject;
 
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
@@ -142,6 +143,27 @@ public class ServicioPagosVirtualesWompi {
 				}
 			}else
 			{
+				JSONObject JSONAplicaCargo = capaDAOCC.PedidoDAO.consultarAplicabilidadPedidoRAPPICARGO(pedido.getIdpedido());
+				if((pedido.getOrigen().equals(new String("C"))) && JSONAplicaCargo != null && Boolean.TRUE.equals(JSONAplicaCargo.get("resultado")) )
+				{
+					Date datefechaPago = new Date();
+					try
+					{
+						datefechaPago = dateFormatHora.parse(pedido.getFechaPagoVirtual());
+					}catch(Exception e)
+					{	
+					}
+					
+					//Hacemos la diferencia de las fechas en minutos
+					//Calcularemos el tiempo Pedido
+					int difTiempo = Math.abs((int) (datFechaActual.getTime() - datefechaPago.getTime() ));
+					Math.abs(minutos = (int)TimeUnit.MILLISECONDS.toMinutes(difTiempo ));
+					double dMinutos = (double) minutos;
+					if(dMinutos <= 5)
+					{
+						continue;
+					}
+				}
 				tiendaKuno = "N";
 			}
 			boolean respReenvio = pedCtrl.reenviarPedidoJava(pedido, urlServerContact,tiendaKuno);

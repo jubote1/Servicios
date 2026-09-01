@@ -60,7 +60,7 @@ public class ReporteMejorEmpleado {
 			{
 				asuntoCorreo = "RESULTADOS FINALES ENCUESTA MEJOR EMPLEADO - COMITE CONVIVENCIA " + fechaActual;
 			}
-			//Sacamos información resumida de total de pedidos en general y por tienda en la semana y por tienda y por día en la semana
+			//Sacamos informaciÃ³n resumida de total de pedidos en general y por tienda en la semana y por tienda y por dÃ­a en la semana
 			String respuesta = "";		
 			//Vamos a sacar ahora el reporte por cada tienda con el detalle de los pagos
 			//Comenzamos por obtener todas las tiendas y realizar un recorrido de cada una
@@ -95,7 +95,7 @@ public class ReporteMejorEmpleado {
 			
 			//Despues de esto totalizaremos las encuestas QUE NO SON POR TIENDA.
 			//SEDE ADMINISTRATIVA
-			respuesta = respuesta + "<table border='2'> <tr> <td colspan='7'> RESULTADOS ENCUESTA PARA CENTRO DE PRODUCCIÓN</td></tr>";
+			respuesta = respuesta + "<table border='2'> <tr> <td colspan='7'> RESULTADOS ENCUESTA PARA CENTRO DE PRODUCCIÃ“N</td></tr>";
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>Nombre Empleado</strong></td>"
 					+  "<td><strong>Promedio</strong></td>"
@@ -156,15 +156,15 @@ public class ReporteMejorEmpleado {
 			
 			
 			
-			//Al final el envío del correo
-			//Procedemos al envío del correo
+			//Al final el envÃ­o del correo
+			//Procedemos al envÃ­o del correo
 			Correo correo = new Correo();
 			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 			correo.setAsunto(asuntoCorreo);
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("COMITECONVIVENCIA");
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuación el detalle de las encuestas de mejor empleado " + " - " + fechaActual +  ": \n" + respuesta);
+			correo.setMensaje("A continuaciÃ³n el detalle de las encuestas de mejor empleado " + " - " + fechaActual +  ": \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}

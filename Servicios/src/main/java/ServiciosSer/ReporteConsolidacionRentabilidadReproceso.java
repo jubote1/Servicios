@@ -34,7 +34,7 @@ public class ReporteConsolidacionRentabilidadReproceso {
 		//TRABAJO CON LAS FECHAS///////
 		//Recuperamos la fecha actual del sistema con la fecha apertura
 		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los cálculos de ventas
+		//Variables donde manejaremos la fecha anerior con el fin realizar los cÃ¡lculos de ventas
 		Date datFechaAnterior;
 		String fechaAnterior = "";
 		//Creamos el objeto calendario
@@ -62,7 +62,7 @@ public class ReporteConsolidacionRentabilidadReproceso {
 		{
 			System.out.println(e.toString());
 		}
-		//Retormanos el día de la semana actual segun la fecha del calendario
+		//Retormanos el dÃ­a de la semana actual segun la fecha del calendario
 		//OJO
 		//int diaActual = 1;
 		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
@@ -76,16 +76,16 @@ public class ReporteConsolidacionRentabilidadReproceso {
 		{
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -7);
 		}
-		//Llevamos a un string la fecha anterior para el cálculo de la venta
+		//Llevamos a un string la fecha anterior para el cÃ¡lculo de la venta
 		datFechaAnterior = calendarioActual.getTime();
 		fechaAnterior = dateFormat.format(datFechaAnterior);
-		//Asumimos que el proceso se correría el dia domingo o a más tardar el día lunes antes de que inicie las jornadas
+		//Asumimos que el proceso se correrÃ­a el dia domingo o a mÃ¡s tardar el dÃ­a lunes antes de que inicie las jornadas
 		//de trabajo.
 		String respuesta = "";
 		
 		//Obtenemos las tiendas
 		ArrayList<Tienda> tiendas = capaDAOCC.TiendaDAO.obtenerTiendas();
-		//Debemos tener las consultas que hay que correr por tienda, retornando la información y poblando la tabla
+		//Debemos tener las consultas que hay que correr por tienda, retornando la informaciÃ³n y poblando la tabla
 		//Variables para la labor de cada tienda
 		ArrayList<GastoConfiguracion> gastosTienda = GastoConfiguracionDAO.obtenerGastorConfiguracionTienda();
 		GastoConfiguracion gastoTiendaTemp;
@@ -110,7 +110,7 @@ public class ReporteConsolidacionRentabilidadReproceso {
 						consultaSQL = consultaSQL.replace("%fechasuperior%", "'"+fechaActual+"'");
 						consultaSQL = consultaSQL.replace("%fechainferior%", "'"+fechaAnterior+"'");
 						consultaSQL = consultaSQL.replace("%idtienda%", Integer.toString(tiendaTemp.getIdTienda()));
-						//Posteriormente deberemos de ejecutar la consulta para tener el valor del cálculo
+						//Posteriormente deberemos de ejecutar la consulta para tener el valor del cÃ¡lculo
 						valorCalculo = GastoSemanalDAO.obtenerValorCalculo(tiendaTemp.getHosbd(), consultaSQL, gastoTiendaTemp.getOrigen());
 						if(porcentajeGasto != 0)
 						{
@@ -119,7 +119,7 @@ public class ReporteConsolidacionRentabilidadReproceso {
 						{
 							valorGasto = valorCalculo;
 						}
-						//Realizamos la inserción del Gasto semanal
+						//Realizamos la inserciÃ³n del Gasto semanal
 						gastoSemanalTemp = new GastoSemanal(0,tiendaTemp.getIdTienda(),gastoTiendaTemp.getIdGastoConf(),fechaActual,valorCalculo,valorGasto);
 						GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
 					}
@@ -127,7 +127,7 @@ public class ReporteConsolidacionRentabilidadReproceso {
 			}
 		}
 		
-		//Volvemos a recorrer las tiendas para extraer la información de los ingresos y egresos.
+		//Volvemos a recorrer las tiendas para extraer la informaciÃ³n de los ingresos y egresos.
 		ArrayList<Egreso> egresosTienda;
 		ArrayList<Ingreso> ingresosTienda;
 		ArrayList<IngresoGaseosaHistorico> ingresosGaseosa;
@@ -155,17 +155,17 @@ public class ReporteConsolidacionRentabilidadReproceso {
 			}
 		}
 		
-		//Al final el envío del correo
-		//Procedemos al envío del correo
+		//Al final el envÃ­o del correo
+		//Procedemos al envÃ­o del correo
 		
 		
 //		Correo correo = new Correo();
 //		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-//		correo.setAsunto("CONCILIACIÓN SEMANAL PAGOS VIRTUALES - PAGOS CON TARJETA DESDE " + fechaAnterior + " HASTA "  + fechaActual);
+//		correo.setAsunto("CONCILIACIÃ“N SEMANAL PAGOS VIRTUALES - PAGOS CON TARJETA DESDE " + fechaAnterior + " HASTA "  + fechaActual);
 //		correo.setContrasena(infoCorreo.getClaveCorreo());
 //		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTECONCILIACIONWOMPI");
 //		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-//		correo.setMensaje("A continuación el detalle y resumen de los pedidos con forma de pago virtual entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
+//		correo.setMensaje("A continuaciÃ³n el detalle y resumen de los pedidos con forma de pago virtual entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
 //		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 //		contro.enviarCorreoHTML();
 	}

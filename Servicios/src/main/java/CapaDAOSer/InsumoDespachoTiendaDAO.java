@@ -9,7 +9,7 @@ import ModeloSer.InsumoDespachoTienda;
 
 
 /**
- * Clase que se encarga de implementar todos aquellos mÈtodos que tienen una interacciÛn directa con la base de datos
+ * Clase que se encarga de implementar todos aquellos m√©todos que tienen una interacci√≥n directa con la base de datos
  * @author JuanDavid
  *
  */
@@ -18,7 +18,7 @@ public class InsumoDespachoTiendaDAO {
 	
 
 	/**
-	 * MÈtodo que nos permitir· validar si existe o no inventario pendiente de ingresar para la tienda en cuestiÛn.
+	 * M√©todo que nos permitir√° validar si existe o no inventario pendiente de ingresar para la tienda en cuesti√≥n.
 	 * @param idTienda
 	 * @param fecha
 	 * @return
@@ -54,7 +54,7 @@ public static boolean existeInsumoDespachadoTienda(int idTienda, String fecha)
 }
 
 /**
- * MÈtodo que se encarga de retornar los despachos de tienda pendientes
+ * M√©todo que se encarga de retornar los despachos de tienda pendientes
  * @param idTienda
  * @param fecha
  * @return Un ArrayList con todos los InsusmosDespachoTienda pendientes para la tienda y la fecha.
@@ -99,7 +99,7 @@ public static ArrayList<InsumoDespachoTienda> obtenerInsumoDespachoTienda(int id
 
 
 /**
- * MÈtodo que se encarga de la actualizaciÛn del estado de un InsumoDespachoTienda.
+ * M√©todo que se encarga de la actualizaci√≥n del estado de un InsumoDespachoTienda.
  * @param idDespacho
  * @param estado
  * @return Un valor booleano indicando el resultado del proceso.

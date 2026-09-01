@@ -63,7 +63,7 @@ public class ServicioTapChef {
 	{
 		//obtenenemos la tienda donde estamos corriendo
 		int idTienda = ObtenerTienda();
-		//Necesitamos extraer el pedido del cual se est· cambiando el estado
+		//Necesitamos extraer el pedido del cual se est√° cambiando el estado
 		//Por ejemplo <LOBBY order="49099">
 		//Trabajaremos con StringTokenizer
 		StringTokenizer tokens=new StringTokenizer(datos, "\"");
@@ -131,9 +131,9 @@ public class ServicioTapChef {
 				System.out.println("Durmiendo el proceso para dar un poco de gabela que inicie");
 			}	  
 	      
-	    //Al arrancar el servicio verificaremos si la variable comanda electrÛnica esta o no habilitada
+	    //Al arrancar el servicio verificaremos si la variable comanda electr√≥nica esta o no habilitada
 		String comandaElec = capaDAOPOS.ParametrosDAO.retornarValorAlfanumerico("COMANDAELECTRONICA", false);
-		//validaremos que si est· prendida la variable vamos a aperturar a escuchar por los puertos
+		//validaremos que si est√° prendida la variable vamos a aperturar a escuchar por los puertos
 		if(comandaElec.equals(new String("S")))
 		{
 			//LLenamos las variables de los estados
@@ -154,7 +154,7 @@ public class ServicioTapChef {
 			  				sb.append(line);
 			  			}
 			  			String datos = sb.toString();
-			  			//Tomados los datos vamos a realizar la ejecuciÛn del main para cambiar de estado el pedido
+			  			//Tomados los datos vamos a realizar la ejecuci√≥n del main para cambiar de estado el pedido
 			  			String[] args ={"start"};
 				    	main(args, datos);
 				    	skCliente.close();

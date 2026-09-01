@@ -83,13 +83,13 @@ public class ServicioEnvioMensajeWhatsApp {
 		
 		//Parametro de la URL Server
 		String urlServerContact = "";
-		//Se crea la variable que se encargar· de la respuesta
+		//Se crea la variable que se encargar√° de la respuesta
 		String respuesta = "";
 		boolean indicadorCorreo = false;
-		//A continuaciÛn hacemos referencia a obtener los pedidos virtuales que est·n pendientes y ya fueron realizados para mandar a la tienda
+		//A continuaci√≥n hacemos referencia a obtener los pedidos virtuales que est√°n pendientes y ya fueron realizados para mandar a la tienda
 		ArrayList<Pedido> pedidosVirtualesRealizados = PedidoDAO.ConsultarPedidosVirtualRealizados(fechaActual);
 		
-		//Vamos armando un correo con los pagos realizados por cada ejecuciÛn
+		//Vamos armando un correo con los pagos realizados por cada ejecuci√≥n
 		respuesta = respuesta + "<table border='2'> <tr> PAGOS VIRTUALES YA REALIZADOS Y SU RESULTADO " + " </tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Id Pedido</strong></td>"
@@ -98,10 +98,10 @@ public class ServicioEnvioMensajeWhatsApp {
 				+  "<td><strong>Fecha Pedido</strong></td>"
 				+  "<td><strong>Usuario</strong></td>"
 				+  "<td><strong>IdLink</strong></td>"
-				+  "<td><strong>Estado EnvÌo</strong></td>"
+				+  "<td><strong>Estado Env√≠o</strong></td>"
 				+  "</tr>";
 		String tiendaKuno = "";
-		//Luego de obtenidos los pedidos que se podrÌan enviar, procedemos a realizar el envÌo uno a uno
+		//Luego de obtenidos los pedidos que se podr√≠an enviar, procedemos a realizar el env√≠o uno a uno
 		for(int i = 0; i < pedidosVirtualesRealizados.size(); i++)
 		{
 			//Si es la primera 	vez se hace la consulta de la URL
@@ -110,13 +110,13 @@ public class ServicioEnvioMensajeWhatsApp {
 				urlServerContact = ParametrosDAO.retornarValorAlfanumericoLocal("URLCONTACTCENTER");
 			}
 			Pedido pedido = pedidosVirtualesRealizados.get(i);
-			//La idea es que en este punto se va a intentar reenviar el pedido y se notificar· el resultado en el correo
+			//La idea es que en este punto se va a intentar reenviar el pedido y se notificar√° el resultado en el correo
 			PedidoCtrl pedCtrl = new PedidoCtrl();
 			if(pedido.getOrigen().equals(new String("TK")))
 			{
 				tiendaKuno = "S";
-				//Se hace una diferenciaciÛn de los pedidos en tienda virtual, aqui haremos una validaciÛn de que la hora
-				//de ingreso del pedido vs la hora actual tenga m·s de 10 minutos para enviarlo.
+				//Se hace una diferenciaci√≥n de los pedidos en tienda virtual, aqui haremos una validaci√≥n de que la hora
+				//de ingreso del pedido vs la hora actual tenga m√°s de 10 minutos para enviarlo.
 				Date datefechaInsercion = new Date();
 				try
 				{
@@ -142,9 +142,9 @@ public class ServicioEnvioMensajeWhatsApp {
 			String strRespReenvio = "";
 			if(respReenvio)
 			{
-				strRespReenvio = "SE ENVÕO A TIENDA";
-				//En este punto contamos que si hubo envÌo a la tienda, es aqui donde vamos a incluir la notificaciÛn
-				//ESTA PARTE LA DEJAREMOS SUSPENDIDA, PORQUE NOS PARECE UN POCO INVASIVA EN CUANTO A INFORMACI”N PARA EL CLIENTE
+				strRespReenvio = "SE ENV√çO A TIENDA";
+				//En este punto contamos que si hubo env√≠o a la tienda, es aqui donde vamos a incluir la notificaci√≥n
+				//ESTA PARTE LA DEJAREMOS SUSPENDIDA, PORQUE NOS PARECE UN POCO INVASIVA EN CUANTO A INFORMACI√ìN PARA EL CLIENTE
 			}else
 			{
 				strRespReenvio = "ERROR AL ENVIAR";
@@ -155,11 +155,11 @@ public class ServicioEnvioMensajeWhatsApp {
 		
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Se debe realizar el envÌo del correo electrÛnico reportando como estuvo el envÌo de los pedidos pagados
-		//Adicionamos condiciÛn de notificar Pagos
+		//Se debe realizar el env√≠o del correo electr√≥nico reportando como estuvo el env√≠o de los pedidos pagados
+		//Adicionamos condici√≥n de notificar Pagos
 		if(indicadorCorreo && notificarPagos)
 		{
-			//Recuperar la lista de distribuciÛn para este correo
+			//Recuperar la lista de distribuci√≥n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEPAGOSVIRTUAL");
 			Date fecha = new Date();
 			Correo correo = new Correo();
@@ -167,7 +167,7 @@ public class ServicioEnvioMensajeWhatsApp {
 			correo.setAsunto("PAGOS VIRTUALES - ENVIO A TIENDA " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuaciÛn los pagos virtuales realizados y su estado de envÌo a tienda: \n" + respuesta);
+			correo.setMensaje("A continuaci√≥n los pagos virtuales realizados y su estado de env√≠o a tienda: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}
@@ -183,7 +183,7 @@ public class ServicioEnvioMensajeWhatsApp {
 				+  "<td><strong>IdLink</strong></td>"
 				+  "<td><strong>Usuario</strong></td>"
 				+  "</tr>";
-		//Posteriormente realizamos el reporte de los pagos virtuales que llevan m·s de 15 minutos y no se han pagado.
+		//Posteriormente realizamos el reporte de los pagos virtuales que llevan m√°s de 15 minutos y no se han pagado.
 		//Vamos a agregar un control para ejecutar todo este bloque en los minutos 6
 		if(minutos%6 == 0)
 		{
@@ -194,7 +194,7 @@ public class ServicioEnvioMensajeWhatsApp {
 				boolean reportarCliente = PedidoDAO.seDebeReportarPagoVirtual(pedidoSinPagar.getIdpedido());
 				if(reportarCliente)
 				{
-					//Realizaremos la lÛgica para enviarle un correo y mensaje al cliente indicando que lleva 20 minutos y no se 
+					//Realizaremos la l√≥gica para enviarle un correo y mensaje al cliente indicando que lleva 20 minutos y no se 
 					//ha realizado el pago
 					capaControladorCC.PedidoCtrl pedCtrl = new capaControladorCC.PedidoCtrl();
 					pedCtrl.realizarRenotificacionWompi(pedidoSinPagar.getIdLink(), pedidoSinPagar.getIdcliente(), "https://checkout.wompi.co/l/" +pedidoSinPagar.getIdLink(), pedidoSinPagar.getIdpedido());
@@ -207,7 +207,7 @@ public class ServicioEnvioMensajeWhatsApp {
 			
 			if(indicadorCorreo && notificarNoPagos)
 			{
-				//Recuperar la lista de distribuciÛn para este correo
+				//Recuperar la lista de distribuci√≥n para este correo
 				ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEVIRTUALSINPAGO");
 				Date fecha = new Date();
 				Correo correo = new Correo();
@@ -221,7 +221,7 @@ public class ServicioEnvioMensajeWhatsApp {
 				contro.enviarCorreoHTML();
 			}
 			
-			//La idea en esta Franja tambiÈn es ejecutar el envÌo del mensaje de WhatsApp si es el caso
+			//La idea en esta Franja tambi√©n es ejecutar el env√≠o del mensaje de WhatsApp si es el caso
 			ArrayList<Pedido> pedidosVirtualesNotWha = PedidoDAO.ConsultarPagosVirtualSinPagarRango(fechaActual, 10,20);
 			for(int j = 0; j < pedidosVirtualesNotWha.size(); j++)
 			{
@@ -234,12 +234,12 @@ public class ServicioEnvioMensajeWhatsApp {
 			}
 			
 		}
-		//Realizamos proceso para cancelar pedidos que tienen m·s de 50 minutos y enviar notificaciÛn al cliente de esta situaciÛn
+		//Realizamos proceso para cancelar pedidos que tienen m√°s de 50 minutos y enviar notificaci√≥n al cliente de esta situaci√≥n
 		ArrayList<Pedido> pedidosVirtualesCancelar = PedidoDAO.ConsultarPagosVirtualSinPagar(fechaActual, 50);
-		//Se crea la variable que se encargar· de la respuesta
+		//Se crea la variable que se encargar√° de la respuesta
 		respuesta = "";
 		indicadorCorreo = false;
-		//Vamos armando un correo con los pagos realizados por cada ejecuciÛn
+		//Vamos armando un correo con los pagos realizados por cada ejecuci√≥n
 		respuesta = respuesta + "<table border='2'> <tr> PAGOS VIRTUALES CANCELADOS POR NO PAGO " + " </tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Id Pedido</strong></td>"
@@ -251,7 +251,7 @@ public class ServicioEnvioMensajeWhatsApp {
 				+  "<td><strong>ESTADO</strong></td>"
 				+  "</tr>";
 		
-		//Luego de obtenidos los pedidos que se podrÌan enviar, procedemos a realizar el envÌo uno a uno
+		//Luego de obtenidos los pedidos que se podr√≠an enviar, procedemos a realizar el env√≠o uno a uno
 		for(int i = 0; i < pedidosVirtualesCancelar.size(); i++)
 		{
 			//Si es la primera 	vez se hace la consulta de la URL
@@ -260,7 +260,7 @@ public class ServicioEnvioMensajeWhatsApp {
 				urlServerContact = ParametrosDAO.retornarValorAlfanumericoLocal("URLCONTACTCENTER");
 			}
 			Pedido pedido = pedidosVirtualesCancelar.get(i);
-			//La idea es que en este punto se va a intentar reenviar el pedido y se notificar· el resultado en el correo
+			//La idea es que en este punto se va a intentar reenviar el pedido y se notificar√° el resultado en el correo
 			capaControladorCC.PedidoCtrl pedCtrl = new capaControladorCC.PedidoCtrl();
 			pedCtrl.realizarCancelacionWompi(pedido.getIdcliente(), pedido.getIdpedido());
 			pedCtrl.cancelarPedido(pedido.getIdpedido());
@@ -270,10 +270,10 @@ public class ServicioEnvioMensajeWhatsApp {
 		
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Se debe realizar el envÌo del correo electrÛnico reportando como estuvo el envÌo de los pedidos pagados
+		//Se debe realizar el env√≠o del correo electr√≥nico reportando como estuvo el env√≠o de los pedidos pagados
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribuciÛn para este correo
+			//Recuperar la lista de distribuci√≥n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEVIRTUALSINPAGO");
 			Date fecha = new Date();
 			Correo correo = new Correo();
@@ -281,18 +281,18 @@ public class ServicioEnvioMensajeWhatsApp {
 			correo.setAsunto("PEDIDOS PAGO VIRTUAL CANCELADOS " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuaciÛn los pedidos de pago virtuales cancelados por no pago en el tiempo estipulado: \n" + respuesta);
+			correo.setMensaje("A continuaci√≥n los pedidos de pago virtuales cancelados por no pago en el tiempo estipulado: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}
 		
 		
-		//Realizamos otro control al proceso para controlar si hay pedido que tengan forma de pago virtual y tengan el idlink vacÌo.
+		//Realizamos otro control al proceso para controlar si hay pedido que tengan forma de pago virtual y tengan el idlink vac√≠o.
 		ArrayList<Pedido> pedidosVirtualesSinLink = PedidoDAO.ConsultarPagosVirtualSinLink(fechaActual);
-		//Se crea la variable que se encargar· de la respuesta
+		//Se crea la variable que se encargar√° de la respuesta
 		respuesta = "";
 		indicadorCorreo = false;
-		//Vamos armando un correo con los pagos realizados por cada ejecuciÛn
+		//Vamos armando un correo con los pagos realizados por cada ejecuci√≥n
 		respuesta = respuesta + "<table border='2'> <tr> CUIDADO PAGOS VIRTUALES SIN LINK DE PAGOS " + " </tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td><strong>Id Pedido</strong></td>"
@@ -313,10 +313,10 @@ public class ServicioEnvioMensajeWhatsApp {
 		
 		respuesta = respuesta + "</table> <br/>";
 		
-		//Se debe realizar el envÌo del correo electrÛnico reportando como estuvo el envÌo de los pedidos pagados
+		//Se debe realizar el env√≠o del correo electr√≥nico reportando como estuvo el env√≠o de los pedidos pagados
 		if(indicadorCorreo)
 		{
-			//Recuperar la lista de distribuciÛn para este correo
+			//Recuperar la lista de distribuci√≥n para este correo
 			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEVIRTUALSINPAGO");
 			Date fecha = new Date();
 			Correo correo = new Correo();
@@ -324,7 +324,7 @@ public class ServicioEnvioMensajeWhatsApp {
 			correo.setAsunto("OJO PEDIDOS PAGO VIRTUAL SIN LINK GENERADO  " + fecha.toString());
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuaciÛn los pedidos de pago virtuales que no tienen link se deberÌa recrear el link y verificar que si le llegue al cliente: \n" + respuesta);
+			correo.setMensaje("A continuaci√≥n los pedidos de pago virtuales que no tienen link se deber√≠a recrear el link y verificar que si le llegue al cliente: \n" + respuesta);
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 		}
@@ -337,7 +337,7 @@ public class ServicioEnvioMensajeWhatsApp {
 		for(int i = 0; i < pagosNoti.size(); i++)
 		{
 			PedidoPagoVirtualConsolidado pedidoTemp = pagosNoti.get(i);
-			//Debemos de consumir un servicio que estar· expuesto en la tienda
+			//Debemos de consumir un servicio que estar√° expuesto en la tienda
 			respNoti = pedCtrlNoti.notificarPedidoTienda(pedidoTemp.getIdLink(), pedidoTemp.getTipoPago(), pedidoTemp.getIdTienda());
 			if(respNoti)
 			{
@@ -352,7 +352,7 @@ public class ServicioEnvioMensajeWhatsApp {
 	{
 		String telefonoCelular = "";
 		Cliente clienteNotif = ClienteDAO.obtenerClienteporID(idCliente);
-		//Revisamos la lÛgica para obtener el telefono
+		//Revisamos la l√≥gica para obtener el telefono
 		if(clienteNotif.getTelefonoCelular()!= null)
 		{
 			if(!clienteNotif.getTelefonoCelular().equals(new String("")))
@@ -392,18 +392,18 @@ public class ServicioEnvioMensajeWhatsApp {
 		            "\"customerNumber\": \"whatsapp:+" + telefonoCelular +"\"," + 
 		            "\"inputs\": [\""+ nombre+" - "+ idPedido +"\" , \""+ linkPago +"\"]" +
 		          "}";
-					//Realizamos la invocaciÛn mediante el uso de HTTPCLIENT
+					//Realizamos la invocaci√≥n mediante el uso de HTTPCLIENT
 					HttpClient client = HttpClientBuilder.create().build();
 					String rutaURLNotif = "https://us-east1-bottapizzaamericana.cloudfunctions.net/fnBottaWhatsAppNotification";
 					HttpPost request = new HttpPost(rutaURLNotif);
 					try
 					{
 						//Fijamos el header con el token
-						//NO HAY SEGURIDAD TODAVÕA
+						//NO HAY SEGURIDAD TODAV√çA
 						//request.setHeader("Authorization", "Bearer " + "prv_prod_Qdb2HcV6AkbkvCKr9UWbhFs6L73IFCkT");
 						request.setHeader("Accept", "application/json");
 						request.setHeader("Content-type", "application/json");
-						//Fijamos los par·metros
+						//Fijamos los par√°metros
 						//pass the json string request in the entity
 					    HttpEntity entity = new ByteArrayEntity(jsonString.getBytes("UTF-8"));
 					    request.setEntity(entity);

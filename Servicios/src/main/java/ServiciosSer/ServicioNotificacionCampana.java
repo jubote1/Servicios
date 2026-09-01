@@ -34,8 +34,8 @@ public static void main(String[] args)
 public void generarPromociones()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCIÓN NOTIFICACION CAMPAÑA");
-	//Capturamos el parámetro del proceso que se va a ejecutar
+	System.out.println("EMPEZAMOS LA EJECUCIÃ“N NOTIFICACION CAMPAÃ‘A");
+	//Capturamos el parÃ¡metro del proceso que se va a ejecutar
 	int idCampana = 0;
 	try
 	{
@@ -60,31 +60,31 @@ public void generarPromociones()
 	Calendar calendarioActual = Calendar.getInstance();
 	int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
 	
-	//Debemos recuperar la información de las tiendas codigos promocionales
+	//Debemos recuperar la informaciÃ³n de las tiendas codigos promocionales
 	Campana campana = CampanaDAO.retornarCampana(idCampana);
 
-	//Variable controladora de la solución de Contact Center
+	//Variable controladora de la soluciÃ³n de Contact Center
 	PromocionesCtrl promoCtrl = new PromocionesCtrl();
-	//Variable donde almacenaremos el resultado del envío de la campana
+	//Variable donde almacenaremos el resultado del envÃ­o de la campana
 	String respuestaMensaje = "";
 	
-	//Vamos a recuperar los clientes según el query para recuperar a quienes les aplica la promoción
+	//Vamos a recuperar los clientes segÃºn el query para recuperar a quienes les aplica la promociÃ³n
 	
 	//Vamos a revisar los contadores para determinar los totales procesados y enviados de correo y mensaje de texto
 	int clientesProcesados = 0;
 	int clientesCorreo = 0;
 	int clientesMensaje = 0;
 	
-	//Posteriormente realizamos la consulta para recuperar los clientes que interesarían
+	//Posteriormente realizamos la consulta para recuperar los clientes que interesarÃ­an
 	ArrayList<ClienteCampana> clientesCampanas = PedidoDAO.obtenerClientesCampana(campana.getQuery());
 	
-	//Por cada clientes debemos de realizar una serie de acciones de notificación al cliente
+	//Por cada clientes debemos de realizar una serie de acciones de notificaciÃ³n al cliente
 	for(int j = 0; j < clientesCampanas.size(); j++)
 	{
 		clientesProcesados++;
 		ClienteCampana clienteCampanaTemp =clientesCampanas.get(j);
-		//Realizaremos una serie de controles con los datos, el primero será verificar si no tiene celular
-		// pero lo tiene en el campo de telefono, en cuyo caso realizaremos una actualización para llevarlo también
+		//Realizaremos una serie de controles con los datos, el primero serÃ¡ verificar si no tiene celular
+		// pero lo tiene en el campo de telefono, en cuyo caso realizaremos una actualizaciÃ³n para llevarlo tambiÃ©n
 		// telefono celular
 		if(clienteCampanaTemp.getTelefonoCelular().equals(new String("")))
 		{
@@ -94,7 +94,7 @@ public void generarPromociones()
 			}
 		}
 		
-		//Realizaremos el envío del mensaje de texto y del correo electrónico
+		//Realizaremos el envÃ­o del mensaje de texto y del correo electrÃ³nico
 		if(clienteCampanaTemp.getTelefonoCelular().length() > 0)
 		{
 			if((clienteCampanaTemp.getTelefonoCelular().substring(0, 1).equals(new String("3"))) && (clienteCampanaTemp.getTelefonoCelular().length() == 10))
@@ -111,7 +111,7 @@ public void generarPromociones()
 				clientesMensaje++;
 			}
 		}
-		//Posteriormente Intentamos realizar el envío del correo electrónico
+		//Posteriormente Intentamos realizar el envÃ­o del correo electrÃ³nico
 		if(clienteCampanaTemp.getEmail().length() > 0)
 		{
 			if(clienteCampanaTemp.getEmail().contains("@"))
@@ -129,7 +129,7 @@ public void generarPromociones()
 				String mensajeCuerpoCorreo = campana.getPlantilla();
 				correo.setMensaje(mensajeCuerpoCorreo);
 				ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-				//Agregamos control para que verifique con que método debe hacer el envío
+				//Agregamos control para que verifique con que mÃ©todo debe hacer el envÃ­o
 				contro.enviarCorreoHTML();
 				//Realizamos un retardo de un segundo para no tener problema con los correos
 				try
@@ -145,15 +145,15 @@ public void generarPromociones()
 		
 		
 		
-	//Realizamos el envío del correo electrónico con los archivos
+	//Realizamos el envÃ­o del correo electrÃ³nico con los archivos
 	Correo correo = new Correo();
-	correo.setAsunto("GENERACIÓN CORREOS Y MENSAJES CAMPAÑA " + campana.getNombreCampana() + " " + fechaActual.toString());
+	correo.setAsunto("GENERACIÃ“N CORREOS Y MENSAJES CAMPAÃ‘A " + campana.getNombreCampana() + " " + fechaActual.toString());
 	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
 	correo.setContrasena(infoCorreo.getClaveCorreo());
 	//Tendremos que definir los destinatarios de este correo
 	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPGENERACIONPROMOCIONES");
 	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuación se información del proceso de envío de campañas a clientes, de los cuales se procesaron " + clientesProcesados + " clientes, se enviaron " + clientesMensaje + " mensajes y se enviaron " + clientesCorreo + " correos.";
+	String mensaje = "A continuaciÃ³n se informaciÃ³n del proceso de envÃ­o de campaÃ±as a clientes, de los cuales se procesaron " + clientesProcesados + " clientes, se enviaron " + clientesMensaje + " mensajes y se enviaron " + clientesCorreo + " correos.";
 	correo.setMensaje(mensaje);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 	contro.enviarCorreoHTML();

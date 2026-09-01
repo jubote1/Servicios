@@ -9,7 +9,7 @@ import ConexionSer.ConexionBaseDatos;
 public class ConsumoPorcionesDAO {
 	
 	/**
-	 * Método que se encarga de la inserción del consumo de porciones en una fecha determinada
+	 * MÃ©todo que se encarga de la inserciÃ³n del consumo de porciones en una fecha determinada
 	 * @param fecha
 	 * @param idTienda
 	 * @param idInsumo
@@ -45,7 +45,7 @@ public class ConsumoPorcionesDAO {
 	
 	
 	/**
-	 * Método que recupera la cantidad de porciones vendidas en un día determinada en una tienda determinada
+	 * MÃ©todo que recupera la cantidad de porciones vendidas en un dÃ­a determinada en una tienda determinada
 	 * @param fecha
 	 * @param hostBD
 	 * @return
@@ -91,7 +91,7 @@ public class ConsumoPorcionesDAO {
 	}
 	
 	/**
-	 * Método que nos retorna un valor booleano para indicar si para ese día ya hay consumo de porciones.
+	 * MÃ©todo que nos retorna un valor booleano para indicar si para ese dÃ­a ya hay consumo de porciones.
 	 * @param fecha
 	 * @param idTienda
 	 * @return

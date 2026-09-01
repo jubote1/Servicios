@@ -18,7 +18,7 @@ public class EmpleadoEventoDAO {
 	
 	
 	/**
-	 * MÈtodo de base para la insercion de los eventos en la base de datos centralizada
+	 * M√©todo de base para la insercion de los eventos en la base de datos centralizada
 	 * @param empEvento
 	 * @return
 	 */
@@ -50,7 +50,7 @@ public class EmpleadoEventoDAO {
 	}
 	
 	/**
-	 * MÈtodo para realizar la inserciÛn del evento empleado pero en direcciÛn local
+	 * M√©todo para realizar la inserci√≥n del evento empleado pero en direcci√≥n local
 	 * @param empEvento
 	 * @return
 	 */
@@ -83,7 +83,7 @@ public class EmpleadoEventoDAO {
 	
 	
 	/**
-	 * MÈtodo para realizar la actualizaciÛn de la inserciÛn en la bodega
+	 * M√©todo para realizar la actualizaci√≥n de la inserci√≥n en la bodega
 	 * @param empEvento
 	 * @param hostBD
 	 * @return
@@ -143,22 +143,22 @@ public class EmpleadoEventoDAO {
 	}
 	
 	/*
-	 * MÈtodo local que se encargar· de borrar los eventos locales que ya tienen m·s de un dÌa en la base de datos local
+	 * M√©todo local que se encargar√° de borrar los eventos locales que ya tienen m√°s de un d√≠a en la base de datos local
 	 */
 	public static boolean borrarEventoRegistroEmpleadoLocal(String hostBD)
 	{
 		//Capturamos la fecha actual
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		Calendar calendarioActual = Calendar.getInstance();
-		//Capturaremos la hora y validaremos la resta del dÌa
+		//Capturaremos la hora y validaremos la resta del d√≠a
 		int horaActual = calendarioActual.get(Calendar.HOUR_OF_DAY);
 		if (horaActual < 3)
 		{
-			//Restamos en 2 dado que ya pasamos de dÌa pero todavÌa estamos en trabajo seguramente
+			//Restamos en 2 dado que ya pasamos de d√≠a pero todav√≠a estamos en trabajo seguramente
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -2);
 		}else
 		{
-			//Restamos en 1 el dÌa para borrar lo del dÌa anterior
+			//Restamos en 1 el d√≠a para borrar lo del d√≠a anterior
 			calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
 		}
 		Date datFechaAnterior = calendarioActual.getTime();
@@ -308,7 +308,7 @@ public class EmpleadoEventoDAO {
 		Calendar calendarioActual = Calendar.getInstance();
 		Date datFechaActual = calendarioActual.getTime();
 		String fechaActual = dateFormat.format(datFechaActual);
-		//Ya con la fecha recuperaremos los eventos del dÌa
+		//Ya con la fecha recuperaremos los eventos del d√≠a
 		ConexionSer.ConexionBaseDatos con = new ConexionSer.ConexionBaseDatos();
 		Connection con1 = con.obtenerConexionBDGeneralLocal();
 		String consulta = "select * from empleado_evento where fecha = '" + fechaActual + "'";

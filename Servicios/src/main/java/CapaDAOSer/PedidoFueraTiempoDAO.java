@@ -23,7 +23,7 @@ public class PedidoFueraTiempoDAO {
 			conContact.close();
 		}catch(Exception e)
 		{
-			System.out.println("Error en la inserción del pedido por fuera de tiempo " + e.toString() );
+			System.out.println("Error en la inserciÃ³n del pedido por fuera de tiempo " + e.toString() );
 		}
 		
 		
@@ -49,7 +49,7 @@ public class PedidoFueraTiempoDAO {
 			conContact.close();
 		}catch(Exception e)
 		{
-			System.out.println("Error validandola inserción de pedido fuera de tiempo " + e.toString() );
+			System.out.println("Error validandola inserciÃ³n de pedido fuera de tiempo " + e.toString() );
 		}
 		return(respuesta);
 	}
@@ -68,7 +68,7 @@ public class PedidoFueraTiempoDAO {
 			conContact.close();
 		}catch(Exception e)
 		{
-			System.out.println("Error en la actulización de Pedido fuera tiempo " + e.toString() );
+			System.out.println("Error en la actulizaciÃ³n de Pedido fuera tiempo " + e.toString() );
 		}
 		
 		

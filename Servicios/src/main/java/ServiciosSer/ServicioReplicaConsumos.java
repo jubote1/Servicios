@@ -38,6 +38,7 @@ import CapaDAOSer.ConsumoPorcionesDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ItemInventarioDAO;
 import CapaDAOSer.ParametrosDAO;
+import CapaDAOSer.PedidoAnuladoDAO;
 import CapaDAOSer.PedidoDAO;
 import CapaDAOSer.TiendaDAO;
 import CapaDAOSer.UsuarioDAO;
@@ -46,6 +47,7 @@ import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
 import ModeloSer.Insumo;
+import ModeloSer.PedidoAnulado;
 import ModeloSer.Tienda;
 import ModeloSer.Usuario;
 import utilidadesSer.ControladorEnvioCorreo;
@@ -65,7 +67,7 @@ public static void main(String[] args)
 public void generarReplicaConsumos()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCIÓN");
+	System.out.println("EMPEZAMOS LA EJECUCIï¿½N");
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -73,7 +75,7 @@ public void generarReplicaConsumos()
 	String strFechaActual = dateFormat.format(fechaActual);
 	//String strFechaActual = "2020-08-20";
 	
-	//Restarle el día para que como se hará día atrasado
+	//Restarle el dï¿½a para que como se harï¿½ dï¿½a atrasado
 	Calendar calendarioActual = Calendar.getInstance();
 	try
 	{
@@ -85,7 +87,7 @@ public void generarReplicaConsumos()
 		System.out.println(e.toString());
 	}
 	
-	//Llevamos a un string la fecha anterior para el cálculo de la venta
+	//Llevamos a un string la fecha anterior para el cï¿½lculo de la venta
 	fechaActual = calendarioActual.getTime();
 	strFechaActual = dateFormat.format(fechaActual);
 	
@@ -102,7 +104,7 @@ public void generarReplicaConsumos()
 		{
 			try
 			{
-				//Una vez obtenidos los consumos inventarios del día en cuestión realizaremos la inserción en el sistema de Bodega
+				//Una vez obtenidos los consumos inventarios del dï¿½a en cuestiï¿½n realizaremos la inserciï¿½n en el sistema de Bodega
 				consumosInventario = ItemInventarioDAO.recuperarConsumosInventario(strFechaActual, tien.getHostBD());
 				for(ConsumoInventario consuTemp: consumosInventario)
 				{
@@ -113,11 +115,20 @@ public void generarReplicaConsumos()
 					respuesta = respuesta + " <p>" + tien.getNombreTienda() + " EXITOSO " +  " </p>";
 				}else
 				{
-					respuesta = respuesta + " <p>" + tien.getNombreTienda() + " CUIDADO SE REPLICÓ CERO " +  " </p>";
+					respuesta = respuesta + " <p>" + tien.getNombreTienda() + " CUIDADO SE REPLICï¿½ CERO " +  " </p>";
 				}
-				//Incluimos lógica para replicar el consumo de porciones 
+				//Incluimos lï¿½gica para replicar el consumo de porciones 
 				int cantidad = ConsumoPorcionesDAO.recuperarCantidadPorciones(strFechaActual, tien.getHostBD());
 				ConsumoPorcionesDAO.insertarConsumoPorciones(strFechaActual, tien.getIdTienda(), cantidad);
+				
+				//Realizamos replica de pedidos anulados hacia la tabla para este fin
+				ArrayList<PedidoAnulado> pedidosAnulado = PedidoDAO.obtenerPedidoAnulado(strFechaActual, tien.getHostBD());
+				PedidoAnulado pedTemp;
+				for(int i = 0; i < pedidosAnulado.size(); i++)
+				{
+					pedTemp = pedidosAnulado.get(i);
+					PedidoAnuladoDAO.insertarPedidoAnulado(pedTemp);
+				}
 				
 			}catch(Exception e)
 			{
@@ -127,7 +138,7 @@ public void generarReplicaConsumos()
 		}
 	}
 	
-	//Realizamos el envío del correo electrónico con los archivos
+	//Realizamos el envï¿½o del correo electrï¿½nico con los archivos
 	Correo correo = new Correo();
 	correo.setAsunto("REPLICA DE CONSUMOS DE TIENDAS " + fechaActual.toString());
 	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
@@ -135,7 +146,7 @@ public void generarReplicaConsumos()
 	//Tendremos que definir los destinatarios de este correo
 	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
 	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuación se información del proceso de replica de consumo de tiendas " + respuesta;
+	String mensaje = "A continuaciï¿½n se informaciï¿½n del proceso de replica de consumo de tiendas " + respuesta;
 	correo.setMensaje(mensaje);
 	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 	contro.enviarCorreoHTML();

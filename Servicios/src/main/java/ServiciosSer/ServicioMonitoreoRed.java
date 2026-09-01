@@ -65,7 +65,7 @@ public static void main(String[] args)
 public void monitorearRed()
 {
 	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCIÓN");
+	System.out.println("EMPEZAMOS LA EJECUCIÃ“N");
 	//Generamos la fecha en la que corre el proceso
 	Date fechaActual = new Date();
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -94,7 +94,7 @@ public void monitorearRed()
 		}
 	}
 	
-	//Realizamos el envío del correo electrónico con los archivos
+	//Realizamos el envÃ­o del correo electrÃ³nico con los archivos
 	if(respuesta.length() > 0)
 	{
 		Correo correo = new Correo();
