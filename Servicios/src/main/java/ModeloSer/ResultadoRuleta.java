@@ -54,5 +54,25 @@ public class ResultadoRuleta {
 		this.correo = correo;
 		this.nombreCliente = nombreCliente;
 	}
-	
+
+	/**
+	 * Si el premio ya fue entregado al cliente, para que el reporte diario diga
+	 * cuales quedan por dispersar. Va como texto y no como booleano porque hay
+	 * tres situaciones distintas: dispersado por la pantalla, entregado a mano
+	 * antes de que la pantalla existiera, y pendiente.
+	 *
+	 * Se llena con un setter y no por el constructor a proposito: asi el
+	 * constructor de seis argumentos sigue sirviendo igual y no hay que tocar
+	 * ningun otro llamador.
+	 */
+	private String estadoDispersion = "";
+
+	public String getEstadoDispersion() {
+		return estadoDispersion;
+	}
+
+	public void setEstadoDispersion(String estadoDispersion) {
+		this.estadoDispersion = estadoDispersion;
+	}
+
 }

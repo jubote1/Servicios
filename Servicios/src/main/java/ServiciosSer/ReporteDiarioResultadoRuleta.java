@@ -80,18 +80,37 @@ public class ReporteDiarioResultadoRuleta {
 		ArrayList<ResultadoRuleta> resultadoNoGanador = ResultadoRuletaDAO.obtenerResultadoDiarioRuletaNoGanadores(fechaActual, false);
 		ArrayList<ResultadoRuleta> resultadoGanador = ResultadoRuletaDAO.obtenerResultadoDiarioRuletaGanadores(fechaActual, false);
 		int cantidadEncuestasEnviadas = ResultadoRuletaDAO.cantidadEncuestasServicioEnviadas(fechaActual, false);
+		//Contamos los premios que siguen sin entregar, para que el resumen lo diga y
+		//nadie los deje olvidados esperando que alguien entre a la pantalla.
+		int pendientesPorDispersar = 0;
+		for(ResultadoRuleta resTemp : resultadoGanador)
+		{
+			if("PENDIENTE".equals(resTemp.getEstadoDispersion()))
+			{
+				pendientesPorDispersar++;
+			}
+		}
+
 		//Recopilamos la información resumen
-		respuesta = respuesta + "<table border='2'> <tr><td colspan ='3'> RESUMEN-" + fechaActual  + "</td></tr>";
+		respuesta = respuesta + "<table border='2'> <tr><td colspan ='4'> RESUMEN-" + fechaActual  + "</td></tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<th width='30'><strong>CANTIDAD ENCUESTAS ENVIADAS</strong></th>"
 				+  "<th width='50'><strong>ENCUESTAS CONTESTADAS</strong></th>"
 				+  "<th width='50'><strong>GANADORES</strong></th>"
+				+  "<th width='50'><strong>PENDIENTES POR DISPERSAR</strong></th>"
 				+  "</tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<td>" + cantidadEncuestasEnviadas + "</td>"
 				+  "<td>" + (resultadoGanador.size() +resultadoNoGanador.size()) + "</td>"
 				+  "<td>" + (resultadoGanador.size()) + "</td>"
+				//Se resalta en rojo cuando hay pendientes: es lo unico del correo que
+				//pide una accion, y en un correo diario que casi siempre se ve igual
+				//lo que no resalta no se lee.
+				+  "<td>" + (pendientesPorDispersar > 0
+						? "<strong style='color:#c0392b;'>" + pendientesPorDispersar + "</strong>"
+						: "0") + "</td>"
 				+  "</tr>";
+		respuesta = respuesta + "</table> <br/>";
 
 		respuesta = respuesta + "<table border='2'> <tr><td colspan ='6'> REPORTE DIARIO NO GANADORES " + fechaActual  + "</td></tr>";
 		respuesta = respuesta + "<tr>"
@@ -117,17 +136,21 @@ public class ReporteDiarioResultadoRuleta {
 		respuesta = respuesta + "</table> <br/>";
 		
 		//Agregamos los ganadores
-		respuesta = respuesta + "<table border='2'> <tr><td colspan ='6'> REPORTE DIARIO GANADORES " + fechaActual  + "</td></tr>";
+		respuesta = respuesta + "<table border='2'> <tr><td colspan ='7'> REPORTE DIARIO GANADORES " + fechaActual  + "</td></tr>";
 		respuesta = respuesta + "<tr>"
 				+  "<th width='30'><strong>ID PEDIDO</strong></td>"
 				+  "<th width='50'><strong>TIENDA</strong></td>"
 				+  "<th width='50'><strong>PREMIO</strong></td>"
 				+  "<th width='50'><strong>TELEFONO</strong></td>"
 				+  "<th width='60'><strong>CORREO</strong></td>"
-				+  "<th width='60'><strong>NOMBRE CLIENTE</strong></td>";
+				+  "<th width='60'><strong>NOMBRE CLIENTE</strong></td>"
+				+  "<th width='50'><strong>ENTREGA</strong></td>"
+				//Faltaba el cierre de fila: sin el, algunos clientes de correo pegan la
+				//primera fila de datos contra los titulos.
+				+  "</tr>";
 		for(ResultadoRuleta resTemp : resultadoGanador)
 		{
-			
+
 			respuesta = respuesta + "<tr>"
 					+  "<td><strong>" +  resTemp.getIdPedido() + "</strong></td>"
 					+  "<td> " + resTemp.getTienda() +"</td>"
@@ -135,7 +158,10 @@ public class ReporteDiarioResultadoRuleta {
 					+  "<td> " + resTemp.getTelefono() +"</td>"
 					+  "<td> " + resTemp.getCorreo() +"</td>"
 					+  "<td> " + resTemp.getNombreCliente() +"</td>"
-					+  "</tr>";	
+					+  "<td> " + ("PENDIENTE".equals(resTemp.getEstadoDispersion())
+							? "<strong style='color:#c0392b;'>PENDIENTE</strong>"
+							: resTemp.getEstadoDispersion()) + "</td>"
+					+  "</tr>";
 		}
 		respuesta = respuesta + "</table> <br/>";
 		
