@@ -263,10 +263,32 @@ public class ReporteSemanalHorariosReproceso {
 				boolean ingreso = false;
 				//Salida empezar� prendido dado que iniciamos con uno nuevo
 				boolean salida = true;
+				//El reporte abarca varios empleados y varios dias. Los indicadores ingreso y
+				//salida hay que reiniciarlos en cada cambio de empleado o de fecha: una jornada
+				//sin cerrar arrastraba su estado al empleado siguiente o al dia siguiente.
+				int idEmpleadoCorte = -1;
+				String fechaCorte = "";
 				for(int i = 0; i < repEntradasSalidas.size(); i++)
 				{
 					//Retomamos el evento que vamos a procesar
 					eventoTemp = repEntradasSalidas.get(i);
+					if(eventoTemp.getId() != idEmpleadoCorte || !fechaCorte.equals(eventoTemp.getFecha()))
+					{
+						//Se cierra la jornada que quedo abierta antes de pasar al siguiente corte
+						if(ingreso && !salida)
+						{
+							filaTemp[4] = "0";
+							filaTemp[5] = "0";
+							respuestaReporte.add(filaTemp);
+						}
+						idEmpleadoCorte = eventoTemp.getId();
+						fechaCorte = eventoTemp.getFecha();
+						filaTemp = new String[10];
+						ingreso = false;
+						salida = true;
+						errorInicial = false;
+						errorFinal = false;
+					}
 					//Hacemos la verificaci�n de si el evento es de ingreso o de salida
 					if(eventoTemp.getTipoEvento().equals(new String("INGRESO")))
 					{
@@ -299,6 +321,25 @@ public class ReporteSemanalHorariosReproceso {
 						salida = false;
 					}else if(eventoTemp.getTipoEvento().equals(new String("SALIDA")))
 					{
+						//Salida sin ingreso abierto: se reporta con cero horas en vez de parsear un nulo
+						//que el catch silenciaba, lo que dejaba filas con nombre y fecha vacios.
+						if(!ingreso)
+						{
+							filaTemp[0] = eventoTemp.getNombreEmpleado();
+							filaTemp[1] = eventoTemp.getFecha();
+							filaTemp[2] = eventoTemp.getDia();
+							filaTemp[3] = "";
+							filaTemp[4] = eventoTemp.getFechaHoraLog();
+							filaTemp[5] = "0";
+							filaTemp[6] = Integer.toString(eventoTemp.getIdTienda());
+							filaTemp[7] = "0";
+							filaTemp[8] = Integer.toString(eventoTemp.getId());
+							filaTemp[9] = Double.toString(eventoTemp.getSalario());
+							respuestaReporte.add(filaTemp);
+							filaTemp = new String[10];
+							salida = true;
+							continue;
+						}
 						filaTemp[4] = eventoTemp.getFechaHoraLog();
 						//Hacer la resta de tiempos para lo cual formateamos las fechas
 						Date fechaFinal = new Date(), fechaInicial = new Date();
