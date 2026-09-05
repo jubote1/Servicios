@@ -69,6 +69,9 @@ import okhttp3.Response;
 import utilidadesSer.ControladorEnvioCorreo;
 
 public class ServicioReplicaProgramaFidelizacion {
+
+	/** Pausa entre correos de aviso. Dos segundos es el ritmo que aguanta Gmail. */
+	private static final long MILIS_ENTRE_AVISOS = 2000L;
 	
 	
 	
@@ -180,8 +183,27 @@ public void generarReplicaProgramaFidelidad()
 							puntosAcumulados = ClienteFidelizacionDAO.sumarPuntosClienteFidelizacion(pedidoTemp.getCorreo(), puntosSumar);
 							FidelizacionTransaccion fidelizaTransac = new FidelizacionTransaccion(pedidoTemp.getCorreo(), pedidoTemp.getIdTienda(), pedidoTemp.getIdPedidoTienda(), pedidoTemp.getValorNeto(), puntosSumar, pedidoTemp.getUsuarioPedido());
 							FidelizacionTransaccionDAO.insertarFidelizacionTransaccion(fidelizaTransac, diasVigencia);
-					        // Lista de destinatarios con nombres y puntos
-					        destinatarios.add(new JSONObject().put("email", pedidoTemp.getCorreo()).put("nombre", pedidoTemp.getNombreCliente()).put("puntos", puntosSumar).put("puntostotal", puntosAcumulados));
+					        /*
+					         * Los puntos se acumulan siempre, pero el correo solo se le manda a
+					         * quien tenga una direccion que sirva. Mandarle a una direccion mal
+					         * escrita gasta un envio de Brevo, que se paga, y no llega a nadie.
+					         *
+					         * Se usa el validador del central con el nombre completo del paquete
+					         * a proposito. Servicios tiene su propia copia de ControladorEnvioCorreo
+					         * en utilidadesSer, y si se duplicara la regla las dos podrian terminar
+					         * diciendo cosas distintas del mismo correo. La regla vive en un solo
+					         * lugar y desde ahi la usan el central, el POS y este proceso.
+					         */
+					        if(utilidadesCC.ControladorEnvioCorreo.esDireccionValida(pedidoTemp.getCorreo()))
+					        {
+					        	// Lista de destinatarios con nombres y puntos
+					        	destinatarios.add(new JSONObject().put("email", pedidoTemp.getCorreo()).put("nombre", pedidoTemp.getNombreCliente()).put("puntos", puntosSumar).put("puntostotal", puntosAcumulados));
+					        }
+					        else
+					        {
+					        	System.out.println("Fidelizacion: se acumulan los puntos pero no se envia correo,"
+					        			+ " la direccion no es valida: [" + pedidoTemp.getCorreo() + "]");
+					        }
 						}
 					}
 				}
@@ -551,6 +573,24 @@ public void generarReplicaProgramaFidelidad()
 	}
 	//Al final realizamos la depuración de las no deseos de estar en el plan de fidelizacion
 	ClienteNoFidelizacionDAO.depurarExistenciaClienteNoFidelizacion();
+
+	/*
+	 * Aviso de puntos por vencerse. Va de ultimo y dentro de su propio try a
+	 * proposito: lo importante de este proceso es acumular los puntos de todas
+	 * las tiendas, y un problema mandando correos no puede impedir eso ni
+	 * dejar tiendas sin procesar. Si falla, se pierde el aviso de una noche y
+	 * al dia siguiente se recupera solo, porque los que no se alcanzaron a
+	 * avisar siguen con la columna de control en nulo.
+	 */
+	try
+	{
+		enviarAvisosVencimiento();
+	}
+	catch(Exception excAviso)
+	{
+		System.out.println("Aviso de vencimiento de puntos: fallo el bloque completo, "
+				+ "se reintenta manana. " + excAviso);
+	}
 	
 	if(false)
 	{
@@ -571,6 +611,162 @@ public void generarReplicaProgramaFidelidad()
 }
 
 
+
+	/**
+	 * Avisa por correo a los clientes que tienen puntos por vencerse.
+	 *
+	 * Son dos avisos en dos momentos: uno temprano, a los 60 dias, que le da al
+	 * cliente tiempo de planear una compra, y un ultimo recordatorio a los 15
+	 * dias para quien no redimio. Los dos se controlan con su propia columna en
+	 * fidelizacion_transaccion, asi que a nadie se le manda el mismo aviso dos
+	 * veces.
+	 *
+	 * Tres decisiones que vale la pena explicar:
+	 *
+	 * El aviso de 15 dias va primero. Si un cliente cae en las dos ventanas la
+	 * misma noche, es mejor que reciba el urgente. Y se marcan las dos columnas
+	 * para que no le llegue el otro correo al dia siguiente.
+	 *
+	 * Hay tope por noche. El dia que esto arranque hay cerca de seis mil
+	 * clientes acumulados en la ventana de 60 dias; sin tope serian seis mil
+	 * correos de una sola vez. Con el tope el atraso se drena en unas semanas y
+	 * despues se estabiliza entre 60 y 210 por noche, que es el ritmo natural.
+	 *
+	 * Hay pausa entre correos. Es la leccion de la dispersion de premios de la
+	 * ruleta: a Gmail no le molesta el volumen del dia, le molesta la rafaga.
+	 *
+	 * No usa Brevo. Sale por la cuenta de Gmail que ya tiene el sistema, que no
+	 * cuesta por correo enviado.
+	 */
+	public static void enviarAvisosVencimiento()
+	{
+		final int diasAviso1 = numero("DIASAVISOVENCIMIENTO1", 60);
+		final int diasAviso2 = numero("DIASAVISOVENCIMIENTO2", 15);
+		final int maximo = numero("MAXAVISOSVENCIMIENTO", 250);
+
+		//La cuenta sale de parametros, con el mismo respaldo que usa la ruleta.
+		String cuenta = ParametrosDAO.retornarValorAlfanumerico("CUENTACORREOVENCIMIENTO");
+		String clave = ParametrosDAO.retornarValorAlfanumerico("CLAVECORREOVENCIMIENTO");
+		if(cuenta == null || cuenta.trim().length() == 0)
+		{
+			cuenta = ParametrosDAO.retornarValorAlfanumerico("CUENTACORREOWOMPI");
+			clave = ParametrosDAO.retornarValorAlfanumerico("CLAVECORREOWOMPI");
+		}
+		if(cuenta == null || cuenta.trim().length() == 0)
+		{
+			System.out.println("Aviso de vencimiento: no hay cuenta de correo configurada, no se envia nada.");
+			return;
+		}
+
+		//Primero el urgente, despues el temprano. El cupo de la noche se comparte.
+		int enviados = enviarTanda(diasAviso2, FidelizacionTransaccionDAO.COLUMNA_AVISO_15, true,
+				maximo, cuenta, clave);
+		if(enviados < maximo)
+		{
+			enviados = enviados + enviarTanda(diasAviso1, FidelizacionTransaccionDAO.COLUMNA_AVISO_60, false,
+					maximo - enviados, cuenta, clave);
+		}
+		System.out.println("Aviso de vencimiento de puntos: " + enviados + " correos enviados esta noche.");
+	}
+
+	/**
+	 * Manda una tanda de avisos y deja constancia de cada uno.
+	 *
+	 * Se marca despues de enviar, no antes: si el correo no sale, el cliente
+	 * queda pendiente y se le intenta manana. Es preferible avisar tarde que no
+	 * avisar.
+	 *
+	 * @return cuantos correos salieron
+	 */
+	private static int enviarTanda(int dias, String columna, boolean esUltimo, int maximo,
+			String cuenta, String clave)
+	{
+		if(maximo <= 0)
+		{
+			return(0);
+		}
+		ArrayList<FidelizacionTransaccionDAO.AvisoVencimiento> pendientes =
+				FidelizacionTransaccionDAO.obtenerClientesParaAviso(dias, columna, maximo);
+
+		int enviados = 0;
+		for(FidelizacionTransaccionDAO.AvisoVencimiento aviso : pendientes)
+		{
+			try
+			{
+				/*
+				 * Si la direccion no sirve no se gasta el envio, pero SI se marca como
+				 * avisado. Si no se marcara, el barrido volveria a intentarlo cada
+				 * noche con el mismo resultado y ocuparia el cupo de alguien a quien si
+				 * se le puede escribir.
+				 */
+				if(!utilidadesCC.ControladorEnvioCorreo.esDireccionValida(aviso.correo))
+				{
+					System.out.println("Aviso de vencimiento: direccion invalida, se omite [" + aviso.correo + "]");
+					FidelizacionTransaccionDAO.marcarAvisoEnviado(aviso.correo, dias, columna);
+					continue;
+				}
+
+				//El ControladorEnvioCorreo del central espera su propio modelo de Correo.
+				//Servicios tiene otro con el mismo nombre en ModeloSer, asi que hay que
+				//nombrar el paquete completo para no tomar el equivocado.
+				capaModeloCC.Correo correo = new capaModeloCC.Correo();
+				correo.setUsuarioCorreo(cuenta);
+				correo.setContrasena(clave);
+				correo.setAsunto(utilidadesCC.PlantillaCorreoVencimientoPuntos.asunto(aviso.puntos, dias));
+				correo.setMensaje(utilidadesCC.PlantillaCorreoVencimientoPuntos.cuerpo(aviso.nombre, aviso.puntos,
+						aviso.fechaVence, dias, esUltimo));
+
+				ArrayList destinos = new ArrayList();
+				destinos.add(aviso.correo);
+
+				utilidadesCC.ControladorEnvioCorreo envio =
+						new utilidadesCC.ControladorEnvioCorreo(correo, destinos);
+				utilidadesCC.ControladorEnvioCorreo.ResultadoEnvio resultado = envio.enviarConReintentos();
+
+				if(resultado == utilidadesCC.ControladorEnvioCorreo.ResultadoEnvio.ENVIADO)
+				{
+					FidelizacionTransaccionDAO.marcarAvisoEnviado(aviso.correo, dias, columna);
+					enviados++;
+				}
+				else if(resultado == utilidadesCC.ControladorEnvioCorreo.ResultadoEnvio.DIRECCION_INVALIDA)
+				{
+					//No sirve reintentarlo manana: se marca para liberar el cupo.
+					FidelizacionTransaccionDAO.marcarAvisoEnviado(aviso.correo, dias, columna);
+				}
+				//Una falla pasajera no se marca: el correo quedo reintentandose solo y
+				//si aun asi no sale, manana este cliente vuelve a aparecer en la lista.
+
+				//Pausa entre correos. A Gmail no le molesta el volumen del dia, le
+				//molesta la rafaga.
+				Thread.sleep(MILIS_ENTRE_AVISOS);
+			}
+			catch(InterruptedException ie)
+			{
+				Thread.currentThread().interrupt();
+				break;
+			}
+			catch(Exception e)
+			{
+				//Un cliente con datos raros no puede tumbar la tanda completa.
+				System.out.println("Aviso de vencimiento: se omite " + aviso.correo + " por " + e);
+			}
+		}
+		return(enviados);
+	}
+
+	/** Lee un parametro numerico, con valor por defecto si no esta configurado. */
+	private static int numero(String parametro, int porDefecto)
+	{
+		try
+		{
+			int valor = ParametrosDAO.retornarValorNumerico(parametro);
+			return(valor > 0 ? valor : porDefecto);
+		}
+		catch(Exception e)
+		{
+			return(porDefecto);
+		}
+	}
 }
 
 
