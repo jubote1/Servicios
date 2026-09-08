@@ -1,306 +1,153 @@
 package ServiciosSer;
 
-import java.io.FileOutputStream;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.text.DateFormat;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import CapaDAOSer.GastoSemanalDAO;
-import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
-import conexionINV.ConexionBaseDatos;
-import utilidadesSer.ControladorEnvioCorreo;
-import ModeloSer.CorreoElectronico;
 import ModeloSer.GastoSemanal;
-import capaDAOCC.MarcacionAnulacionPedidoDAO;
-import capaDAOCC.MarcacionCambioPedidoDAO;
-import capaDAOCC.MarcacionComisionDAO;
-import capaDAOCC.PedidoDAO;
-import capaDAOCC.RazonSocialDAO;
-import capaModeloCC.MarcacionAnulacionPedido;
-import capaModeloCC.MarcacionCambioPedido;
-import capaModeloCC.MarcacionComision;
 import capaModeloCC.RazonSocial;
-import capaModeloCC.Tienda;
-import ModeloSer.Correo;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.BorderStyle;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFRichTextString;
+/**
+ * Reporte de PAGO semanal de RAPPI.
+ *
+ * Es el mismo reporte que ReporteSemanalRappi con cuatro diferencias, y por eso
+ * HEREDA de él en vez de ser otra copia del programa completo. Antes eran dos
+ * gemelos de casi 300 líneas: un arreglo en uno no llegaba al otro, y nadie se
+ * daba cuenta.
+ *
+ * Lo que cambia:
+ *
+ *   - El corte va MIÉRCOLES y el período liquidado es de sábado a viernes de la
+ *     semana anterior. El otro reporte corta domingo, de lunes a domingo. Son
+ *     los cortes de cierre de Rappi, no una decisión nuestra.
+ *   - Con RAPPIFULLSERVICE en S se ocultan los pagos en línea, la tarifa de
+ *     servicio y la propina, y la tarifa NO se descuenta de la consignación.
+ *   - Solo registra el concepto de comisión en gasto_semanal, no los tres.
+ *   - Otro asunto y otra lista de correo.
+ *
+ * El bloque de Rappi Cargo es el mismo, calculado con el período de este
+ * reporte. Ojo con eso: los dos reportes descuentan el costo de Cargo de su
+ * propia consignación estimada, con períodos distintos, porque son dos vistas
+ * independientes que cada área concilia por separado.
+ */
+public class ReporteSemanalPagoRappi extends ReporteSemanalRappi {
 
-public class ReporteSemanalPagoRappi {
-	
-	
-	public void generarReporteRappi()
+	/** Parámetro que dice si la operación va bajo el modelo full service. */
+	private static final String PARAM_FULL_SERVICE = "RAPPIFULLSERVICE";
+
+	/** Del miércoles del corte hacia atrás hasta el viernes en que cierra la semana. */
+	private static final int DIAS_HASTA_EL_CIERRE = 5;
+
+	/** Y de ese viernes hacia atrás hasta el sábado en que abre. */
+	private static final int DIAS_DEL_PERIODO = 6;
+
+	/**
+	 * Si la operación es full service.
+	 *
+	 * Se resuelve una vez al construir y no se vuelve a leer: si el parámetro
+	 * cambiara en medio de la generación, media razón social saldría con unas
+	 * columnas y la otra mitad con otras.
+	 */
+	private final boolean fullService;
+
+	public ReporteSemanalPagoRappi()
 	{
-		DecimalFormat formatea = new DecimalFormat("###,###");
-		//Obtenemos las razones sociales que vamos a procesar
-		ArrayList<RazonSocial> razonesSociales = RazonSocialDAO.obtenerRazones();
-		RazonSocial razTemp;
-		//Recuperamos la relaci�n Marcaci�n , tienda comisi�n
-		ArrayList<MarcacionComision> marcacionesComision = MarcacionComisionDAO.obtenerMarcacionComision(2);
-		//Posteriormente realizamos el procesamiento para definir el rango de fechas del cual deseamos procesar el reporte
-		//Recuperamos la fecha actual del sistema con la fecha apertura
-		String fechaActual = "";
-		//Variables donde manejaremos la fecha anerior con el fin realizar los c�lculos de ventas
-		Date datFechaAnterior;
-		String fechaAnterior = "";
-		//Creamos el objeto calendario
-		Calendar calendarioActual = Calendar.getInstance();
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		double porcentajeIvaComision = 19;
-		boolean rappiFullService = true;
-		//Obtenemos la fecha Actual
+		super();
+		this.fullService = "S".equalsIgnoreCase(this.leerFullService());
+		System.out.println("ReporteSemanalPagoRappi: full service = " + this.fullService);
+	}
+
+	/**
+	 * Lee el parámetro sin que un null tumbe el proceso.
+	 *
+	 * El código anterior hacía strRappiFullService.equals(...) directo sobre lo
+	 * que devolvía el DAO, así que un parámetro ausente lanzaba
+	 * NullPointerException; como estaba dentro del try general, el proceso
+	 * seguía con el valor inicial de la variable -true, full service- SIN avisar
+	 * de nada. Aquí se avisa y se asume lo contrario, que es lo conservador:
+	 * mostrar todas las columnas y descontar la tarifa.
+	 */
+	private String leerFullService()
+	{
 		try
 		{
-			//OJO
-			fechaActual = dateFormat.format(calendarioActual.getTime());
-			porcentajeIvaComision = (double)ParametrosDAO.retornarValorNumerico("PORCENTAJEIVACOMISION");
-			String strRappiFullService = ParametrosDAO.retornarValorAlfanumerico("RAPPIFULLSERVICE");
-			if(strRappiFullService.equals(new String("S")))
-			{
-				rappiFullService = true;
-			}else
-			{
-				rappiFullService = false;
-			}
-			//fechaActual = "2021-02-01";
-		}catch(Exception exc)
-		{
-			System.out.println(exc.toString());
-		}
-		try
-		{
-			//Al objeto calendario le fijamos la fecha actual del sitema
-			calendarioActual.setTime(dateFormat.parse(fechaActual));
-			
+			final String valor = ParametrosDAO.retornarValorAlfanumerico(PARAM_FULL_SERVICE);
+			return(valor == null ? "" : valor.trim());
 		}catch(Exception e)
 		{
-			System.out.println(e.toString());
+			System.out.println("ReporteSemanalPagoRappi: no se pudo leer " + PARAM_FULL_SERVICE
+					+ ", se asume que NO es full service: " + e);
+			return("");
 		}
-		//Retormanos el d�a de la semana actual segun la fecha del calendario
-		//OJO
-		//int diaActual = 1;
-		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
-		
-		//Vamos a poner el proceso a correr los miercoles
-		if(diaActual == 4)
-		{
-			//Si es miercoles se resta dos
-			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
-			fechaActual = dateFormat.format(calendarioActual.getTime());
-			calendarioActual.add(Calendar.DAY_OF_YEAR, -6);
-			datFechaAnterior = calendarioActual.getTime();
-			fechaAnterior = dateFormat.format(datFechaAnterior);
-		}else
-		{
-			System.out.println("Recuerda que este proceso debe correr es lo miercoles");
-			return;
-		}
-		
-		
-		//En este punto ya tenemos FechaActual y fechaAnterior, con estas dos iremos a obtener los pedidos para la presentaci�n pero esto lo haremos en un ciclo for por raz�n social.
-		//Recuperamos el idProducto asociado a domicilios.com
-		for(int i = 0; i < razonesSociales.size(); i++)
-		{
-			razTemp = razonesSociales.get(i);
-			//Obtenemos las tiendas
-			ArrayList<Tienda> tiendas = capaDAOCC.TiendaDAO.obtenerTiendasxRazon(razTemp.getIdRazon());
-			
-			//Obtenemos un total por tienda de los pedidos
-			ArrayList pedidosDomCOMTienda;
-			//Obtenemos totales de pago online por tienda
-			ArrayList pedidosDomCOMONLINETienda = PedidoDAO.obtenerPedidosPlataformasONLINETienda(razTemp.getIdRazon(), fechaAnterior, fechaActual,2);
-			//Procedemos a procesar la informaci�n y a enviar el correo con el reporte
-			String respuesta = "";
-			//Agregamos en este apartado el total de pedidos por tienda para poder extraer la comisi�n por tienda
-			if(rappiFullService)
-			{
-				respuesta = respuesta + "<table border='2'> <tr colspan='5'>RAPPI TOTAL POR TIENDA " + razTemp.getNombreRazon() +  " </tr>";
-				respuesta = respuesta + "<tr>"
-						+  "<td><strong>Tienda</strong></td>"
-						+  "<td><strong>Total Pedidos</strong></td>"
-						+  "<td><strong>Total Descuentos</strong></td>"
-						+  "<td><strong>Comisi�n Total</strong></td>"
-						+  "<td><strong>Costo Pagos en Linea</strong></td>"
-						+"</tr>";
-			}else
-			{
-				respuesta = respuesta + "<table border='2'> <tr colspan='8'>RAPPI TOTAL POR TIENDA " + razTemp.getNombreRazon() +  " </tr>";
-				respuesta = respuesta + "<tr>"
-						+  "<td><strong>Tienda</strong></td>"
-						+  "<td><strong>Total Pedidos</strong></td>"
-						+  "<td><strong>Total Pedidos en LINEA</strong></td>"
-						+  "<td><strong>Total Descuentos</strong></td>"
-						+  "<td><strong>Total Tarifa Servicio</strong></td>"
-						+  "<td><strong>Total Propina</strong></td>"
-						+  "<td><strong>Comisi�n Total</strong></td>"
-						+  "<td><strong>Costo Pagos en Linea</strong></td>"
-						+"</tr>";
-			}
-			String[] resTotalTienda;
-			String[] resTotalONLINE;
-			double totalPagosONLINE = 0;
-			double totalComisionPedido = 0;
-			double totalComision = 0;
-			double totalComisionFinal = 0;
-			double totalGastoPagoONLINE = 0;
-			double totalGastoPagoONLINEFinal = 0;
-			double totalTarifaServicioFinal = 0;
-			double totalDescuentoFinal = 0;
-			double totalConsignacion = 0;
-			double comision = 0;
-			double comisionfull = 0;
-			double totalPedido = 0;
-			double totalPedidoTienda = 0;
-			double descuento = 0;
-			double totalDescuento = 0;
-			double totalTarifaServicio = 0;
-			double totalPropina = 0;
-			double tarifaServicio = 0;
-			double propina = 0;
-			String marketplace = "";
-			String descuentoAsumido = "";
-			for(Tienda tiendaTemp : tiendas)
-			{
-				totalPedidoTienda = 0;
-				totalDescuento = 0;
-				totalComision = 0;
-				totalTarifaServicio = 0;
-				totalPropina = 0;
-				//Revisar a que corresponde la Marcacion Comision
-				comision = 0;
-				comisionfull = 0;
-				for(MarcacionComision marComTemp: marcacionesComision)
-				{
-					if(marComTemp.getIdTienda() == tiendaTemp.getIdTienda())
-					{
-						comision = (double)marComTemp.getComision();
-						comisionfull = (double)marComTemp.getComisionfull();
-						break;
-					}
-				}
-				pedidosDomCOMTienda = PedidoDAO.obtenerPedidosPlataformasTiendaDetallada(razTemp.getIdRazon(), fechaAnterior, fechaActual,2,tiendaTemp.getIdTienda());
-				for(int z = 0; z < pedidosDomCOMTienda.size(); z++)
-				{
-					String[] pedTienda = (String[]) pedidosDomCOMTienda.get(z);
-					totalPedido = Double.parseDouble(pedTienda[0]);
-					totalPedidoTienda = totalPedidoTienda + totalPedido;
-					descuento = Double.parseDouble(pedTienda[4]);
-					tarifaServicio = Double.parseDouble(pedTienda[5]);
-					propina = Double.parseDouble(pedTienda[6]);
-					marketplace = pedTienda[2];
-					totalDescuento = totalDescuento + descuento;
-					totalTarifaServicio = totalTarifaServicio + tarifaServicio;
-					totalPropina = totalPropina + propina;
-					if(marketplace.equals(new String("S")))
-					{
-						totalComisionPedido = totalPedido*(comision/100);
-					}else
-					{
-						totalComisionPedido = totalPedido*(comisionfull/100);
-					}
-					totalComision = totalComision + totalComisionPedido;
-				}
-				totalPagosONLINE = 0;
-				for(int k = 0; k < pedidosDomCOMONLINETienda.size(); k++ )
-				{
-					resTotalONLINE = (String[]) pedidosDomCOMONLINETienda.get(k);
-					if(resTotalONLINE[3].equals(Integer.toString(tiendaTemp.getIdTienda())))
-					{
-						totalPagosONLINE = Double.parseDouble(resTotalONLINE[1]);
-						break;
-					}
-				}
-				totalConsignacion = totalConsignacion + totalPagosONLINE;
-				totalComision = totalComision + ((totalComision)*(porcentajeIvaComision/100));
-				totalComisionFinal = totalComisionFinal + totalComision;
-				totalGastoPagoONLINE = (totalPagosONLINE * 0.06);
-				totalGastoPagoONLINEFinal = totalGastoPagoONLINEFinal + totalGastoPagoONLINE;
-				totalTarifaServicioFinal = totalTarifaServicioFinal + totalTarifaServicio;
-				totalDescuentoFinal = totalDescuentoFinal + totalDescuento;
-				if(rappiFullService)
-				{
-					respuesta = respuesta + "<tr><td>" + tiendaTemp.getNombreTienda() + "</td><td>" + formatea.format(totalPedidoTienda) +  "</td><td>" + formatea.format(totalDescuento) + "</td><td>"  + formatea.format(totalComision) + "</td><td>" + formatea.format(totalGastoPagoONLINE) +"</td></tr>";
-				}else
-				{
-					respuesta = respuesta + "<tr><td>" + tiendaTemp.getNombreTienda() + "</td><td>" + formatea.format(totalPedidoTienda) +  "</td><td>" + formatea.format(totalPagosONLINE) + "</td><td>" + formatea.format(totalDescuento) + "</td><td>" + formatea.format(totalTarifaServicio) + "</td><td>" + formatea.format(totalPropina) + "</td><td>" + formatea.format(totalComision) + "</td><td>" + formatea.format(totalGastoPagoONLINE) +"</td></tr>";
-				}
-				//En este punto tenemos el total de la tienda y lo insertaremos en la tabla correspondiente
-				GastoSemanal gastoSemanalTemp = new GastoSemanal(0,tiendaTemp.getIdTienda(),18,fechaActual,totalComision+totalGastoPagoONLINE,totalComision+totalGastoPagoONLINE);
-				GastoSemanalDAO.insertarGastoSemanal(gastoSemanalTemp);
-			}
-			respuesta = respuesta + "</table> <br/>";
-			//vamos a diferenciar cuando es full service los cálculo
-			double totalConsignacionBruto = totalConsignacion;
-			if(rappiFullService)
-			{
-
-				respuesta = respuesta + "<b>TOTAL BRUTO CONSIGNACI�N " + formatea.format(totalConsignacionBruto) +"</b><br/>";
-				totalConsignacion = totalConsignacion - totalComisionFinal - totalGastoPagoONLINEFinal + totalDescuentoFinal;
-				respuesta = respuesta + "<b> - TOTAL GASTO COMISI�N " + formatea.format(totalComisionFinal) +"</b><br/>";
-				respuesta = respuesta + "<b> - TOTAL GASTO PAGOS ON LINE " + formatea.format(totalGastoPagoONLINEFinal) +"</b><br/>";
-				respuesta = respuesta + "<b>CONSIGNACI�N APROXIMADA " + formatea.format(totalConsignacion) +"</b><br/>";
-			}else
-			{
-				respuesta = respuesta + "<b>TOTAL BRUTO CONSIGNACI�N " + formatea.format(totalConsignacionBruto) +"</b><br/>";
-				totalConsignacion = totalConsignacion - totalComisionFinal - totalGastoPagoONLINEFinal - totalTarifaServicioFinal + totalDescuentoFinal;
-				respuesta = respuesta + "<b> - TOTAL GASTO COMISI�N " + formatea.format(totalComisionFinal) +"</b><br/>";
-				respuesta = respuesta + "<b> - TOTAL GASTO PAGOS ON LINE " + formatea.format(totalGastoPagoONLINEFinal) +"</b><br/>";
-				respuesta = respuesta + "<b> - TOTAL TARIFA DE SERVICIO DE RAPPI " + formatea.format(totalTarifaServicioFinal) +"</b><br/>";
-				respuesta = respuesta + "<b> + TOTAL DESCUENTOS ASUMIDOS POR RAPPI " + formatea.format(totalDescuentoFinal) +"</b><br/>";
-				respuesta = respuesta + "<b>CONSIGNACI�N APROXIMADA " + formatea.format(totalConsignacion) +"</b><br/>";
-			}
-			
-			//Procedemos al env�o del correo
-			Correo correo = new Correo();
-			CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-			correo.setAsunto("REPORTE PAGO SEMANAL RAPPI de la Raz�n Social " + razTemp.getNombreRazon() + " " + razTemp.getIdentificacion());
-			correo.setContrasena(infoCorreo.getClaveCorreo());
-			ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPORTEPAGORAPPI");
-			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("A continuaci�n el reporte semanal de pedidos tomados para RAPPI separados por razones sociales entre las fechas " + fechaAnterior + " - " + fechaActual +  ": \n" + respuesta);
-			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-			contro.enviarCorreoHTML();
-			
-		}
-		
 	}
-	
-	
 
-public static void main(String[] args)
-{
-	ReporteSemanalPagoRappi reporteDomicios = new ReporteSemanalPagoRappi();
-	reporteDomicios.generarReporteRappi();
-	//ConexionBaseDatos con = new ConexionBaseDatos();
-	//Connection con1 = con.obtenerConexionBDTienda("");
-	
+	/** El corte va miércoles, y la semana que se liquida es de sábado a viernes. */
+	@Override
+	protected String[] periodo(final String fechaCorte)
+	{
+		final Calendar calendario = this.aCalendario(fechaCorte);
+		if(calendario == null)
+		{
+			return(null);
+		}
+		if(calendario.get(Calendar.DAY_OF_WEEK) != Calendar.WEDNESDAY)
+		{
+			System.out.println("ReporteSemanalPagoRappi: el corte " + fechaCorte
+					+ " no cae miércoles, no se procesa.");
+			return(null);
+		}
+		final SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
+		calendario.add(Calendar.DAY_OF_YEAR, -DIAS_HASTA_EL_CIERRE);
+		final String fin = formatoFecha.format(calendario.getTime());
+		calendario.add(Calendar.DAY_OF_YEAR, -DIAS_DEL_PERIODO);
+		return(new String[]{ formatoFecha.format(calendario.getTime()), fin });
+	}
+
+	@Override
+	protected String tituloReporte()
+	{
+		return("REPORTE PAGO SEMANAL RAPPI");
+	}
+
+	@Override
+	protected String asuntoCorreo(final RazonSocial razTemp)
+	{
+		return("REPORTE PAGO SEMANAL RAPPI de la Razón Social "
+				+ razTemp.getNombreRazon() + " " + razTemp.getIdentificacion());
+	}
+
+	@Override
+	protected String parametroCorreos()
+	{
+		return("REPORTEPAGORAPPI");
+	}
+
+	/** En full service no aplican los pagos en línea, ni la tarifa, ni la propina. */
+	@Override
+	protected boolean columnasCompletas()
+	{
+		return(!this.fullService);
+	}
+
+	/** En full service la tarifa de servicio no se descuenta de la consignación. */
+	@Override
+	protected boolean restarTarifaServicio()
+	{
+		return(!this.fullService);
+	}
+
+	/** Este reporte solo registra la comisión: ni el recaudo ni los descuentos. */
+	@Override
+	protected void insertarGastos(final int idTienda, final String fechaActual, final double pagosONLINE,
+			final double comision, final double gastoPagoONLINE, final double descuento)
+	{
+		GastoSemanalDAO.insertarGastoSemanal(new GastoSemanal(0, idTienda, CONCEPTO_COMISION,
+				fechaActual, comision + gastoPagoONLINE, comision + gastoPagoONLINE));
+	}
+
+	public static void main(String[] args)
+	{
+		new ReporteSemanalPagoRappi().generarReporteRappi();
+	}
 }
-
-}
-
-
-
-
