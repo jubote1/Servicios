@@ -52,154 +52,128 @@ import ModeloSer.Insumo;
 import ModeloSer.Tienda;
 import ModeloSer.Usuario;
 import utilidadesSer.ControladorEnvioCorreo;
+import utilidadesSer.EmparejadorBiometria;
+import utilidadesSer.CorreosBiometria;
 
 public class ServicioMonitoreoUsuarios {
-	
-	
-	
-	
-public static void main(String[] args)
-{
-	ServicioMonitoreoUsuarios servicioMonitoreoUsuarios = new ServicioMonitoreoUsuarios();
-	servicioMonitoreoUsuarios.monitoreoUsuarios();
-}
 
-public void monitoreoUsuarios()
-{
-	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCIÓN");
-	//Generamos la fecha en la que corre el proceso
-	Date fechaActual = new Date();
-	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-	//Formateamos la fecha Actual para consulta
-	String strFechaActual = dateFormat.format(fechaActual);
-	//Restarle el día para que como se hará día atrasado
-	Calendar calendarioActual = Calendar.getInstance();
-	try
-	{
-		//Al objeto calendario le fijamos la fecha actual del sitema
-		calendarioActual.setTime(fechaActual);
-		calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
-	}catch(Exception e)
-	{
-		System.out.println(e.toString());
+	/** Hora a partir de la cual un ingreso se considera sospechosamente tardio. */
+	private static final int HORA_TARDIA_POR_DEFECTO = 20;
+
+
+	public static void main(final String[] args) {
+		final ServicioMonitoreoUsuarios servicioMonitoreoUsuarios = new ServicioMonitoreoUsuarios();
+		servicioMonitoreoUsuarios.monitoreoUsuarios();
 	}
-	
-	//Llevamos a un string la fecha anterior para el cálculo de la venta
-	fechaActual = calendarioActual.getTime();
-	strFechaActual = dateFormat.format(fechaActual);
-	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo	
-	ArrayList<EmpleadoEvento>  repEntradasSalidas = ReporteHorariosDAO.obtenerEntradasSalidasEmpleadosEventos(strFechaActual,strFechaActual);
-	boolean entrada = false;
-	boolean salida = false;
-	EmpleadoEvento empEventoAnterior = new EmpleadoEvento(0, "", "", "", 0, "");
-	String resultado = "";
-	for(int i = 0; i < repEntradasSalidas.size(); i++)
-	{
-		EmpleadoEvento empEventoTemp = repEntradasSalidas.get(i);
-		//La idea es que esto pasará una única vez, o la primera vez
-		if(empEventoAnterior.getId() == 0)
-		{
-			empEventoAnterior = repEntradasSalidas.get(i);
+
+	/**
+	 * Revisa la biometria del dia anterior, avisa a cada empleado con novedad y manda
+	 * el resumen general a la lista ERRORBIOMETRIA.
+	 */
+	public void monitoreoUsuarios() {
+		final SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
+		final Calendar calendario = Calendar.getInstance();
+		calendario.add(Calendar.DAY_OF_YEAR, -1);
+		final String fechaRevisada = formatoFecha.format(calendario.getTime());
+		System.out.println("Revisando la biometria del dia " + fechaRevisada);
+
+		int horaTardia = ParametrosDAO.retornarValorNumericoLocal("MONITOREOBIOHORATARDIA");
+		if (horaTardia <= 0) {
+			horaTardia = ServicioMonitoreoUsuarios.HORA_TARDIA_POR_DEFECTO;
+			System.out.println("El parametro MONITOREOBIOHORATARDIA no esta definido, se usa " + horaTardia);
 		}
-		if(empEventoAnterior.getId() == empEventoTemp.getId())
-		{
-			if(empEventoTemp.getTipoEvento().equals(new String("INGRESO")))
-			{
-				entrada = true;
-				salida = false;
-			}
-			else if(empEventoTemp.getTipoEvento().equals(new String("SALIDA")))
-			{
-				salida = true;
-			}
-			if(entrada && salida)
-			{
-				//Realizaremos un substring de la hora y si esa hora es despuesde las 17 de la noche, sospechar que las cosas no andan
-				//bien
-				String strHora = empEventoAnterior.getFechaHoraLog().substring(11,13);
-				int intHora = 0;
-				try
-				{
-					intHora = Integer.parseInt(strHora);
-				}catch(Exception e)
-				{
-					intHora = 0;
+
+		final ArrayList<EmpleadoEvento> eventos = ReporteHorariosDAO
+				.obtenerEntradasSalidasEmpleadosEventos(fechaRevisada, fechaRevisada);
+		final ArrayList<NovedadBiometria> novedades = EmparejadorBiometria.detectarNovedades(eventos, horaTardia);
+		System.out.println("Eventos revisados: " + eventos.size() + ". Novedades: " + novedades.size());
+		if (novedades.size() == 0) {
+			System.out.println("Sin novedades. No se envia ningun correo.");
+			return;
+		}
+
+		//Nombre de la tienda, para que el correo general no muestre numeros.
+		final ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
+		for (int i = 0; i < novedades.size(); i++) {
+			final NovedadBiometria novedad = novedades.get(i);
+			novedad.setNombreTienda("No identificada");
+			for (int j = 0; j < tiendas.size(); j++) {
+				if (tiendas.get(j).getIdTienda() == novedad.getIdTienda()) {
+					novedad.setNombreTienda(tiendas.get(j).getNombreTienda());
+					break;
 				}
-				if(intHora >= 20)
-				{
-					resultado = resultado + " " + empEventoAnterior.getId()+ "-" + empEventoAnterior.getNombreEmpleado() + " INGRESO APARENTEMENTE TARDÍO " + empEventoAnterior.getFechaHoraLog();
-					String email = EmpleadoEventoDAO.obtenerCorreoElectronico(empEventoAnterior.getId());
-					//Enviamos correo notificando al empleado que tiene problemas con al biometría
-					Correo correo = new Correo();
-					correo.setAsunto("POSIBLE INCONVENIENTE BIOMETRIA EN DÍA " + fechaActual.toString());
-					CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+			}
+		}
+
+		//Un solo correo por empleado con TODAS sus novedades del dia. Antes salia uno
+		//por novedad y podian llegarle varios identicos. Las novedades vienen ordenadas
+		//por empleado, asi que basta recorrerlas por bloques.
+		final CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES",
+				"CLAVECORREOREPORTE");
+		int avisados = 0;
+		final ArrayList<NovedadBiometria> sinCorreo = new ArrayList<NovedadBiometria>();
+		int inicio = 0;
+		while (inicio < novedades.size()) {
+			int fin = inicio;
+			while (fin + 1 < novedades.size()
+					&& novedades.get(fin + 1).getIdEmpleado() == novedades.get(inicio).getIdEmpleado()) {
+				fin++;
+			}
+			final ArrayList<NovedadBiometria> delEmpleado = new ArrayList<NovedadBiometria>();
+			for (int k = inicio; k <= fin; k++) {
+				delEmpleado.add(novedades.get(k));
+			}
+			final NovedadBiometria primera = delEmpleado.get(0);
+			String correoEmpleado = "";
+			try {
+				correoEmpleado = EmpleadoEventoDAO.obtenerCorreoElectronico(primera.getIdEmpleado());
+			} catch (final Exception e) {
+				System.out.println("No se pudo leer el correo del empleado " + primera.getIdEmpleado() + ": " + e);
+			}
+			for (int k = 0; k < delEmpleado.size(); k++) {
+				delEmpleado.get(k).setCorreo(correoEmpleado);
+			}
+			//OJO: si el empleado no tiene correo NO se intenta enviar. Antes se le metia la
+			//direccion nula a la lista de destinatarios. Queda reportado en el general.
+			if (primera.tieneCorreo()) {
+				try {
+					final Correo correo = new Correo();
+					correo.setAsunto("Novedad en su registro de biometria del " + fechaRevisada);
 					correo.setContrasena(infoCorreo.getClaveCorreo());
-					//Tendremos que definir los destinatarios de este correo
-					ArrayList correos = new ArrayList();
-					correos.add(email);
 					correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-					String mensaje = "Señor Empleado el día de ayer tuvo problemas con el registro de su biometría, por favor revise apenas pueda y notifique la situación. Tuvo INGRESO AL PARECER TARDÍO " + empEventoAnterior.getFechaHoraLog();
-					correo.setMensaje(mensaje);
-					ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-					contro.enviarCorreoHTML();
+					correo.setMensaje(CorreosBiometria.armarCorreoEmpleado(delEmpleado, fechaRevisada));
+					final ArrayList destinatarios = new ArrayList();
+					destinatarios.add(primera.getCorreo().trim());
+					final ControladorEnvioCorreo envio = new ControladorEnvioCorreo(correo, destinatarios);
+					envio.enviarCorreoHTML();
+					avisados++;
+				} catch (final Exception e) {
+					//Que falle un correo no puede tumbar el resto ni el resumen general.
+					System.out.println("Fallo el correo al empleado " + primera.getIdEmpleado() + ": " + e);
 				}
+			} else {
+				sinCorreo.add(primera);
 			}
-		}else
-		{
-			if(salida == false)
-			{
-				resultado = resultado + " " + empEventoAnterior.getId()+ "-" + empEventoAnterior.getNombreEmpleado() + " INGRESO " + empEventoAnterior.getFechaHoraLog() + " - SALIDA NO HAY";
-				String email = EmpleadoEventoDAO.obtenerCorreoElectronico(empEventoAnterior.getId());
-				//Enviamos correo notificando al empleado que tiene problemas con al biometría
-				Correo correo = new Correo();
-				correo.setAsunto("POSIBLE INCONVENIENTE BIOMETRIA EN DÍA " + fechaActual.toString());
-				CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-				correo.setContrasena(infoCorreo.getClaveCorreo());
-				//Tendremos que definir los destinatarios de este correo
-				ArrayList correos = new ArrayList();
-				correos.add(email);
-				correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-				String mensaje = "Señor Empleado el día de ayer tuvo problemas con el registro de su biometría, por favor revise apenas pueda y notifique la situación. Tuvo INGRESO " + empEventoAnterior.getFechaHoraLog()+ " - SALIDA NO HAY";
-				correo.setMensaje(mensaje);
-				ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-				contro.enviarCorreoHTML();
-			}
-			entrada = false;
-			salida = false;
-			empEventoAnterior = repEntradasSalidas.get(i);
-			if(empEventoTemp.getTipoEvento().equals(new String("INGRESO")))
-			{
-				entrada = true;
-				salida = false;
-			}
-			else if(empEventoTemp.getTipoEvento().equals(new String("SALIDA")))
-			{
-				salida = true;
-			}
+			inicio = fin + 1;
 		}
-		
-		
+		System.out.println("Empleados avisados: " + avisados + ". Sin correo: " + sinCorreo.size());
+
+		try {
+			final Correo general = new Correo();
+			general.setAsunto("Novedades de biometria del " + fechaRevisada + " - " + novedades.size() + " novedades");
+			general.setContrasena(infoCorreo.getClaveCorreo());
+			general.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+			general.setMensaje(CorreosBiometria.armarCorreoGeneral(novedades, sinCorreo, fechaRevisada, avisados, horaTardia));
+			final ArrayList correos = GeneralDAO.obtenerCorreosParametro("ERRORBIOMETRIA");
+			if (correos.size() == 0) {
+				System.out.println("La lista ERRORBIOMETRIA esta vacia. No se envia el resumen.");
+				return;
+			}
+			final ControladorEnvioCorreo envio = new ControladorEnvioCorreo(general, correos);
+			envio.enviarCorreoHTML();
+		} catch (final Exception e) {
+			System.out.println("Fallo el envio del resumen general: " + e);
+		}
 	}
-	
-	
-	//Realizamos el envío del correo electrónico con los archivos
-	Correo correo = new Correo();
-	correo.setAsunto("EMPLEADOS CON POSIBLES PROBLEMAS BIOMETRIA EN DÍA " + fechaActual.toString());
-	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-	correo.setContrasena(infoCorreo.getClaveCorreo());
-	//Tendremos que definir los destinatarios de este correo
-	ArrayList correos = GeneralDAO.obtenerCorreosParametro("ERRORBIOMETRIA");
-	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuación la información de las personas que posiblemente tienen problemas con el acceso " + resultado;
-	correo.setMensaje(mensaje);
-	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-	contro.enviarCorreoHTML();
-}
-
 
 }
-
-
-
-
