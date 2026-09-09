@@ -777,36 +777,95 @@ public class TiendaDAO {
 			
 		}
 		
-		public static int obtenerCantidadConexionesBD()
+		/**
+		 * Estado de las conexiones de la base de datos principal.
+		 *
+		 * Se separan tres cosas que antes iban revueltas en un solo numero:
+		 * el total, las que de verdad estan trabajando, y las que llevan mucho tiempo
+		 * dormidas. Son problemas distintos: el total sube por si solo cuando algun
+		 * programa no cierra sus conexiones, y eso no es saturacion del motor.
+		 */
+		public static class EstadoConexiones
 		{
-			ArrayList<Tienda> tiendas = new ArrayList<>();
+			public int total = 0;
+			public int maximo = 0;
+			public int trabajando = 0;
+			public int dormidasViejas = 0;
+			public int minutosDormida = 0;
+			public boolean consultaExitosa = false;
+		
+			public int porcentajeUso()
+			{
+				if (this.maximo <= 0)
+				{
+					return(0);
+				}
+				return((int) Math.round((this.total * 100.0) / this.maximo));
+			}
+		}
+		
+		/**
+		 * Consulta el estado de las conexiones de la base de datos principal.
+		 *
+		 * Reemplaza a obtenerCantidadConexionesBD, que hacia un COUNT(*) sobre todo el
+		 * PROCESSLIST: contaba las dormidas y el demonio event_scheduler, asi que el
+		 * numero que llegaba al correo como "conexiones activas" no eran activas.
+		 *
+		 * @param minutosDormida minutos que debe llevar dormida una conexion para
+		 *        considerarla abandonada por el programa que la abrio.
+		 */
+		public static EstadoConexiones obtenerEstadoConexionesBD(int minutosDormida)
+		{
+			EstadoConexiones estado = new EstadoConexiones();
+			estado.minutosDormida = minutosDormida;
+			Logger logger = Logger.getLogger("log_file");
 			ConexionBaseDatos con = new ConexionBaseDatos();
 			Connection con1 = con.obtenerConexionBDContactLocal();
-			int cantidadConexiones = 0;
 			try
 			{
 				Statement stm = con1.createStatement();
-				String consulta = "SELECT COUNT(*) FROM information_schema.PROCESSLIST;";
+				//Se excluye command = 'Daemon' porque es el event_scheduler del motor y no
+				//una conexion de un programa nuestro. La de esta misma consulta si aparece,
+				//como 'Query', y por eso se descuenta de las que estan trabajando.
+				String consulta = " SELECT COUNT(*) AS total, "
+						+ " SUM(CASE WHEN command <> 'Sleep' THEN 1 ELSE 0 END) AS trabajando, "
+						+ " SUM(CASE WHEN command = 'Sleep' AND time >= " + (minutosDormida * 60) + " THEN 1 ELSE 0 END) AS dormidas "
+						+ " FROM information_schema.PROCESSLIST "
+						+ " WHERE command <> 'Daemon' ";
 				ResultSet rs = stm.executeQuery(consulta);
-				double meta;
-				while(rs.next()){
-					cantidadConexiones = rs.getInt(1);
+				while(rs.next())
+				{
+					estado.total = rs.getInt("total");
+					estado.trabajando = rs.getInt("trabajando");
+					estado.dormidasViejas = rs.getInt("dormidas");
 				}
 				rs.close();
+				if (estado.trabajando > 0)
+				{
+					estado.trabajando = estado.trabajando - 1;
+				}
+				ResultSet rsMaximo = stm.executeQuery("SELECT @@max_connections AS maximo");
+				while(rsMaximo.next())
+				{
+					estado.maximo = rsMaximo.getInt("maximo");
+				}
+				rsMaximo.close();
 				stm.close();
-				con1.close();
+				estado.consultaExitosa = (estado.maximo > 0);
 			}catch (Exception e){
-				System.out.println("falle consultando cantidad conexiones");
+				logger.error("Fallo consultando el estado de las conexiones: " + e.toString());
+			}
+			finally
+			{
 				try
 				{
-					con1.close();
+					if (con1 != null) con1.close();
 				}catch(Exception e1)
 				{
-					System.out.println("falle consultando cantidad conexiones");
+					logger.error(e1.toString());
 				}
 			}
-			return(cantidadConexiones);
-			
+			return(estado);
 		}
 
 }
