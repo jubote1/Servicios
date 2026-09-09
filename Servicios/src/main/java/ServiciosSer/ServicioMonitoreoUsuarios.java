@@ -49,6 +49,7 @@ import ModeloSer.CorreoElectronico;
 import ModeloSer.EmpleadoBiometria;
 import ModeloSer.EmpleadoEvento;
 import ModeloSer.Insumo;
+import ModeloSer.NovedadBiometria;
 import ModeloSer.Tienda;
 import ModeloSer.Usuario;
 import utilidadesSer.ControladorEnvioCorreo;
