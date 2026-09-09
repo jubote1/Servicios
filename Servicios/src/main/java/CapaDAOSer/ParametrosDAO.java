@@ -404,4 +404,61 @@ public class ParametrosDAO {
 		return(actualiza);
 	}
 	
+	
+	/**
+	 * Un parametro numerico CON DECIMALES, de general.parametros.valornumericod.
+	 *
+	 * retornarValorNumerico no sirve para esto: hace Integer.parseInt sobre
+	 * valornumerico, asi que un 2.8 se vuelve 0 y el calculo queda mudo sin dar
+	 * error. Los porcentajes con decimales van en la columna valornumericod.
+	 *
+	 * Recibe un valor por defecto y lo devuelve cuando el parametro no existe o
+	 * no se puede leer, en vez de un cero silencioso: un porcentaje en cero pasa
+	 * desapercibido en un reporte, y un cobro que se deja de descontar se
+	 * convierte en plata.
+	 */
+	public static double retornarValorNumericoDouble(String variable, double porDefecto)
+	{
+		double valor = porDefecto;
+		boolean encontrado = false;
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDGeneral();
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "select valornumericod from parametros where valorparametro = '" + variable + "'";
+			ResultSet rs = stm.executeQuery(consulta);
+			while(rs.next()){
+				String leido = rs.getString("valornumericod");
+				if(leido != null && !leido.trim().equals(""))
+				{
+					try
+					{
+						valor = Double.parseDouble(leido.trim());
+						encontrado = true;
+					}catch(Exception e)
+					{
+						System.out.println("El parametro " + variable + " no es un numero: '" + leido + "'");
+					}
+				}
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e)
+		{
+			System.out.println("retornarValorNumericoDouble " + variable + ": " + e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+		}
+		if(!encontrado)
+		{
+			System.out.println("El parametro " + variable + " no esta configurado, se usa " + porDefecto);
+		}
+		return(valor);
+	}
 }
