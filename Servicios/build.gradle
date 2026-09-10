@@ -53,7 +53,36 @@ task fatJar(type: Jar) {
         	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
     //baseName = archivesBaseName
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    // OJO CON EL ORDEN, aca se perdio una tarde.
+    //
+    // duplicatesStrategy = EXCLUDE quiere decir que cuando dos fuentes traen la
+    // misma clase gana LA PRIMERA y la otra se descarta en silencio. Y en el
+    // classpath hay TRES jars con el mismo nombre PizzaAmericanaCliente.jar:
+    //
+    //   1. ProyectoPizzaAmericana/libs/       una foto del POS de noviembre 2025
+    //   2. ProyectoTiendaAmericanaCliente/    la que el POS acaba de construir
+    //      build/libs/
+    //   3. ProyectoInventarioAmericana/libs/  otra copia
+    //
+    // El central va declarado antes que el POS, asi que la foto de noviembre
+    // ganaba y el paquete se quedaba con clases de hace un ano. En ejecucion eso
+    // sale como NoSuchMethodError de un metodo que SI esta en el fuente: la
+    // clase existe, pero es la version vieja. Fue lo que paso con
+    // PedidoDAO.obtenerResumenTienda.
+    //
+    // Aqui se le da el primer turno al jar que el POS acaba de construir. Las
+    // otras copias NO se excluyen, entran despues: asi lo compilado hoy gana en
+    // todas las clases que existan en ambos, y lo que solo exista en las fotos
+    // viejas sigue estando. Si se excluyeran, el central -que compila contra la
+    // foto de noviembre- podria quedarse sin alguna clase.
+    from {
+        def cp = configurations.runtimeClasspath.files
+        def esPosRecienCompilado = { f ->
+            f.path.replace(File.separatorChar, (char) 0x2F).contains('ProyectoTiendaAmericanaCliente/build/libs')
+        }
+        (cp.findAll(esPosRecienCompilado) + cp.findAll { !esPosRecienCompilado(it) })
+            .collect { it.isDirectory() ? it : zipTree(it) }
+    }
     with jar
     
     exclude "META-INF/*.SF"
