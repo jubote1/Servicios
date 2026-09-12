@@ -213,9 +213,17 @@ public class ServicioPagosVirtualesWompi {
 				+  "</tr>";
 		//Posteriormente realizamos el reporte de los pagos virtuales que llevan m�s de 20 minutos y no se han pagado.
 		//Vamos a agregar un control para ejecutar todo este bloque en los minutos 4 y minutos 8
-		if((minutos%4 == 0) || (minutos%8 == 0))
+		//Los tiempos salen del parametro y no quemados: asi el aviso que recibe el
+		//cliente y el momento en que se cancela siempre coinciden, que era el
+		//problema de fondo -se le decian cifras que no eran-.
+		int minutosAviso = utilidadesCC.TiemposPagoVirtual.minutosAviso();
+		int minutosCancela = utilidadesCC.TiemposPagoVirtual.minutosCancela();
+		//Cada 4 minutos. El "|| minutos%8 == 0" que habia aqui no agregaba nada:
+		//todo multiplo de 8 ya es multiplo de 4, asi que la segunda condicion nunca
+		//se cumplia sola y hacia pensar que eran dos franjas distintas.
+		if(minutos%4 == 0)
 		{
-			ArrayList<Pedido> pedidosVirtualesSinFin = PedidoDAO.ConsultarPagosVirtualSinPagar(fechaActual, 20);
+			ArrayList<Pedido> pedidosVirtualesSinFin = PedidoDAO.ConsultarPagosVirtualSinPagar(fechaActual, minutosAviso);
 			for(int j = 0; j < pedidosVirtualesSinFin.size(); j++)
 			{
 				Pedido pedidoSinPagar = pedidosVirtualesSinFin.get(j);
@@ -249,22 +257,30 @@ public class ServicioPagosVirtualesWompi {
 				contro.enviarCorreoHTML();
 			}
 			
-			//La idea en esta Franja tambi�n es ejecutar el env�o del mensaje de WhatsApp si es el caso
-			ArrayList<Pedido> pedidosVirtualesNotWha = PedidoDAO.ConsultarPagosVirtualSinPagarRango(fechaActual, 20,30);
-			for(int j = 0; j < pedidosVirtualesNotWha.size(); j++)
+			//El recordatorio por WhatsApp. Estaba comentado con un "SE QUITA
+			//TEMPORALMENTE" sin fecha, asi que hoy el cliente recibe UN correo a los
+			//20 minutos y despues se le cancela: el canal que mas se lee esta
+			//apagado. Queda detras de un parametro, apagado por defecto, para poder
+			//prenderlo sin volver a tocar el codigo y sin que se prenda solo con un
+			//despliegue.
+			String enviarWhatsApp = ParametrosDAO.retornarValorAlfanumericoLocal("WOMPIWHATSAPPRECORDATORIO");
+			if("S".equals(enviarWhatsApp))
 			{
-				Pedido pedidoSinPagar = pedidosVirtualesNotWha.get(j);
-				boolean reportarCliente = PedidoDAO.seDebeReportarPagoWhatsApp(pedidoSinPagar.getIdpedido());
-				if(reportarCliente)
+				ArrayList<Pedido> pedidosVirtualesNotWha = PedidoDAO.ConsultarPagosVirtualSinPagarRango(fechaActual, minutosAviso, minutosCancela);
+				for(int j = 0; j < pedidosVirtualesNotWha.size(); j++)
 				{
-					//# SE QUITA TEMPORALMENTE NOTIFICACIÓN WHATSAPP
-					//notificarWhatsApp(pedidoSinPagar.getNombrecliente(), pedidoSinPagar.getIdpedido(), pedidoSinPagar.getIdcliente(), "https://checkout.wompi.co/l/" +pedidoSinPagar.getIdLink());
+					Pedido pedidoSinPagar = pedidosVirtualesNotWha.get(j);
+					boolean reportarCliente = PedidoDAO.seDebeReportarPagoWhatsApp(pedidoSinPagar.getIdpedido());
+					if(reportarCliente)
+					{
+						notificarWhatsApp(pedidoSinPagar.getNombrecliente(), pedidoSinPagar.getIdpedido(), pedidoSinPagar.getIdcliente(), "https://checkout.wompi.co/l/" + pedidoSinPagar.getIdLink());
+					}
 				}
 			}
-			
 		}
 		//Realizamos proceso para cancelar pedidos que tienen m�s de 50 minutos y enviar notificaci�n al cliente de esta situaci�n
-		ArrayList<Pedido> pedidosVirtualesCancelar = PedidoDAO.ConsultarPagosVirtualSinPagarEspecial(fechaActual, 50);
+
+		ArrayList<Pedido> pedidosVirtualesCancelar = PedidoDAO.ConsultarPagosVirtualSinPagarEspecial(fechaActual, minutosCancela);
 		//Se crea la variable que se encargar� de la respuesta
 		respuesta = "";
 		indicadorCorreo = false;
@@ -425,7 +441,10 @@ public class ServicioPagosVirtualesWompi {
 			IntegracionCRM intWhat = IntegracionCRMDAO.obtenerInformacionIntegracion("ULTRAMSG");
 			okhttp3.MediaType mediaType = okhttp3.MediaType.parse("application/x-www-form-urlencoded");
 			String mensajeEvidencia = "token=" + intWhat.getAccessToken() + "&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +", este es tu link de pago " + linkPago + " . Ingresa y realiza el proceso de pago. Una vez efectudado el pago,iniciaremos la elaboraci�n de tu pedido. �Que lo disfrutes! &priority=1&referenceId=";
-			RequestBody body = RequestBody.create(mediaType, "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Estimado " + nombre +" ya han pasado m�s de 20 minutos y no hemos registrado tu pago, este es tu link de pago " + linkPago + " . Ingresa y realiza el proceso de pago. Una vez efectudado el pago,iniciaremos la elaboraci�n de tu pedido. �Que lo disfrutes! &priority=1&referenceId=");
+			//El mensaje dice cuanto tiempo le QUEDA, no cuanto lleva: lo primero es
+			//lo que necesita para decidir, lo segundo es un reproche. Y el numero
+			//sale del parametro, no quemado en la frase.
+			RequestBody body = RequestBody.create(mediaType, "token=tjjy9tki646vwazi&to=+57"+ telefonoCelular + "&body=Hola " + nombre + ", aun no registramos el pago de tu pedido #" + idPedido + ". Te quedan " + utilidadesCC.TiemposPagoVirtual.minutosRestantes() + " minutos para pagarlo aqui: " + linkPago + " Apenas nos llegue el pago empezamos a prepararlo. &priority=1&referenceId=");
 			Request request = new Request.Builder()
 			  .url("https://api.ultramsg.com/" + intWhat.getClientID() + "/messages/chat")
 			  .post(body)
