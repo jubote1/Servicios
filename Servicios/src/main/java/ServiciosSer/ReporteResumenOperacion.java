@@ -116,7 +116,7 @@ public class ReporteResumenOperacion {
 				hayPendientes = true;
 			}
 			if (fila.getPedidosDescuadrados() > 0) {
-				ReporteResumenOperacion.avisarDescuadre(tien.getNombreTienda(), fila.getPedidosDescuadrados(),
+				ReporteResumenOperacion.avisarDescuadre(tien.getNombreTienda(), resumen.descuadres,
 						fechaActual);
 			}
 			filas.add(fila);
@@ -180,9 +180,17 @@ public class ReporteResumenOperacion {
 	/**
 	 * Aviso aparte por descuadres de forma de pago, para corregirlos antes del
 	 * cierre. Va a otra lista y con otro asunto, igual que antes.
+	 *
+	 * Antes recibia solo cuantos eran y el correo decia "tiene descuadre en 1
+	 * descuadrados". En la tienda no habia como saber cual pedido mirar, asi que
+	 * el aviso no se podia atender. Ahora recibe cuales son y los lista.
 	 */
-	private static void avisarDescuadre(final String nombreTienda, final int cantidad, final String fechaActual) {
+	private static void avisarDescuadre(final String nombreTienda,
+			final ArrayList<capaDAOPOS.PedidoDAO.Descuadre> descuadres, final String fechaActual) {
 		try {
+			if (descuadres == null || descuadres.isEmpty()) {
+				return;
+			}
 			final ArrayList correos = GeneralDAO.obtenerCorreosParametro("ERRORREPLICAINV");
 			if (correos.size() == 0) {
 				System.out.println("La lista ERRORREPLICAINV esta vacia. No se avisa el descuadre.");
@@ -191,11 +199,12 @@ public class ReporteResumenOperacion {
 			final CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES",
 					"CLAVECORREOREPORTE");
 			final Correo correo = new Correo();
-			correo.setAsunto("OJO DESCUADRE FORMA PAGO " + fechaActual);
+			//El asunto lleva la tienda: antes todas las tiendas mandaban el mismo
+			//asunto y en la bandeja no se distinguia de cual era sin abrirlo.
+			correo.setAsunto(utilidadesSer.CorreoDescuadre.asunto(nombreTienda, fechaActual));
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje("Ojo en la tienda: \n" + nombreTienda + " tiene descuadre en " + cantidad
-					+ " descuadrados.");
+			correo.setMensaje(utilidadesSer.CorreoDescuadre.cuerpo(nombreTienda, fechaActual, descuadres));
 			final ControladorEnvioCorreo envio = new ControladorEnvioCorreo(correo, correos);
 			envio.enviarCorreoHTML();
 		} catch (final Exception e) {
