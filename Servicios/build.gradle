@@ -4,8 +4,8 @@ plugins {
 	id 'eclipse'
 }
 
-archivesBaseName = 'ServicioPagosVirtualesWompi'
-mainClassName = 'ServicioPagosVirtualesWompi'
+archivesBaseName = 'ServicioSemanalVentaIntegralReproceso'
+mainClassName = 'ServicioSemanalVentaIntegralReproceso'
 //compileJava.options.fork = true
 //compileJava.options.forkOptions.executable = 'C:/Program Files/Java/jdk-16.0.2/bin/javac.exe'
 
@@ -48,7 +48,7 @@ task fatJar(type: Jar) {
 	manifest {
         attributes 'Implementation-Title': 'Servicios Varios',
         	'Class-Path': '.', 
-        	'Main-Class': 'ServiciosSer.ServicioPagosVirtualesWompi'
+        	'Main-Class': 'ServiciosSer.ServicioSemanalVentaIntegralReproceso'
         	
         	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }

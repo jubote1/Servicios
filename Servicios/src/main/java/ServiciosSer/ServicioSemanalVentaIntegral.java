@@ -45,7 +45,7 @@ public class ServicioSemanalVentaIntegral {
 	private static final String PARAM_CORREOS = "REPORTEVENTAINTEGRAL";
 
 	/** Parametro con la fecha de corte a reprocesar, en aaaa-mm-dd. */
-	private static final String PARAM_FECHA_REPROCESO = "FECHAREPROCESOVENTAINTEGRAL";
+	private static final String PARAM_FECHA_REPROCESO = "FECHAREPROCESO";
 
 	public void generarReporteVentaIntegral() {
 		this.generarParaCorte(new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime()));
