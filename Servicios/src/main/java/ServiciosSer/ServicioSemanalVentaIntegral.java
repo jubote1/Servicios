@@ -4,6 +4,8 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -104,6 +106,13 @@ public class ServicioSemanalVentaIntegral {
 	 * Genera el cierre para el rango de fechas indicado: consulta cada tienda y
 	 * el contact center, guarda el resumen y envia el correo. Es el punto de
 	 * entrada que usa el reproceso.
+	 *
+	 * Contact Center es un canal aparte, no una tienda: se agrega en un solo
+	 * numero por categoria para toda la red (VentaIntegralResumenDAO.
+	 * consultarTotalContactCenter), sin distinguir a que tienda iba el pedido,
+	 * y se guarda con el idtienda centinela IDTIENDA_CONTACTCENTER. Antes se
+	 * sumaba dentro de cada tienda; eso mezclaba algo que la tienda no ejecuto
+	 * con su propio desempeno.
 	 */
 	public void generar(final String semanaInicio, final String semanaFin) {
 		final ArrayList<VentaIntegralCategoria> categorias = VentaIntegralCategoriaDAO.listarCategoriasActivas();
@@ -111,22 +120,22 @@ public class ServicioSemanalVentaIntegral {
 			System.out.println("ServicioSemanalVentaIntegral: no hay categorias activas, no hay nada que calcular.");
 			return;
 		}
-		final ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocalSinBodega();
 
-		// idtienda -> idcategoria -> cantidad. Se llena primero con el lado tienda
-		// (conexion remota, una por una) y despues se completa con el lado contact
-		// center (una sola consulta al central por categoria, agrupada por tienda).
+		// Solo tiendas con hosbd: sin base local que consultar no son un punto de
+		// venta real operando (tiendas de prueba, cerradas, etc.).
+		final ArrayList<Tienda> tiendas = new ArrayList<>();
+		for (Tienda tienda : TiendaDAO.obtenerTiendasLocalSinBodega()) {
+			if (tienda.getHostBD() != null && !tienda.getHostBD().trim().isEmpty()) {
+				tiendas.add(tienda);
+			}
+		}
+
 		final Map<Integer, Map<Integer, Double>> cantidadTiendaPorTienda = new HashMap<>();
-		final Map<Integer, Map<Integer, Double>> cantidadCCPorTienda = new HashMap<>();
 		final Map<Integer, String> nombrePorTienda = new HashMap<>();
-
 		for (Tienda tienda : tiendas) {
 			nombrePorTienda.put(tienda.getIdTienda(), tienda.getNombreTienda());
 			final Map<Integer, Double> cantidadesCategoria = new HashMap<>();
 			cantidadTiendaPorTienda.put(tienda.getIdTienda(), cantidadesCategoria);
-			if (tienda.getHostBD() == null || tienda.getHostBD().trim().isEmpty()) {
-				continue;
-			}
 			for (VentaIntegralCategoria categoria : categorias) {
 				try {
 					double total = VentaIntegralTiendaDAO.consultarTotalTienda(tienda.getHostBD(), categoria,
@@ -138,38 +147,25 @@ public class ServicioSemanalVentaIntegral {
 							+ " categoria " + categoria.getNombre() + ": " + e);
 				}
 			}
-		}
-
-		for (VentaIntegralCategoria categoria : categorias) {
-			final HashMap<Integer, Double> totalesCC = VentaIntegralResumenDAO
-					.consultarTotalesContactCenter(categoria, semanaInicio, semanaFin);
-			for (Map.Entry<Integer, Double> entrada : totalesCC.entrySet()) {
-				cantidadCCPorTienda.computeIfAbsent(entrada.getKey(), k -> new HashMap<>()).put(
-						categoria.getIdCategoria(), entrada.getValue());
-			}
-		}
-
-		// idtienda -> idcategoria -> cantidad_total, para el correo (CV en memoria,
-		// sin volver a consultar la tabla de resumen).
-		final Map<Integer, Map<Integer, Double>> totalCombinadoPorTienda = new HashMap<>();
-		for (Tienda tienda : tiendas) {
-			final Map<Integer, Double> cantidadesTienda = cantidadTiendaPorTienda.getOrDefault(tienda.getIdTienda(),
-					new HashMap<>());
-			final Map<Integer, Double> cantidadesCC = cantidadCCPorTienda.getOrDefault(tienda.getIdTienda(),
-					new HashMap<>());
-			final Map<Integer, Double> combinado = new HashMap<>();
-			totalCombinadoPorTienda.put(tienda.getIdTienda(), combinado);
 			for (VentaIntegralCategoria categoria : categorias) {
-				double cantTienda = cantidadesTienda.getOrDefault(categoria.getIdCategoria(), 0.0);
-				double cantCC = cantidadesCC.getOrDefault(categoria.getIdCategoria(), 0.0);
-				combinado.put(categoria.getIdCategoria(), cantTienda + cantCC);
+				double cantTienda = cantidadesCategoria.getOrDefault(categoria.getIdCategoria(), 0.0);
 				VentaIntegralResumenDAO.insertarOActualizarResumen(new VentaIntegralResumenSemana(
-						tienda.getIdTienda(), categoria.getIdCategoria(), semanaInicio, semanaFin, cantTienda,
-						cantCC));
+						tienda.getIdTienda(), categoria.getIdCategoria(), semanaInicio, semanaFin, cantTienda, 0.0));
 			}
 		}
 
-		this.enviarCorreo(semanaInicio, semanaFin, categorias, tiendas, nombrePorTienda, totalCombinadoPorTienda);
+		// Contact Center: un unico numero por categoria para toda la red.
+		final Map<Integer, Double> cantidadCCPorCategoria = new HashMap<>();
+		for (VentaIntegralCategoria categoria : categorias) {
+			double totalCC = VentaIntegralResumenDAO.consultarTotalContactCenter(categoria, semanaInicio, semanaFin);
+			cantidadCCPorCategoria.put(categoria.getIdCategoria(), totalCC);
+			VentaIntegralResumenDAO.insertarOActualizarResumen(new VentaIntegralResumenSemana(
+					VentaIntegralResumenDAO.IDTIENDA_CONTACTCENTER, categoria.getIdCategoria(), semanaInicio,
+					semanaFin, 0.0, totalCC));
+		}
+
+		this.enviarCorreo(semanaInicio, semanaFin, categorias, tiendas, nombrePorTienda, cantidadTiendaPorTienda,
+				cantidadCCPorCategoria);
 	}
 
 	// =======================================================================
@@ -179,21 +175,60 @@ public class ServicioSemanalVentaIntegral {
 
 	private void enviarCorreo(final String semanaInicio, final String semanaFin,
 			final ArrayList<VentaIntegralCategoria> categorias, final ArrayList<Tienda> tiendas,
-			final Map<Integer, String> nombrePorTienda, final Map<Integer, Map<Integer, Double>> totales) {
+			final Map<Integer, String> nombrePorTienda, final Map<Integer, Map<Integer, Double>> cantidadPorTienda,
+			final Map<Integer, Double> cantidadCCPorCategoria) {
 
-		// Promedio de la red por categoria, para el indice tienda/promedio.
+		// Promedio de la red por categoria, SOLO con tiendas reales (Contact
+		// Center no es una tienda, no debe mezclarse en el promedio ni en el CV).
 		final Map<Integer, Double> promedioPorCategoria = new HashMap<>();
 		for (VentaIntegralCategoria categoria : categorias) {
 			double suma = 0;
-			int conteo = 0;
 			for (Tienda tienda : tiendas) {
-				Double valor = totales.get(tienda.getIdTienda()).get(categoria.getIdCategoria());
-				if (valor != null) {
-					suma += valor;
-					conteo++;
+				suma += cantidadPorTienda.get(tienda.getIdTienda()).getOrDefault(categoria.getIdCategoria(), 0.0);
+			}
+			promedioPorCategoria.put(categoria.getIdCategoria(), tiendas.isEmpty() ? 0.0 : (suma / tiendas.size()));
+		}
+
+		// Total y CV por tienda, y cuales tiendas dieron todo en cero -alerta para
+		// evaluar un reproceso, no una certeza de fallo: puede ser legitimo.
+		final Map<Integer, Double> totalPorTienda = new HashMap<>();
+		final Map<Integer, Double> cvPorTienda = new HashMap<>();
+		final ArrayList<Tienda> tiendasSinDatos = new ArrayList<>();
+		for (Tienda tienda : tiendas) {
+			final Map<Integer, Double> cantidadesTienda = cantidadPorTienda.get(tienda.getIdTienda());
+			double total = 0;
+			final ArrayList<Double> indices = new ArrayList<>();
+			for (VentaIntegralCategoria categoria : categorias) {
+				double cantidad = cantidadesTienda.getOrDefault(categoria.getIdCategoria(), 0.0);
+				total += cantidad;
+				double promedioRed = promedioPorCategoria.getOrDefault(categoria.getIdCategoria(), 0.0);
+				if (promedioRed > 0) {
+					indices.add(cantidad / promedioRed);
 				}
 			}
-			promedioPorCategoria.put(categoria.getIdCategoria(), conteo > 0 ? (suma / conteo) : 0.0);
+			totalPorTienda.put(tienda.getIdTienda(), total);
+			cvPorTienda.put(tienda.getIdTienda(), this.coeficienteVariacion(indices));
+			if (total == 0) {
+				tiendasSinDatos.add(tienda);
+			}
+		}
+
+		// Ranking: de mayor a menor total, para ver de un vistazo la mejor
+		// gestion integral de las tiendas.
+		final ArrayList<Tienda> tiendasOrdenadas = new ArrayList<>(tiendas);
+		Collections.sort(tiendasOrdenadas, new Comparator<Tienda>() {
+			public int compare(Tienda a, Tienda b) {
+				return (Double.compare(totalPorTienda.get(b.getIdTienda()), totalPorTienda.get(a.getIdTienda())));
+			}
+		});
+
+		double totalCC = 0;
+		for (Double valor : cantidadCCPorCategoria.values()) {
+			totalCC += valor;
+		}
+		double totalRed = totalCC;
+		for (Double valor : totalPorTienda.values()) {
+			totalRed += valor;
 		}
 
 		final DecimalFormat numero = new DecimalFormat("###,##0.##");
@@ -203,7 +238,21 @@ public class ServicioSemanalVentaIntegral {
 				.append("font-size:15px;font-weight:bold\">CIERRE SEMANAL VENTA INTEGRAL</div>");
 		html.append("<p style=\"margin:8px 0 16px 0;color:#555\">Periodo del <b>").append(semanaInicio)
 				.append("</b> al <b>").append(semanaFin)
-				.append("</b>. Solo venta fisica (tienda + contact center), no incluye app / tienda virtual.</p>");
+				.append("</b>. Solo venta fisica (tienda + contact center), no incluye app / tienda virtual. "
+						+ "Las tiendas van de mayor a menor Total, para medir la mejor gestion integral.</p>");
+
+		if (!tiendasSinDatos.isEmpty()) {
+			html.append("<div style=\"background:#FFF6DC;border:1px solid ").append(AMARILLO)
+					.append(";border-radius:4px;padding:8px 12px;margin-bottom:14px\">")
+					.append("<b style=\"color:").append(AMARILLO).append("\">Aparentemente sin datos esta semana:</b> ");
+			for (int i = 0; i < tiendasSinDatos.size(); i++) {
+				if (i > 0) {
+					html.append(", ");
+				}
+				html.append(tiendasSinDatos.get(i).getNombreTienda());
+			}
+			html.append(". Dieron cero en todas las categorias; revisar si conviene un reproceso.</div>");
+		}
 
 		html.append("<table cellspacing=\"0\" cellpadding=\"6\" style=\"border-collapse:collapse;"
 				+ "border:1px solid " + GRIS_BORDE + "\">");
@@ -213,32 +262,66 @@ public class ServicioSemanalVentaIntegral {
 					.append("text-align:right\">").append(categoria.getNombre()).append("</td>");
 		}
 		html.append("<td style=\"background:").append(AZUL).append(";color:#FFFFFF;font-weight:bold;")
+				.append("text-align:right\">Total</td>");
+		html.append("<td style=\"background:").append(AZUL).append(";color:#FFFFFF;font-weight:bold;")
 				.append("text-align:right\">CV</td></tr>");
 
-		for (Tienda tienda : tiendas) {
-			final Map<Integer, Double> cantidadesTienda = totales.get(tienda.getIdTienda());
-			final ArrayList<Double> indices = new ArrayList<>();
+		for (Tienda tienda : tiendasOrdenadas) {
+			final Map<Integer, Double> cantidadesTienda = cantidadPorTienda.get(tienda.getIdTienda());
 			html.append("<tr><td style=\"border-top:1px solid ").append(GRIS_BORDE).append("\">")
 					.append(tienda.getNombreTienda()).append("</td>");
 			for (VentaIntegralCategoria categoria : categorias) {
 				double cantidad = cantidadesTienda.getOrDefault(categoria.getIdCategoria(), 0.0);
-				double promedioRed = promedioPorCategoria.getOrDefault(categoria.getIdCategoria(), 0.0);
-				if (promedioRed > 0) {
-					indices.add(cantidad / promedioRed);
-				}
 				html.append("<td style=\"border-top:1px solid ").append(GRIS_BORDE).append(";text-align:right\">")
 						.append(numero.format(cantidad)).append("</td>");
 			}
-			final double cv = this.coeficienteVariacion(indices);
+			final double cv = cvPorTienda.get(tienda.getIdTienda());
 			final String color = cv > 0.35 ? ROJO : (cv > 0.15 ? AMARILLO : VERDE);
+			html.append("<td style=\"border-top:1px solid ").append(GRIS_BORDE)
+					.append(";text-align:right;font-weight:bold\">")
+					.append(numero.format(totalPorTienda.get(tienda.getIdTienda()))).append("</td>");
 			html.append("<td style=\"border-top:1px solid ").append(GRIS_BORDE).append(";text-align:right;")
 					.append("color:").append(color).append(";font-weight:bold\">")
-					.append(indices.isEmpty() ? "&mdash;" : new DecimalFormat("0.000").format(cv)).append("</td></tr>");
+					.append(totalPorTienda.get(tienda.getIdTienda()) == 0 ? "&mdash;"
+							: new DecimalFormat("0.000").format(cv))
+					.append("</td></tr>");
 		}
+
+		// Contact Center: fila aparte, sin CV -no es una tienda, no tiene sentido
+		// compararla contra el promedio de tiendas-.
+		html.append("<tr><td style=\"border-top:2px solid ").append(AZUL).append(";font-style:italic\">")
+				.append("Contact Center</td>");
+		for (VentaIntegralCategoria categoria : categorias) {
+			html.append("<td style=\"border-top:2px solid ").append(AZUL).append(";text-align:right;font-style:italic\">")
+					.append(numero.format(cantidadCCPorCategoria.getOrDefault(categoria.getIdCategoria(), 0.0)))
+					.append("</td>");
+		}
+		html.append("<td style=\"border-top:2px solid ").append(AZUL)
+				.append(";text-align:right;font-weight:bold;font-style:italic\">").append(numero.format(totalCC))
+				.append("</td><td style=\"border-top:2px solid ").append(AZUL).append("\">&nbsp;</td></tr>");
+
+		// Total de la red: tiendas + Contact Center.
+		html.append("<tr><td style=\"border-top:1px solid ").append(GRIS_BORDE).append(";background:")
+				.append(GRIS_FONDO).append(";font-weight:bold\">TOTAL RED</td>");
+		for (VentaIntegralCategoria categoria : categorias) {
+			double totalCategoria = cantidadCCPorCategoria.getOrDefault(categoria.getIdCategoria(), 0.0);
+			for (Tienda tienda : tiendas) {
+				totalCategoria += cantidadPorTienda.get(tienda.getIdTienda()).getOrDefault(categoria.getIdCategoria(), 0.0);
+			}
+			html.append("<td style=\"border-top:1px solid ").append(GRIS_BORDE).append(";background:")
+					.append(GRIS_FONDO).append(";text-align:right;font-weight:bold\">").append(numero.format(totalCategoria))
+					.append("</td>");
+		}
+		html.append("<td style=\"border-top:1px solid ").append(GRIS_BORDE).append(";background:").append(GRIS_FONDO)
+				.append(";text-align:right;font-weight:bold\">").append(numero.format(totalRed)).append("</td>")
+				.append("<td style=\"border-top:1px solid ").append(GRIS_BORDE).append(";background:")
+				.append(GRIS_FONDO).append("\">&nbsp;</td></tr>");
+
 		html.append("</table>");
 		html.append("<p style=\"margin:10px 0 0 0;color:#777;font-size:11px\">CV = coeficiente de variacion de los "
-				+ "indices (cantidad de la tienda / promedio de la red) entre las categorias de la temporada. Bajo "
-				+ "(verde) es desempeno parejo entre categorias; alto (rojo) esta concentrado en pocas.</p>");
+				+ "indices (cantidad de la tienda / promedio de la red, solo tiendas) entre las categorias de la "
+				+ "temporada. Bajo (verde) es desempeno parejo entre categorias; alto (rojo) esta concentrado en "
+				+ "pocas. Contact Center no se compara por CV: es un canal, no una tienda.</p>");
 		html.append("</div>");
 
 		final Correo correo = new Correo();
