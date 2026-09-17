@@ -55,21 +55,79 @@ public class ReporteVarianzaSemanal {
 	private static final String LISTA_CORREO = "REPORTEDESECHOSDIDI";
 
 	public static void main(final String[] args) {
-		final SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
-		String desde;
-		String hasta;
-
+		//Dos fechas por argumento ganan sobre todo lo demas. Sirve para sacar
+		//una semana puntual sin tener que tocar un parametro que comparten
+		//todos los reprocesos.
 		if (args != null && args.length >= 2) {
-			desde = args[0];
-			hasta = args[1];
-		} else {
-			//Hasta AYER, no hasta hoy: lo de hoy todavia no se ha replicado.
-			final Calendar cal = Calendar.getInstance();
-			cal.add(Calendar.DAY_OF_YEAR, -1);
-			hasta = formato.format(cal.getTime());
-			cal.add(Calendar.DAY_OF_YEAR, -(DIAS - 1));
-			desde = formato.format(cal.getTime());
+			ejecutar(args[0], args[1]);
+			return;
 		}
+		final String[] rango = rangoParaCorridaDel(Calendar.getInstance());
+		ejecutar(rango[0], rango[1]);
+	}
+
+	/**
+	 * Vuelve a sacar el reporte de la semana que corresponde a FECHAREPROCESO.
+	 *
+	 * FECHAREPROCESO es el dia en que el proceso DEBIO correr, no el ultimo dia
+	 * de la semana que se quiere. Es la misma lectura que tienen los otros
+	 * reprocesos -en Rappi ese parametro es el dia del corte- y hace que
+	 * reprocesar sea literalmente "hagalo como si hoy fuera ese domingo".
+	 *
+	 * OJO: FECHAREPROCESO es uno solo y lo comparten todos los reprocesos. Si
+	 * alguien lo movio para reprocesar otra cosa, esto sale con esa fecha. Por
+	 * eso el rango que se resolvio se imprime antes de hacer nada, y por eso el
+	 * proceso normal acepta las dos fechas por argumento.
+	 */
+	public static void reprocesar() {
+		final String fecha = CapaDAOSer.ParametrosDAO.retornarValorAlfanumerico("FECHAREPROCESO");
+		if (fecha == null || fecha.trim().length() == 0) {
+			System.out.println("El parametro FECHAREPROCESO esta vacio. No se hace nada.");
+			return;
+		}
+		final Calendar cal = Calendar.getInstance();
+		try {
+			cal.setTime(formato().parse(fecha.trim()));
+		} catch (final Exception e) {
+			System.out.println("FECHAREPROCESO no se entiende: '" + fecha + "'. Se espera yyyy-MM-dd.");
+			return;
+		}
+		System.out.println("Reproceso con FECHAREPROCESO = " + fecha.trim());
+		final String[] rango = rangoParaCorridaDel(cal);
+		ejecutar(rango[0], rango[1]);
+	}
+
+	/**
+	 * El rango de siete dias que le toca a una corrida hecha ese dia.
+	 *
+	 * Termina el dia ANTERIOR al de la corrida, no el mismo dia: la replica de
+	 * varianza corre a las 23:50 con el dia anterior, asi que el dia en curso
+	 * no tiene datos. Incluirlo meteria un dia vacio que baja los totales y
+	 * hace ver la semana mejor de lo que fue.
+	 *
+	 * Es publico para poder probarlo: es la clase de cuenta que se ve obvia y
+	 * sale corrida por un dia.
+	 *
+	 * @return {desde, hasta} en yyyy-MM-dd
+	 */
+	public static String[] rangoParaCorridaDel(final Calendar diaDeCorrida) {
+		final Calendar hasta = (Calendar) diaDeCorrida.clone();
+		hasta.add(Calendar.DAY_OF_YEAR, -1);
+		final Calendar desde = (Calendar) hasta.clone();
+		desde.add(Calendar.DAY_OF_YEAR, -(DIAS - 1));
+		return (new String[] {formato().format(desde.getTime()), formato().format(hasta.getTime())});
+	}
+
+	/** SimpleDateFormat no se puede compartir entre hilos, asi que se crea cada vez. */
+	private static SimpleDateFormat formato() {
+		return (new SimpleDateFormat("yyyy-MM-dd"));
+	}
+
+	/**
+	 * Arma y manda el reporte de un rango. Es el unico sitio donde esta la
+	 * logica: la corrida de los domingos y el reproceso entran por aca.
+	 */
+	public static void ejecutar(final String desde, final String hasta) {
 		System.out.println("Varianza semanal del " + desde + " al " + hasta);
 
 		final ArrayList<VarianzaSemanalDAO.Linea> lineas =
