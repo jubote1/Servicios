@@ -8,3 +8,7 @@ Servicios/.gradle/
 # 274 MB y GitHub rechaza cualquier archivo de mas de 100 MB, lo que hacia fallar
 # el push con "pre-receive hook declined".
 Servicios/libs/*.jar
+
+# Salidas de compilacion sueltas en el arbol de fuentes: en ProyectoPizzaAmericana
+# se colaron seis .class por un "git add -A" sobre src, y hubo que sacarlos.
+*.class
