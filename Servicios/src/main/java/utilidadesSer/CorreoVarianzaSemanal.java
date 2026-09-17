@@ -6,11 +6,11 @@ import java.util.ArrayList;
  * El correo semanal de varianza de inventario.
  *
  * Lo que responde, en este orden: cuanta plata se perdio en la semana, en que
- * tienda, y en cual de los insumos caros. Esa es la lectura que sirve un
+ * tienda, y en cual de los insumos costosos. Esa es la lectura que sirve un
  * domingo; el resto es respaldo.
  *
- * Por que los caros van al detalle y las carnes acumuladas: medido sobre 30
- * dias, los caros son el 64% del faltante y el queso solo es la mitad de todo.
+ * Por que los costosos van al detalle y las carnes acumuladas: medido sobre 30
+ * dias, los costosos son el 64% del faltante y el queso solo es la mitad de todo.
  * Poner los 120 insumos al detalle esconderia eso en tres paginas de ceros.
  *
  * Se muestra tambien una linea de "resto de insumos" que nadie pidio, y es a
@@ -41,10 +41,10 @@ public final class CorreoVarianzaSemanal {
 	// Lo que recibe
 	// =======================================================================
 
-	/** Una tienda con su detalle de caros y sus acumulados. */
+	/** Una tienda con su detalle de costosos y sus acumulados. */
 	public static class FilaTienda {
 		public String tienda = "";
-		/** Un caro: nombre, unidad, cantidad, neto. */
+		/** Un costoso: nombre, unidad, cantidad, neto. */
 		public ArrayList<Object[]> caros = new ArrayList<Object[]>();
 		public int carosEnCero = 0;
 		public double netoCaros;
@@ -145,7 +145,7 @@ public final class CorreoVarianzaSemanal {
 			.append("style=\"font-size:13px;color:").append(TINTA).append(";\">");
 		h.append("<tr>");
 		celdaTitulo(h, "Tienda", "left");
-		celdaTitulo(h, "Caros", "right");
+		celdaTitulo(h, "Costosos", "right");
 		celdaTitulo(h, "Carnes", "right");
 		celdaTitulo(h, "Resto", "right");
 		celdaTitulo(h, "Total", "right");
@@ -173,11 +173,11 @@ public final class CorreoVarianzaSemanal {
 		cerrarPanel(h);
 	}
 
-	/** Por cada tienda, los caros uno por uno y despues los acumulados. */
+	/** Por cada tienda, los costosos uno por uno y despues los acumulados. */
 	private static void detallePorTienda(final StringBuilder h, final ArrayList<FilaTienda> filas) {
 		for (int i = 0; i < filas.size(); i++) {
 			final FilaTienda f = filas.get(i);
-			abrirPanel(h, f.tienda, "Detalle de los insumos caros. Carnes y resto van sumados.");
+			abrirPanel(h, f.tienda, "Detalle de los insumos costosos. Carnes y resto van sumados.");
 
 			h.append("<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" ")
 				.append("style=\"font-size:13px;color:").append(TINTA).append(";\">");
@@ -200,16 +200,16 @@ public final class CorreoVarianzaSemanal {
 			}
 			if (f.caros.isEmpty()) {
 				h.append("<tr><td colspan=\"4\" style=\"padding:8px 6px;color:").append(TINTA_2)
-					.append(";font-size:12.5px;\">Ningun insumo caro se movio esta semana.</td></tr>");
+					.append(";font-size:12.5px;\">Ningun insumo costoso se movio esta semana.</td></tr>");
 			}
 			if (f.carosEnCero > 0) {
 				h.append("<tr><td colspan=\"4\" style=\"padding:4px 6px;color:").append(TINTA_2)
 					.append(";font-size:11.5px;\">(").append(f.carosEnCero)
-					.append(" insumo(s) caro(s) quedaron en cero y no se listan)</td></tr>");
+					.append(" insumo(s) costoso(s) quedaron en cero y no se listan)</td></tr>");
 			}
 
 			h.append("<tr style=\"background-color:#F7F9FC;\">");
-			celda(h, "Subtotal caros", "left", TINTA, true);
+			celda(h, "Subtotal costosos", "left", TINTA, true);
 			celda(h, "", "right", TINTA, false);
 			celda(h, "", "left", TINTA, false);
 			celda(h, pesos(f.netoCaros), "right", color(f.netoCaros), true);

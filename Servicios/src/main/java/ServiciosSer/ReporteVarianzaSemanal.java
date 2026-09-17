@@ -27,9 +27,9 @@ import utilidadesSer.CorreoVarianzaSemanal;
  *
  * COMO ESTA ARMADO EL CORREO
  *
- * Los insumos caros -queso, pina, las masas y la pasta- van al detalle, uno por
+ * Los insumos costosos -queso, pina, las masas y la pasta- van al detalle, uno por
  * uno. Las carnes van acumuladas en una linea, y el resto en otra. No es
- * capricho: los caros son el 64% del faltante y el queso solo es la mitad de
+ * capricho: los costosos son el 64% del faltante y el queso solo es la mitad de
  * todo, asi que listar los 120 insumos esconderia eso entre ceros.
  *
  * Los grupos salen de insumo.grupo_varianza, que se administra desde la
@@ -128,7 +128,7 @@ public class ReporteVarianzaSemanal {
 
 			if ("CAROS".equals(l.grupo)) {
 				fila.netoCaros = fila.netoCaros + l.neto;
-				//Un caro que no se movio no se lista. Son quince, y en una
+				//Un costoso que no se movio no se lista. Son quince, y en una
 				//semana normal la mitad queda en cero: listarlos todos por once
 				//tiendas llena el correo de filas que no dicen nada.
 				if (l.cantidad == 0 && Math.round(l.neto) == 0) {
@@ -144,7 +144,7 @@ public class ReporteVarianzaSemanal {
 			}
 		}
 
-		//Dentro de cada tienda, el caro que mas plata se llevo primero.
+		//Dentro de cada tienda, el costoso que mas plata se llevo primero.
 		final ArrayList<CorreoVarianzaSemanal.FilaTienda> filas =
 				new ArrayList<CorreoVarianzaSemanal.FilaTienda>(porTienda.values());
 		for (int i = 0; i < filas.size(); i++) {
