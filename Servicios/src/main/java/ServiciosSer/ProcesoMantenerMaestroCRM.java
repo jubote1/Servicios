@@ -70,6 +70,13 @@ public class ProcesoMantenerMaestroCRM {
 				cargarEnTablaDePaso(con, tienda.getIdTienda(), clientes);
 				final int nuevas = actualizarDesdeTienda(con, tienda.getIdTienda());
 				System.out.println("  " + clientes.size() + " clientes leidos, " + nuevas + " personas nuevas");
+
+				//El vinculo se devuelve a la tienda. Va DESPUES de resolver, para
+				//que baje ya con las personas nuevas de esta misma corrida.
+				final int propagados = propagarIdPersona(con, tienda.getIdTienda(), tienda.getHostBD());
+				if (propagados >= 0) {
+					System.out.println("  idpersona propagado a " + propagados + " clientes");
+				}
 				tiendasLeidas++;
 			}
 
@@ -229,6 +236,136 @@ public class ProcesoMantenerMaestroCRM {
 
 		stm.close();
 		return (contarPersonas(con) - antes);
+	}
+
+	/**
+	 * Devuelve a la tienda el idpersona de cada uno de sus clientes.
+	 *
+	 * POR QUE EL VINCULO TIENE QUE VIVIR TAMBIEN EN LA TIENDA
+	 *
+	 * Hasta ahora vivia solo en el central, en crm.stage_cliente_tienda. Con la
+	 * columna en la tienda, la tienda sabe a que persona corresponde cada
+	 * cliente: un cambio hecho alla sube sabiendo a quien pertenece, y el
+	 * vinculo sobrevive a un cambio de celular, que es lo que hoy rompe la
+	 * identificacion.
+	 *
+	 * SOLO SE ESCRIBE LO QUE CAMBIA
+	 *
+	 * Se lee primero lo que la tienda YA tiene y se comparan en memoria. Son
+	 * unas sesenta mil filas por tienda: cabe de sobra, y evita mandar 650 mil
+	 * UPDATE cada noche para reescribir lo mismo. En la primera corrida bajan
+	 * todos; despues solo los nuevos y los que cambiaron de persona.
+	 *
+	 * SI LA COLUMNA NO EXISTE, NO PASA NADA
+	 *
+	 * La tienda puede ir atrasada con la migracion 2026_09_19_02. En ese caso se
+	 * avisa y se sigue: el maestro del central ya quedo bien, que es lo que no
+	 * se puede perder. Reventar aqui dejaria a las tiendas siguientes sin
+	 * procesar por una columna que falta en esta.
+	 *
+	 * @return cuantos clientes se actualizaron, o -1 si la tienda no esta lista
+	 */
+	private static int propagarIdPersona(final Connection con, final int idTienda, final String hostBD) {
+		Connection cnTienda = null;
+		try {
+			cnTienda = new capaConexionPOS.ConexionBaseDatos().obtenerConexionBDTiendaRemota(hostBD);
+			if (cnTienda == null) {
+				System.out.println("  no se pudo conectar para propagar el idpersona.");
+				return (-1);
+			}
+			if (!tieneColumnaIdPersona(cnTienda)) {
+				System.out.println("  la tienda no tiene la columna idpersona todavia."
+						+ " Corra sql/2026_09_19_02_idpersona_en_cliente.sql. Se sigue sin propagar.");
+				return (-1);
+			}
+
+			//Lo que la tienda ya tiene.
+			final java.util.HashMap<Integer, Long> enTienda = new java.util.HashMap<Integer, Long>();
+			final Statement stLee = cnTienda.createStatement();
+			final ResultSet rsLee = stLee.executeQuery("SELECT idcliente, idpersona FROM cliente");
+			while (rsLee.next()) {
+				final long idp = rsLee.getLong("idpersona");
+				enTienda.put(Integer.valueOf(rsLee.getInt("idcliente")),
+						rsLee.wasNull() ? null : Long.valueOf(idp));
+			}
+			rsLee.close();
+			stLee.close();
+
+			//Lo que el maestro dice que deberia tener.
+			final PreparedStatement psMaestro = con.prepareStatement(
+					"SELECT idcliente, idpersona FROM crm.stage_cliente_tienda"
+					+ " WHERE idtienda = ? AND idpersona IS NOT NULL");
+			psMaestro.setInt(1, idTienda);
+			final ResultSet rsMaestro = psMaestro.executeQuery();
+
+			final PreparedStatement psEscribe = cnTienda.prepareStatement(
+					"UPDATE cliente SET idpersona = ? WHERE idcliente = ?");
+			int cambios = 0;
+			int enLote = 0;
+			while (rsMaestro.next()) {
+				final int idCliente = rsMaestro.getInt("idcliente");
+				final long idPersona = rsMaestro.getLong("idpersona");
+				final Long actual = enTienda.get(Integer.valueOf(idCliente));
+				//Si ya esta igual no se toca: reescribir lo mismo solo gasta
+				//tiempo y mueve la fecha de modificacion de la fila.
+				if (actual != null && actual.longValue() == idPersona) {
+					continue;
+				}
+				//Y si el cliente no existe en la tienda tampoco: seria una fila
+				//borrada alla, y el UPDATE no haria nada.
+				if (!enTienda.containsKey(Integer.valueOf(idCliente))) {
+					continue;
+				}
+				psEscribe.setLong(1, idPersona);
+				psEscribe.setInt(2, idCliente);
+				psEscribe.addBatch();
+				cambios++;
+				enLote++;
+				if (enLote >= LOTE) {
+					psEscribe.executeBatch();
+					enLote = 0;
+				}
+			}
+			if (enLote > 0) {
+				psEscribe.executeBatch();
+			}
+			psEscribe.close();
+			rsMaestro.close();
+			psMaestro.close();
+			return (cambios);
+		} catch (final Exception e) {
+			System.out.println("  fallo la propagacion del idpersona: " + e.toString());
+			return (-1);
+		} finally {
+			try {
+				if (cnTienda != null) {
+					cnTienda.close();
+				}
+			} catch (final Exception e) {
+			}
+		}
+	}
+
+	/** Si la tienda ya corrio la migracion que agrega la columna. */
+	private static boolean tieneColumnaIdPersona(final Connection cnTienda) {
+		try {
+			final Statement stm = cnTienda.createStatement();
+			final ResultSet rs = stm.executeQuery(
+					"SELECT COUNT(*) AS hay FROM information_schema.COLUMNS"
+					+ " WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cliente'"
+					+ "   AND COLUMN_NAME = 'idpersona'");
+			boolean hay = false;
+			if (rs.next()) {
+				hay = (rs.getInt("hay") > 0);
+			}
+			rs.close();
+			stm.close();
+			return (hay);
+		} catch (final Exception e) {
+			//Ante la duda, no se escribe.
+			System.out.println("  no se pudo verificar la columna idpersona: " + e.toString());
+			return (false);
+		}
 	}
 
 	private static int contarPersonas(final Connection con) throws Exception {
