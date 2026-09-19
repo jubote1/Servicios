@@ -40,12 +40,45 @@ public class ReporteIdentificacionMostrador {
 	/** Un cajero con menos pedidos que esto no se lista: no dice nada. */
 	private static final int MINIMO_PEDIDOS_CAJERO = 10;
 
-	public static void main(final String[] args) {
+	/**
+	 * El rango de siete dias que le toca a una corrida hecha ese dia.
+	 *
+	 * Termina el dia ANTERIOR al de la corrida, y son siete dias exactos.
+	 *
+	 * Antes hacia "hasta = hoy, desde = hoy - 7", que tenia dos problemas: eran
+	 * OCHO dias contando los dos extremos, y el ultimo era el dia en curso. Si
+	 * el proceso corre un domingo de madrugada, ese domingo no ha vendido nada
+	 * todavia: entraba un dia casi vacio que bajaba el porcentaje y hacia ver la
+	 * semana peor de lo que fue. Y como el rango se corria un dia cada vez, dos
+	 * semanas seguidas no eran comparables.
+	 *
+	 * Es la misma cuenta de ReporteVarianzaSemanal.rangoParaCorridaDel, a
+	 * proposito: dos reportes semanales que cubran semanas distintas se leen uno
+	 * contra otro y no cuadran.
+	 *
+	 * Es publico para poder probarlo: es la clase de cuenta que se ve obvia y
+	 * sale corrida por un dia.
+	 *
+	 * @return {desde, hasta} en yyyy-MM-dd
+	 */
+	public static String[] rangoParaCorridaDel(final Calendar diaDeCorrida) {
 		final SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
-		final Calendar cal = Calendar.getInstance();
-		final String hasta = formato.format(cal.getTime());
-		cal.add(Calendar.DAY_OF_YEAR, -DIAS);
-		final String desde = formato.format(cal.getTime());
+		final Calendar hasta = (Calendar) diaDeCorrida.clone();
+		hasta.add(Calendar.DAY_OF_YEAR, -1);
+		final Calendar desde = (Calendar) hasta.clone();
+		desde.add(Calendar.DAY_OF_YEAR, -(DIAS - 1));
+		return (new String[] {formato.format(desde.getTime()), formato.format(hasta.getTime())});
+	}
+
+	public static void main(final String[] args) {
+		//Se aceptan las dos fechas por argumento para poder repetir una semana
+		//sin tocar parametros, igual que el reporte de varianza.
+		final String[] rango = (args != null && args.length >= 2)
+				? new String[] {args[0], args[1]}
+				: rangoParaCorridaDel(Calendar.getInstance());
+		final String desde = rango[0];
+		final String hasta = rango[1];
+		System.out.println("Identificacion en mostrador del " + desde + " al " + hasta);
 
 		final ArrayList<CorreoIdentificacion.FilaTienda> filas =
 				new ArrayList<CorreoIdentificacion.FilaTienda>();
