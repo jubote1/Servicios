@@ -40,10 +40,28 @@ public final class CorreoIdentificacion {
 		public String tienda = "";
 		public int pedidos = 0;
 		public int identificados = 0;
+
+		/**
+		 * De los no identificados, a cuantos SI se les pregunto y el cliente no
+		 * dio el dato. Es lo que separa dos problemas que hasta ahora se veian
+		 * iguales: el cliente que se niega -hay que darle una razon- y el pedido
+		 * en el que nadie pregunto -es de operacion-.
+		 *
+		 * Queda en cero donde todavia no se prendio PEDIRCLIENTEPV, que es lo
+		 * correcto: ahi nadie esta preguntando.
+		 */
+		public int seNegaron = 0;
+
 		public ArrayList<String[]> cajeros = new ArrayList<String[]>();
 
 		public int porcentaje() {
 			return (this.pedidos == 0 ? 0 : (this.identificados * 100) / this.pedidos);
+		}
+
+		/** Ni identificado ni preguntado. */
+		public int sinPreguntar() {
+			final int resto = this.pedidos - this.identificados - this.seNegaron;
+			return (resto > 0 ? resto : 0);
 		}
 	}
 
@@ -91,8 +109,10 @@ public final class CorreoIdentificacion {
 		m.append("<tr><td style=\"padding:14px 22px 18px;\">");
 		m.append("<table cellpadding='6' cellspacing='0' border='0'")
 				.append(" style=\"border-collapse:collapse;width:100%;font-size:13px;\">");
+		//Las dos ultimas columnas son el aporte del paso 3: parten el "no
+		//identificado" en el que se nego y el que nadie pregunto.
 		m.append("<tr>").append(th("Tienda")).append(th("Pedidos")).append(th("Identificados"))
-				.append(th("%")).append("</tr>");
+				.append(th("%")).append(th("Se nego")).append(th("No se pregunto")).append("</tr>");
 		for (int i = 0; i < filas.size(); i++) {
 			final FilaTienda f = filas.get(i);
 			m.append("<tr>")
@@ -100,6 +120,8 @@ public final class CorreoIdentificacion {
 					.append(td(Integer.toString(f.pedidos), TINTA, "right"))
 					.append(td(Integer.toString(f.identificados), TINTA, "right"))
 					.append(td("<b>" + f.porcentaje() + "%</b>", color(f.porcentaje()), "right"))
+					.append(td(Integer.toString(f.seNegaron), TINTA_2, "right"))
+					.append(td(Integer.toString(f.sinPreguntar()), TINTA_2, "right"))
 					.append("</tr>");
 			for (int j = 0; j < f.cajeros.size(); j++) {
 				final String[] c = f.cajeros.get(j);
@@ -108,6 +130,8 @@ public final class CorreoIdentificacion {
 						.append(td(c[1], TINTA_2, "right"))
 						.append(td(c[2], TINTA_2, "right"))
 						.append(td(c[3] + "%", color(entero(c[3])), "right"))
+						.append(td(c.length > 4 ? c[4] : "0", TINTA_2, "right"))
+						.append(td(c.length > 5 ? c[5] : "0", TINTA_2, "right"))
 						.append("</tr>");
 			}
 		}
@@ -118,6 +142,12 @@ public final class CorreoIdentificacion {
 				.append("Se cuenta identificado cuando el pedido quedo con un cliente que tiene celular. ")
 				.append("Para comparar: en <b>Para Llevar</b> se identifica alrededor del 90% en todas las tiendas, ")
 				.append("asi que el sistema si da: es cuestion de preguntarlo.")
+				.append("<br><br>")
+				.append("<b>Se nego</b> son los pedidos en que la caja SI pregunto y el cliente no dio el dato. ")
+				.append("<b>No se pregunto</b> es el resto. Son dos problemas distintos: el primero se ataca ")
+				.append("dandole una razon al cliente, el segundo con la operacion de la caja. ")
+				.append("En las tiendas donde todavia no se prendio el parametro PEDIRCLIENTEPV, ")
+				.append("\"Se nego\" sale en cero porque alli nadie esta preguntando.")
 				.append("</td></tr>");
 
 		m.append("<tr><td style=\"padding:14px 22px 20px;border-top:1px solid ").append(LINEA)

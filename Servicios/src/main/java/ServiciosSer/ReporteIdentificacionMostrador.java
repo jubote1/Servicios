@@ -70,11 +70,13 @@ public class ReporteIdentificacionMostrador {
 				final capaDAOPOS.PedidoDAO.IdentificacionCajero c = cajeros.get(j);
 				fila.pedidos = fila.pedidos + c.pedidos;
 				fila.identificados = fila.identificados + c.identificados;
+				fila.seNegaron = fila.seNegaron + c.preguntadosSinDar;
 				//El detalle por cajero solo para los que tienen volumen: con tres
 				//pedidos un porcentaje no significa nada y estorba en la lista.
 				if (c.pedidos >= MINIMO_PEDIDOS_CAJERO) {
 					fila.cajeros.add(new String[] {c.cajero, Integer.toString(c.pedidos),
-							Integer.toString(c.identificados), Integer.toString(c.porcentaje())});
+							Integer.toString(c.identificados), Integer.toString(c.porcentaje()),
+							Integer.toString(c.preguntadosSinDar), Integer.toString(c.sinPreguntar())});
 				}
 			}
 			filas.add(fila);
