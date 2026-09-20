@@ -77,8 +77,22 @@ public class ProcesoMantenerMaestroCRM {
 				if (propagados >= 0) {
 					System.out.println("  idpersona propagado a " + propagados + " clientes");
 				}
+
+				//Y de una vez se trae lo que el central no tiene: los pedidos de
+				//mostrador y para llevar, agregados por persona. Va despues de
+				//propagar porque agrupa por cliente.idpersona, que es lo que
+				//acaba de bajar.
+				final int conPedidos = acumularPedidosTienda(con, tienda.getIdTienda(), tienda.getHostBD());
+				if (conPedidos >= 0) {
+					System.out.println("  " + conPedidos + " personas con pedidos de mostrador");
+				}
 				tiendasLeidas++;
 			}
+
+			//3. Y con las once tiendas ya cargadas, el resumen por persona que
+			//   lee el CRM. Va al final a proposito: se arma completo o no se
+			//   cambia, no queda a medias.
+			recalcularResumen(con);
 
 			System.out.println("--- resumen ---");
 			imprimirResumen(con);
@@ -378,6 +392,138 @@ public class ProcesoMantenerMaestroCRM {
 		rs.close();
 		stm.close();
 		return (total);
+	}
+
+	/**
+	 * Sube a la tabla de paso los pedidos de mostrador y para llevar de una
+	 * tienda, ya agregados por persona.
+	 *
+	 * EL CENTRAL NO TIENE ESTOS PEDIDOS. Medido el 2026-09-20 sobre siete dias:
+	 * el central ve 4.455 de 7.486 pedidos de la cadena. El 41% -los tipos 2 y
+	 * 3- solo existe en la base de la tienda. Un CRM armado unicamente con
+	 * pizzaamericana.pedido diria que un cliente de mostrador no compra nunca,
+	 * y esa es la clase de error que no se nota: da un numero, no da un error.
+	 *
+	 * Se manda AGREGADO y no pedido por pedido: una fila por persona en vez de
+	 * decenas de miles de pedidos. Manrique, la mas grande, resuelve su
+	 * agregado en 2,6 segundos y devuelve 18 mil filas.
+	 *
+	 * Los tipos 1 -domicilio- y 4 -virtual recoger- NO se traen: esos si suben
+	 * al central, y traerlos seria contarlos dos veces. Los cuatro ids son
+	 * identicos en las once tiendas, se verifico uno por uno.
+	 *
+	 * @return cuantas personas quedaron, o -1 si la tienda no respondio
+	 */
+	private static int acumularPedidosTienda(final Connection con, final int idTienda,
+			final String hostBD) {
+		Connection cnTienda = null;
+		try {
+			cnTienda = new capaConexionPOS.ConexionBaseDatos().obtenerConexionBDTiendaRemota(hostBD);
+			if (cnTienda == null) {
+				System.out.println("  no se pudo conectar para leer los pedidos de mostrador.");
+				return (-1);
+			}
+			if (!tieneColumnaIdPersona(cnTienda)) {
+				//Sin la columna no hay por donde agrupar. No es una falla: es
+				//una tienda a la que todavia no le corrieron el script.
+				return (-1);
+			}
+
+			final Statement stLee = cnTienda.createStatement();
+			final ResultSet rs = stLee.executeQuery(
+					"SELECT c.idpersona AS idpersona, COUNT(*) AS pedidos,"
+					+ " IFNULL(SUM(p.total_neto),0) AS valor,"
+					+ " MIN(p.fechapedido) AS primero, MAX(p.fechapedido) AS ultimo"
+					+ " FROM pedido p JOIN cliente c ON c.idcliente = p.idcliente"
+					+ " WHERE p.idtipopedido IN (2,3) AND p.idmotivoanulacion IS NULL"
+					+ " AND c.idpersona IS NOT NULL"
+					+ " GROUP BY c.idpersona");
+
+			//Se reemplaza lo de ESTA tienda y no se acumula: lo que llega es la
+			//foto completa. Borrar e insertar dentro de una transaccion evita
+			//que el recalculo alcance a ver la tienda a medio cargar.
+			con.setAutoCommit(false);
+			final PreparedStatement psBorra = con.prepareStatement(
+					"DELETE FROM crm.stage_pedido_tienda WHERE idtienda = ?");
+			psBorra.setInt(1, idTienda);
+			psBorra.executeUpdate();
+			psBorra.close();
+
+			final PreparedStatement psEscribe = con.prepareStatement(
+					"INSERT INTO crm.stage_pedido_tienda"
+					+ " (idtienda, idpersona, pedidos, valor, primer_pedido, ultimo_pedido)"
+					+ " VALUES (?, ?, ?, ?, ?, ?)");
+			int filas = 0;
+			int enLote = 0;
+			while (rs.next()) {
+				psEscribe.setInt(1, idTienda);
+				psEscribe.setLong(2, rs.getLong("idpersona"));
+				psEscribe.setInt(3, rs.getInt("pedidos"));
+				psEscribe.setDouble(4, rs.getDouble("valor"));
+				psEscribe.setDate(5, rs.getDate("primero"));
+				psEscribe.setDate(6, rs.getDate("ultimo"));
+				psEscribe.addBatch();
+				filas++;
+				enLote++;
+				if (enLote >= LOTE) {
+					psEscribe.executeBatch();
+					enLote = 0;
+				}
+			}
+			if (enLote > 0) {
+				psEscribe.executeBatch();
+			}
+			psEscribe.close();
+			rs.close();
+			stLee.close();
+			con.commit();
+			con.setAutoCommit(true);
+			return (filas);
+		} catch (final Exception e) {
+			//El rollback importa: sin el, la tienda quedaria con las filas
+			//borradas y sin las nuevas, o sea reportando cero pedidos de
+			//mostrador hasta la noche siguiente.
+			try {
+				con.rollback();
+				con.setAutoCommit(true);
+			} catch (final Exception e2) {
+			}
+			System.out.println("  fallo la carga de pedidos de mostrador: " + e.toString());
+			return (-1);
+		} finally {
+			try {
+				cnTienda.close();
+			} catch (final Exception e) {
+			}
+		}
+	}
+
+	/**
+	 * Manda recalcular el resumen por persona que lee el CRM.
+	 *
+	 * El calculo vive en el procedimiento crm.pr_recalcular_persona_resumen y
+	 * no aqui, a proposito: asi afinar la formula de un segmento o corregir un
+	 * conteo es correr un archivo .sql, y no volver a armar y desplegar el jar.
+	 * En esta casa eso pesa -el jar del maestro estuvo cuatro dias sin
+	 * actualizar y nadie lo noto-.
+	 *
+	 * Tarda algo mas de un minuto: recorre los 797 mil pedidos del central una
+	 * sola vez y de ahi saca todo lo demas.
+	 *
+	 * Si falla no se tumba la corrida: el maestro ya quedo al dia, que es lo
+	 * importante, y el resumen se puede recalcular a mano con un CALL.
+	 */
+	private static void recalcularResumen(final Connection con) {
+		try {
+			final long arranque = System.currentTimeMillis();
+			final Statement stm = con.createStatement();
+			stm.execute("CALL crm.pr_recalcular_persona_resumen()");
+			stm.close();
+			System.out.println("resumen del CRM recalculado en "
+					+ ((System.currentTimeMillis() - arranque) / 1000) + " s");
+		} catch (final Exception e) {
+			System.out.println("fallo el recalculo del resumen: " + e.toString());
+		}
 	}
 
 	private static void imprimirResumen(final Connection con) throws Exception {
