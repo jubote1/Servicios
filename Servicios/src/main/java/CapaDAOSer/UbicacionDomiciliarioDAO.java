@@ -45,7 +45,7 @@ public class UbicacionDomiciliarioDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String delete = "DELETE FROM ubicacion_domiciliario WHERE fecha < DATE_ADD(NOW(),  INTERVAL -60 DAY)"; 
+			String delete = "DELETE FROM ubicacion_domiciliario WHERE fecha < DATE_ADD(NOW(),  INTERVAL -90 DAY)";
 			logger.info(delete);
 			stm.executeUpdate(delete);
 			con1.close();

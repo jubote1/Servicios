@@ -19,7 +19,6 @@ import CapaDAOSer.PedidoPOSPMDAO;
 import CapaDAOSer.PedidoPixelDAO;
 import CapaDAOSer.TiempoPedidoDAO;
 import CapaDAOSer.TiendaDAO;
-import CapaDAOSer.UbicacionDomiciliarioDAO;
 import ConexionSer.ConexionBaseDatos;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
@@ -150,9 +149,9 @@ public class ServicioReporteEstadisticasSemanales {
 				respuestaProblema = respuestaProblema + " " + tienda.getNombreTienda();
 			}
 		}
-		//Realizamos la depuración de la tabla insertar ubicación domiciliario
-		UbicacionDomiciliarioDAO.depurarUbicacionDomiciliario();
-		
+		//La depuración de ubicacion_domiciliario ahora corre aparte, a diario,
+		//en ServicioDiarioDepuracionUbicacionDomiciliario.
+
 		//Recuperar la lista de distribución para este correo
 		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPESTADISTICASSEMANAL");
 		Date fecha = new Date();
