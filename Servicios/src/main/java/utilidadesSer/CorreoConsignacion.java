@@ -28,6 +28,13 @@ public class CorreoConsignacion {
 		return "$" + new DecimalFormat("#,##0", simbolos).format(valor);
 	}
 
+	/** Un porcentaje con coma decimal: 1.5 -> "1,5%", 2 -> "2%". */
+	public static String porcentaje(final double valor) {
+		final DecimalFormatSymbols simbolos = new DecimalFormatSymbols(Locale.US);
+		simbolos.setDecimalSeparator(',');
+		return new DecimalFormat("0.##", simbolos).format(valor) + "%";
+	}
+
 	/** Un entero con punto de miles. */
 	public static String entero(final long valor) {
 		final DecimalFormatSymbols simbolos = new DecimalFormatSymbols(Locale.US);

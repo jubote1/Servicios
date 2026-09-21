@@ -8,6 +8,7 @@ import java.util.Locale;
 
 import CapaDAOSer.ConsignacionBoldDAO;
 import CapaDAOSer.GeneralDAO;
+import CapaDAOSer.ParametrosDAO;
 import CapaDAOSer.TiendaDAO;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
@@ -17,7 +18,9 @@ import utilidadesSer.CorreoConsignacion;
 
 /**
  * Consignacion diaria de BOLD (QR): lo que se cobro por QR en cada tienda el
- * dia anterior y el total general que Bold va a consignar.
+ * dia anterior y el total general que Bold va a consignar, ya descontada su
+ * comision (general.parametros.COMISIONBOLD en valornumericod, 1.5 por
+ * defecto, con el IVA incluido).
  *
  * A diferencia de la de Wompi, que solo corre en dias habiles y cubre desde el
  * ultimo dia habil, esta corre TODOS los dias y cubre un solo dia: el de ayer.
@@ -29,6 +32,9 @@ import utilidadesSer.CorreoConsignacion;
  * parametro todavia no tiene destinatarios usa los de REPORTECONSIGNACIONWOMPI.
  */
 public class ReporteConsignacionBold {
+
+	/** Comision de Bold en porcentaje, IVA incluido, si general.parametros.COMISIONBOLD no existe. */
+	private static final double COMISION_BOLD_DEFECTO = 1.5;
 
 	public static void main(final String[] args) {
 		generar(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
@@ -48,6 +54,11 @@ public class ReporteConsignacionBold {
 		final String fechaConsignacion = formatoFecha.format(calendario.getTime());
 		final String fechaLarga = fechaLarga(calendario.getTime());
 
+		// Bold descuenta su comision de lo que consigna. El porcentaje ya incluye el IVA.
+		final double porcentajeComision = ParametrosDAO.retornarValorNumericoDouble("COMISIONBOLD",
+				COMISION_BOLD_DEFECTO);
+		final String textoComision = CorreoConsignacion.porcentaje(porcentajeComision) + " IVA incluido";
+
 		final ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		final StringBuilder filas = new StringBuilder();
 		final ArrayList<String> sinRespuesta = new ArrayList<String>();
@@ -61,14 +72,17 @@ public class ReporteConsignacionBold {
 			final double[] qr = ConsignacionBoldDAO.obtenerQRDia(fechaConsignacion, host);
 			if (qr == null) {
 				sinRespuesta.add(tienda.getNombreTienda());
-				filas.append(CorreoConsignacion.fila(tienda.getNombreTienda(), "sin respuesta", "-"));
+				filas.append(CorreoConsignacion.fila(tienda.getNombreTienda(), "sin respuesta", "-", "-"));
 				continue;
 			}
 			totalGeneral += qr[0];
 			cantidadGeneral += (int) qr[1];
 			filas.append(CorreoConsignacion.fila(tienda.getNombreTienda(),
-					CorreoConsignacion.entero((long) qr[1]), CorreoConsignacion.pesos(qr[0])));
+					CorreoConsignacion.entero((long) qr[1]), CorreoConsignacion.pesos(qr[0]),
+					CorreoConsignacion.pesos(qr[0] - qr[0] * porcentajeComision / 100)));
 		}
+		final double comisionTotal = totalGeneral * porcentajeComision / 100;
+		final double totalAConsignar = totalGeneral - comisionTotal;
 
 		final StringBuilder cuerpo = new StringBuilder();
 		cuerpo.append(CorreoConsignacion.abrir("Consignación diaria BOLD",
@@ -77,13 +91,24 @@ public class ReporteConsignacionBold {
 			cuerpo.append(CorreoConsignacion.aviso("No respondieron estas tiendas y su QR NO está sumado en el total: "
 					+ join(sinRespuesta) + ". Verifique que el computador esté encendido y reprocese el día."));
 		}
-		cuerpo.append(CorreoConsignacion.tarjetaTotal("Total a consignar BOLD", totalGeneral,
-				CorreoConsignacion.entero(cantidadGeneral) + " pagos QR del " + fechaConsignacion));
+		cuerpo.append(CorreoConsignacion.tarjetaTotal("Total a consignar BOLD", totalAConsignar,
+				"Venta QR " + CorreoConsignacion.pesos(totalGeneral) + " menos comisión "
+						+ CorreoConsignacion.pesos(comisionTotal) + " (" + textoComision + ")"));
+
+		cuerpo.append(CorreoConsignacion.abrirTabla("Liquidación", "Concepto", "Valor"));
+		cuerpo.append(CorreoConsignacion.fila("Pagos QR del " + fechaConsignacion,
+				CorreoConsignacion.entero(cantidadGeneral)));
+		cuerpo.append(CorreoConsignacion.fila("Venta QR", CorreoConsignacion.pesos(totalGeneral)));
+		cuerpo.append(CorreoConsignacion.fila("(-) Comisión BOLD " + textoComision,
+				CorreoConsignacion.pesos(comisionTotal)));
+		cuerpo.append(CorreoConsignacion.filaTotal("Valor a consignar", CorreoConsignacion.pesos(totalAConsignar)));
+		cuerpo.append(CorreoConsignacion.cerrarTabla());
+
 		cuerpo.append(CorreoConsignacion.abrirTabla("Cobrado por QR en cada tienda", "Tienda", "Pagos QR",
-				"Valor"));
+				"Venta QR", "Neto (menos comisión)"));
 		cuerpo.append(filas);
 		cuerpo.append(CorreoConsignacion.filaTotal("TOTAL GENERAL", CorreoConsignacion.entero(cantidadGeneral),
-				CorreoConsignacion.pesos(totalGeneral)));
+				CorreoConsignacion.pesos(totalGeneral), CorreoConsignacion.pesos(totalAConsignar)));
 		cuerpo.append(CorreoConsignacion.cerrarTabla());
 		cuerpo.append(CorreoConsignacion.cerrar("Generado automáticamente por Servicios Pizza Americana el "
 				+ new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()) + "."));
