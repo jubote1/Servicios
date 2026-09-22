@@ -13,11 +13,16 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.RichTextString;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+
+
+
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.ClientAnchor;
@@ -131,8 +136,42 @@ public class ReporteSemanalHorariosBase {
 		String rutaImagenReporte = rutaArchivoBD + "LogoPizzaAmericana.png";
 		//Creamos el archivo para el despliegue de la informaci�n
 		//Creamos el libro en Excel y la hoja en cuesti�n, definimos los encabezados.
-		HSSFWorkbook workbook = new HSSFWorkbook();
-		HSSFSheet sheet = workbook.createSheet("RESUMEN TIEMPOS");
+		Workbook workbook = new XSSFWorkbook();
+
+		/*
+		 * Los estilos se crean UNA vez y se reusan.
+		 *
+		 * No es manía: un CellStyle en POI es un objeto del libro, no del texto,
+		 * y crear uno por celda revienta el archivo. El formato xlsx admite unos
+		 * 64.000 estilos, y este reporte pinta entre 90 y 110 bloques con siete
+		 * columnas cada uno. Creando estilos dentro del bucle se llega al tope y
+		 * Excel abre el archivo diciendo que esta danado.
+		 */
+		final Font fuenteNombre = workbook.createFont();
+		fuenteNombre.setBold(true);
+		fuenteNombre.setFontHeightInPoints((short) 12);
+		fuenteNombre.setColor(IndexedColors.DARK_BLUE.getIndex());
+		final CellStyle estiloNombre = workbook.createCellStyle();
+		estiloNombre.setFont(fuenteNombre);
+
+		final Font fuenteEncabezado = workbook.createFont();
+		fuenteEncabezado.setBold(true);
+		fuenteEncabezado.setColor(IndexedColors.WHITE.getIndex());
+		final CellStyle estiloEncabezado = workbook.createCellStyle();
+		estiloEncabezado.setFont(fuenteEncabezado);
+		estiloEncabezado.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+		estiloEncabezado.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+		estiloEncabezado.setAlignment(HorizontalAlignment.CENTER);
+		estiloEncabezado.setBorderBottom(BorderStyle.THIN);
+
+		final Font fuenteTotal = workbook.createFont();
+		fuenteTotal.setBold(true);
+		final CellStyle estiloTotal = workbook.createCellStyle();
+		estiloTotal.setFont(fuenteTotal);
+		estiloTotal.setFillForegroundColor(IndexedColors.LEMON_CHIFFON.getIndex());
+		estiloTotal.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+		estiloTotal.setBorderTop(BorderStyle.MEDIUM);
+		Sheet sheet = workbook.createSheet("RESUMEN TIEMPOS");
 		sheet.setColumnWidth(0, 7500);
 		sheet.setColumnWidth(1, 4500);
 		sheet.setColumnWidth(2, 4500);
@@ -241,11 +280,11 @@ public class ReporteSemanalHorariosBase {
 		//Luego de definidos las fechas crearemos el archivo que en su nombre contiene las fechas
 		try
 		{
-			   rutaArchivoGenerado = rutaArchivoBD  + "ReporteHorasTrabajadas" + "-" + fechaAnterior + "--" + fechaActual +".xls";
+			   rutaArchivoGenerado = rutaArchivoBD  + "ReporteHorasTrabajadas" + "-" + fechaAnterior + "--" + fechaActual + ".xlsx";
 			   
 			   FileOutputStream fileOut = new FileOutputStream(rutaArchivoGenerado);
 			   
-			   rutaArchivoGenerado = rutaArchivoGenerado + "%&" + "ReporteHorasTrabajadas" + "-" + fechaAnterior + "--" + fechaActual +".xls";
+			   rutaArchivoGenerado = rutaArchivoGenerado + "%&" + "ReporteHorasTrabajadas" + "-" + fechaAnterior + "--" + fechaActual + ".xlsx";
 			   
 			   //Creamos los estilos para el encabezado del reporte y para el nombre de la persona que es el segundo nivel
 			   //de rompimiento del reporte
@@ -254,7 +293,7 @@ public class ReporteSemanalHorariosBase {
 	            whiteFont.setColor(IndexedColors.BLUE.index);
 	            whiteFont.setFontHeightInPoints((short) 14.00);
 	            whiteFont.setBold(true);
-	            HSSFCellStyle cellheader = workbook.createCellStyle();
+	            CellStyle cellheader = workbook.createCellStyle();
 	            cellheader.setWrapText(true);
 	            cellheader.setFont(whiteFont);
 	            cellheader.setAlignment(HorizontalAlignment .CENTER);
@@ -264,7 +303,7 @@ public class ReporteSemanalHorariosBase {
 	            fontSegFila.setColor(IndexedColors.ORANGE.index);
 	            fontSegFila.setFontHeightInPoints((short) 10.00);
 	            fontSegFila.setBold(true);
-	            HSSFCellStyle cellInfoReporte = workbook.createCellStyle();
+	            CellStyle cellInfoReporte = workbook.createCellStyle();
 	            cellInfoReporte.setBorderBottom(BorderStyle.THIN);
 	            cellInfoReporte.setBorderTop(BorderStyle.THIN);
 	            cellInfoReporte.setBorderLeft(BorderStyle.THIN);
@@ -274,7 +313,7 @@ public class ReporteSemanalHorariosBase {
 	            cellInfoReporte.setAlignment(HorizontalAlignment .CENTER);
 	            
 	            //Creamos el estilo para la informacion del reporte
-	            HSSFCellStyle styleInfRep = workbook.createCellStyle();
+	            CellStyle styleInfRep = workbook.createCellStyle();
 	            styleInfRep.setBorderBottom(BorderStyle.THIN);
 	            styleInfRep.setBorderTop(BorderStyle.THIN);
 	            styleInfRep.setBorderLeft(BorderStyle.THIN);
@@ -283,17 +322,17 @@ public class ReporteSemanalHorariosBase {
 	            
 	            
 	            //NOMBRE DEL REPORTE
-	            HSSFRow headerRow = sheet.createRow((short) 0);
+	            Row headerRow = sheet.createRow((short) 0);
 	            sheet.addMergedRegion(CellRangeAddress.valueOf("$A$1:$G$1"));
 	            Cell cellHeader = headerRow.createCell((short) 0);
-	            cellHeader.setCellValue(new HSSFRichTextString("REPORTE SEMANAL DE HORAS TRABAJADAS \n" + fechaAnterior + "--" + fechaActual ));
+	            cellHeader.setCellValue(workbook.getCreationHelper().createRichTextString("REPORTE SEMANAL DE HORAS TRABAJADAS \n" + fechaAnterior + "--" + fechaActual ));
 	            headerRow.setHeight((short)1000);
 	            cellHeader.setCellStyle(cellheader);
 	            
 	            //Realizamos la adici�n de la imagen del logo de pizza americana
 	            InputStream inputStream = new FileInputStream(rutaImagenReporte);
 	            byte[] imageBytes = IOUtils.toByteArray(inputStream);
-	            int pictureIdx = workbook.addPicture(imageBytes, workbook.PICTURE_TYPE_PNG);
+	            int pictureIdx = workbook.addPicture(imageBytes, Workbook.PICTURE_TYPE_PNG);
 	            //close the input stream
 	            //Returns an object that handles instantiating concrete classes
 	            CreationHelper helper = workbook.getCreationHelper();
@@ -606,12 +645,12 @@ public class ReporteSemanalHorariosBase {
 							//Damos un salto adicional de separaci�n 
 							filaActual++;
 							//Creamos Encabezado del reporte
-							HSSFRow nombrePersona = sheet.createRow(filaActual);
+							Row nombrePersona = sheet.createRow(filaActual);
 							Cell cellFila = nombrePersona.createCell((short) 0);
-							cellFila.setCellValue(empleadoActual);
+							cellFila.setCellValue(empleadoActual);							cellFila.setCellStyle(estiloNombre);
 							filaActual++;
 							//Continuamos con los encabezados
-							HSSFRow encabezados = sheet.createRow(filaActual);
+							Row encabezados = sheet.createRow(filaActual);
 							Cell cellFilaEncabezado = encabezados.createCell((short) 0);
 							cellFilaEncabezado.setCellValue("NOMBRE EMPLEADO");
 							cellFilaEncabezado = encabezados.createCell((short) 1);
@@ -625,7 +664,7 @@ public class ReporteSemanalHorariosBase {
 							cellFilaEncabezado = encabezados.createCell((short) 5);
 							cellFilaEncabezado.setCellValue("HORAS");
 							cellFilaEncabezado = encabezados.createCell((short) 6);
-							cellFilaEncabezado.setCellValue("TIENDA");
+							cellFilaEncabezado.setCellValue("TIENDA");							//Los siete encabezados con el mismo estilo, en un solo sitio.							for (int cc = 0; cc <= 6; cc++) { encabezados.getCell(cc).setCellStyle(estiloEncabezado); }
 							filaActual++;
 				}
 				
@@ -647,13 +686,13 @@ public class ReporteSemanalHorariosBase {
 							+ " de descanso)</strong></td> </tr>";
 
 					//Insertamos el pie
-					HSSFRow pie = sheet.createRow(filaActual);
+					Row pie = sheet.createRow(filaActual);
 					Cell cellFilaPie = pie.createCell((short) 0);
-					cellFilaPie.setCellValue("TOTAL HORAS " +  formatea.format(acumuladoHoras));
+					cellFilaPie.setCellValue("TOTAL HORAS " +  formatea.format(acumuladoHoras));					cellFilaPie.setCellStyle(estiloTotal);
 					cellFilaPie = pie.createCell((short) 3);
-					cellFilaPie.setCellValue("PROGRAMADAS " + formatea.format(progAnt.horas));
+					cellFilaPie.setCellValue("PROGRAMADAS " + formatea.format(progAnt.horas));					cellFilaPie.setCellStyle(estiloTotal);
 					cellFilaPie = pie.createCell((short) 5);
-					cellFilaPie.setCellValue("DIFERENCIA " + formatea.format(acumuladoHoras - progAnt.horas));
+					cellFilaPie.setCellValue("DIFERENCIA " + formatea.format(acumuladoHoras - progAnt.horas));					cellFilaPie.setCellStyle(estiloTotal);
 					//En este punto realizamos los c�lculos
 					if(tieneFestivo)
 					{
@@ -712,9 +751,9 @@ public class ReporteSemanalHorariosBase {
 					//Aqui tendremos un gran doble salto para pasar de empleado
 					respuesta = respuesta + "<table WIDTH='400' border='2'> <TH COLSPAN='6'> " + empleadoActual  + "</TH> </tr>";
 					//Creamos Encabezado del reporte
-					HSSFRow nombrePersona = sheet.createRow(filaActual);
+					Row nombrePersona = sheet.createRow(filaActual);
 					Cell cellFila = nombrePersona.createCell((short) 0);
-					cellFila.setCellValue(empleadoActual);
+					cellFila.setCellValue(empleadoActual);					cellFila.setCellStyle(estiloNombre);
 					filaActual++;
 					respuesta = respuesta + "<tr>"
 							+  "<td width='120' nowrap><strong>NOMBRE</strong></td>"
@@ -726,7 +765,7 @@ public class ReporteSemanalHorariosBase {
 							+  "<td width='40' nowrap><strong>TIENDA</strong></td>"
 							+  "</tr>";
 					//Continuamos con los encabezados
-					HSSFRow encabezados = sheet.createRow(filaActual);
+					Row encabezados = sheet.createRow(filaActual);
 					Cell cellFilaEncabezado = encabezados.createCell((short) 0);
 					cellFilaEncabezado.setCellValue("NOMBRE EMPLEADO");
 					cellFilaEncabezado = encabezados.createCell((short) 1);
@@ -740,7 +779,7 @@ public class ReporteSemanalHorariosBase {
 					cellFilaEncabezado = encabezados.createCell((short) 5);
 					cellFilaEncabezado.setCellValue("HORAS");
 					cellFilaEncabezado = encabezados.createCell((short) 6);
-					cellFilaEncabezado.setCellValue("TIENDA");
+					cellFilaEncabezado.setCellValue("TIENDA");					//Los siete encabezados con el mismo estilo, en un solo sitio.					for (int cc = 0; cc <= 6; cc++) { encabezados.getCell(cc).setCellStyle(estiloEncabezado); }
 					filaActual++;
 					acumuladoHoras = 0;
 					//En este punto realizamos el clareo de las variables
@@ -825,7 +864,7 @@ public class ReporteSemanalHorariosBase {
 				HorarioTrabajadoDAO.insertarHorarioTrabajado(horario);
 				
 				//Realizamos pintado de la fila en el Excel de una fila de datos
-				HSSFRow encabezados = sheet.createRow(filaActual);
+				Row encabezados = sheet.createRow(filaActual);
 				Cell cellFillaDatos = encabezados.createCell((short) 0);
 				cellFillaDatos.setCellValue(fila[0]);
 				cellFillaDatos = encabezados.createCell((short) 1);
@@ -910,13 +949,13 @@ public class ReporteSemanalHorariosBase {
 					+ " &nbsp;&nbsp; (" + progUlt.turnos + " turnos, " + progUlt.diasSinTurno
 					+ " de descanso)</strong></td> </tr>";
 
-			HSSFRow pie = sheet.createRow(filaActual);
+			Row pie = sheet.createRow(filaActual);
 			Cell cellFilaPie = pie.createCell((short) 0);
-			cellFilaPie.setCellValue("TOTAL HORAS " +  formatea.format(acumuladoHoras));
+			cellFilaPie.setCellValue("TOTAL HORAS " +  formatea.format(acumuladoHoras));			cellFilaPie.setCellStyle(estiloTotal);
 			cellFilaPie = pie.createCell((short) 3);
-			cellFilaPie.setCellValue("PROGRAMADAS " + formatea.format(progUlt.horas));
+			cellFilaPie.setCellValue("PROGRAMADAS " + formatea.format(progUlt.horas));			cellFilaPie.setCellStyle(estiloTotal);
 			cellFilaPie = pie.createCell((short) 5);
-			cellFilaPie.setCellValue("DIFERENCIA " + formatea.format(acumuladoHoras - progUlt.horas));
+			cellFilaPie.setCellValue("DIFERENCIA " + formatea.format(acumuladoHoras - progUlt.horas));			cellFilaPie.setCellStyle(estiloTotal);
 			filaActual = filaActual + 2;
 
 			/*
@@ -946,27 +985,27 @@ public class ReporteSemanalHorariosBase {
 					+ "<td width='200' nowrap>" + progTotal.diasSinTurno + "</td></tr>"
 					+ "</table> <br/>";
 
-			HSSFRow totalGeneral = sheet.createRow(filaActual);
+			Row totalGeneral = sheet.createRow(filaActual);
 			Cell celTot = totalGeneral.createCell((short) 0);
-			celTot.setCellValue("TOTAL GENERAL DE LA SEMANA");
+			celTot.setCellValue("TOTAL GENERAL DE LA SEMANA");			celTot.setCellStyle(estiloTotal);
 			filaActual++;
 			totalGeneral = sheet.createRow(filaActual);
 			celTot = totalGeneral.createCell((short) 0);
-			celTot.setCellValue("HORAS TRABAJADAS");
+			celTot.setCellValue("HORAS TRABAJADAS");			celTot.setCellStyle(estiloTotal);
 			celTot = totalGeneral.createCell((short) 1);
-			celTot.setCellValue(formatea.format(totalTrabajadoGeneral));
+			celTot.setCellValue(formatea.format(totalTrabajadoGeneral));			celTot.setCellStyle(estiloTotal);
 			filaActual++;
 			totalGeneral = sheet.createRow(filaActual);
 			celTot = totalGeneral.createCell((short) 0);
-			celTot.setCellValue("HORAS PROGRAMADAS");
+			celTot.setCellValue("HORAS PROGRAMADAS");			celTot.setCellStyle(estiloTotal);
 			celTot = totalGeneral.createCell((short) 1);
-			celTot.setCellValue(formatea.format(progTotal.horas));
+			celTot.setCellValue(formatea.format(progTotal.horas));			celTot.setCellStyle(estiloTotal);
 			filaActual++;
 			totalGeneral = sheet.createRow(filaActual);
 			celTot = totalGeneral.createCell((short) 0);
-			celTot.setCellValue("DIFERENCIA");
+			celTot.setCellValue("DIFERENCIA");			celTot.setCellStyle(estiloTotal);
 			celTot = totalGeneral.createCell((short) 1);
-			celTot.setCellValue(formatea.format(totalTrabajadoGeneral - progTotal.horas));
+			celTot.setCellValue(formatea.format(totalTrabajadoGeneral - progTotal.horas));			celTot.setCellStyle(estiloTotal);
 			filaActual = filaActual + 2;
 			
 			//En esta parte termina la generaci�n del correo
