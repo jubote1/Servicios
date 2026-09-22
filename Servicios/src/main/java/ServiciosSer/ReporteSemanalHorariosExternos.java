@@ -31,6 +31,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.util.IOUtils;
 
 import CapaDAOSer.GeneralDAO;
+import CapaDAOSer.HorarioPlanificadoDAO;
 import CapaDAOSer.HorarioResumenDAO;
 import CapaDAOSer.HorarioTrabajadoDAO;
 import CapaDAOSer.ParametrosDAO;
@@ -470,6 +471,19 @@ public class ReporteSemanalHorariosExternos {
 			//Obtenemos la informaci�n consolidada por persona y d�a
 			ArrayList reporteHorarios = respuestaReporte;
 			ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
+
+			//Lo PROGRAMADO de todas las personas del periodo, de una sola vez.
+			//
+			//Es la otra mitad del reporte: horario_trabajado dice lo que la
+			//persona marco en el huellero, y horario_planificado lo que se le
+			//habia programado. Un total de horas no se puede juzgar sin las dos:
+			//40 horas son muchas o pocas segun cuantas se hayan programado.
+			//
+			//Se trae el mapa completo y no una consulta por empleado porque el
+			//reporte recorre entre 90 y 110 personas.
+			java.util.HashMap<Integer, HorarioPlanificadoDAO.Programado> programado =
+					HorarioPlanificadoDAO.obtenerProgramadoPorEmpleado(fechaAnterior, fechaActual);
+			double totalTrabajadoGeneral = 0;
 			
 			//La primera parte de la l�gica realiza el llenado del arreglo y la segunda realiza el pintado
 			// es aqui donde se interviene el pintado
@@ -551,10 +565,27 @@ public class ReporteSemanalHorariosExternos {
 				{
 					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>TOTAL HORAS " + formatea.format(acumuladoHoras) + "</strong></td> </tr>";
 					
+					//Lo programado de ESTE empleado, al lado de lo que trabajo.
+					//La diferencia se calcula trabajado menos programado, asi que
+					//en positivo trabajo de mas y en negativo de menos, que es
+					//como lo lee quien revisa la nomina.
+					HorarioPlanificadoDAO.Programado progAnt =
+							HorarioPlanificadoDAO.de(programado, idEmpleadoAnterior);
+					totalTrabajadoGeneral = totalTrabajadoGeneral + acumuladoHoras;
+					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS PROGRAMADAS "
+							+ formatea.format(progAnt.horas) + " &nbsp;&nbsp; DIFERENCIA "
+							+ formatea.format(acumuladoHoras - progAnt.horas)
+							+ " &nbsp;&nbsp; (" + progAnt.turnos + " turnos, " + progAnt.diasSinTurno
+							+ " de descanso)</strong></td> </tr>";
+
 					//Insertamos el pie
 					HSSFRow pie = sheet.createRow(filaActual);
 					Cell cellFilaPie = pie.createCell((short) 0);
-					cellFilaPie.setCellValue("TOTAL HORAS " +  acumuladoHoras);
+					cellFilaPie.setCellValue("TOTAL HORAS " +  formatea.format(acumuladoHoras));
+					cellFilaPie = pie.createCell((short) 3);
+					cellFilaPie.setCellValue("PROGRAMADAS " + formatea.format(progAnt.horas));
+					cellFilaPie = pie.createCell((short) 5);
+					cellFilaPie.setCellValue("DIFERENCIA " + formatea.format(acumuladoHoras - progAnt.horas));
 					//En este punto realizamos los c�lculos
 					if(tieneFestivo)
 					{
@@ -802,9 +833,72 @@ public class ReporteSemanalHorariosExternos {
 			HorarioResumen horarioResumen = new HorarioResumen(0, Integer.parseInt(fila[8]), acumuladoHoras, horasExtrasOrdinarias,horasExtrasDominicales, horasFestivas, recargoNocTotal,fechaAnterior,fechaActual );
 			HorarioResumenDAO.insertarHorarioResumen(horarioResumen);
 			//Insertamos el pie
+			HorarioPlanificadoDAO.Programado progUlt =
+					HorarioPlanificadoDAO.de(programado, idEmpleadoAnterior);
+			totalTrabajadoGeneral = totalTrabajadoGeneral + acumuladoHoras;
+			respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS PROGRAMADAS "
+					+ formatea.format(progUlt.horas) + " &nbsp;&nbsp; DIFERENCIA "
+					+ formatea.format(acumuladoHoras - progUlt.horas)
+					+ " &nbsp;&nbsp; (" + progUlt.turnos + " turnos, " + progUlt.diasSinTurno
+					+ " de descanso)</strong></td> </tr>";
+
 			HSSFRow pie = sheet.createRow(filaActual);
 			Cell cellFilaPie = pie.createCell((short) 0);
 			cellFilaPie.setCellValue("TOTAL HORAS " +  formatea.format(acumuladoHoras));
+			cellFilaPie = pie.createCell((short) 3);
+			cellFilaPie.setCellValue("PROGRAMADAS " + formatea.format(progUlt.horas));
+			cellFilaPie = pie.createCell((short) 5);
+			cellFilaPie.setCellValue("DIFERENCIA " + formatea.format(acumuladoHoras - progUlt.horas));
+			filaActual = filaActual + 2;
+
+			/*
+			 * El total general, que hasta hoy no existia.
+			 *
+			 * El reporte reinicia acumuladoHoras en cada empleado, asi que quien
+			 * queria saber cuantas horas trabajo la cadena en la semana tenia que
+			 * sumar a mano los noventa y pico de bloques. Aqui queda de una, y al
+			 * lado lo programado: esa comparacion es justamente lo que permite
+			 * decir si se trabajo de mas o de menos frente a lo planeado.
+			 */
+			HorarioPlanificadoDAO.Programado progTotal = HorarioPlanificadoDAO.total(programado);
+			respuesta = respuesta + "<table WIDTH='400' border='2'>"
+					+ "<TH COLSPAN='7'>TOTAL GENERAL DE LA SEMANA</TH></tr>"
+					+ "<tr><td width='200' nowrap><strong>HORAS TRABAJADAS</strong></td>"
+					+ "<td width='200' nowrap><strong>" + formatea.format(totalTrabajadoGeneral)
+					+ "</strong></td></tr>"
+					+ "<tr><td width='200' nowrap><strong>HORAS PROGRAMADAS</strong></td>"
+					+ "<td width='200' nowrap><strong>" + formatea.format(progTotal.horas)
+					+ "</strong></td></tr>"
+					+ "<tr><td width='200' nowrap><strong>DIFERENCIA</strong></td>"
+					+ "<td width='200' nowrap><strong>"
+					+ formatea.format(totalTrabajadoGeneral - progTotal.horas) + "</strong></td></tr>"
+					+ "<tr><td width='200' nowrap>Turnos programados</td>"
+					+ "<td width='200' nowrap>" + progTotal.turnos + "</td></tr>"
+					+ "<tr><td width='200' nowrap>Dias de descanso o vacaciones</td>"
+					+ "<td width='200' nowrap>" + progTotal.diasSinTurno + "</td></tr>"
+					+ "</table> <br/>";
+
+			HSSFRow totalGeneral = sheet.createRow(filaActual);
+			Cell celTot = totalGeneral.createCell((short) 0);
+			celTot.setCellValue("TOTAL GENERAL DE LA SEMANA");
+			filaActual++;
+			totalGeneral = sheet.createRow(filaActual);
+			celTot = totalGeneral.createCell((short) 0);
+			celTot.setCellValue("HORAS TRABAJADAS");
+			celTot = totalGeneral.createCell((short) 1);
+			celTot.setCellValue(formatea.format(totalTrabajadoGeneral));
+			filaActual++;
+			totalGeneral = sheet.createRow(filaActual);
+			celTot = totalGeneral.createCell((short) 0);
+			celTot.setCellValue("HORAS PROGRAMADAS");
+			celTot = totalGeneral.createCell((short) 1);
+			celTot.setCellValue(formatea.format(progTotal.horas));
+			filaActual++;
+			totalGeneral = sheet.createRow(filaActual);
+			celTot = totalGeneral.createCell((short) 0);
+			celTot.setCellValue("DIFERENCIA");
+			celTot = totalGeneral.createCell((short) 1);
+			celTot.setCellValue(formatea.format(totalTrabajadoGeneral - progTotal.horas));
 			filaActual = filaActual + 2;
 			
 			//En esta parte termina la generaci�n del correo
