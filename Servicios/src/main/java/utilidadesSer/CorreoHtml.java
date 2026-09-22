@@ -135,6 +135,16 @@ public class CorreoHtml {
 		return "</table><div style=\"height:20px;line-height:20px;\">&nbsp;</div>";
 	}
 
+	/** Fila para marcar un problema dentro de una tabla (un dato que no se pudo calcular, por ejemplo). */
+	public static String filaAviso(final String... celdas) {
+		final StringBuilder sb = new StringBuilder("<tr>");
+		for (int i = 0; i < celdas.length; i++) {
+			sb.append("<td style=\"padding:8px 12px;border-bottom:1px solid #e7e9ee;background:#fdeceb;color:#8a1c1f;text-align:")
+					.append(i == 0 ? "left" : "right").append(";\">").append(h(celdas[i])).append("</td>");
+		}
+		return sb.append("</tr>").toString();
+	}
+
 	/** Recuadro rojo para lo que el lector no debe pasar por alto. */
 	public static String aviso(final String texto) {
 		return "<div style=\"border-left:5px solid " + ROJO + ";background:#fdeceb;color:#8a1c1f;padding:12px 14px;"

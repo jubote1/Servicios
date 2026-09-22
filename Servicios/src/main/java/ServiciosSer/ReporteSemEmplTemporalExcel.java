@@ -42,6 +42,7 @@ import ModeloSer.TiempoPedido;
 import ModeloSer.Tienda;
 import ModeloSer.Usuario;
 import utilidadesSer.ControladorEnvioCorreo;
+import utilidadesSer.CorreoHtml;
 
 public class ReporteSemEmplTemporalExcel {
 	
@@ -196,9 +197,16 @@ public class ReporteSemEmplTemporalExcel {
 	            styleInfRep.setBorderLeft(BorderStyle.THIN);
 	            styleInfRep.setBorderRight(BorderStyle.THIN);
 	            styleInfRep.setWrapText(true);
+
+	            //Fila en rojo claro para cuando la hora de salida no se pudo interpretar.
+	            HSSFCellStyle styleError = workbook.createCellStyle();
+	            styleError.cloneStyleFrom(styleInfRep);
+	            styleError.setFillForegroundColor(IndexedColors.ROSE.index);
+	            styleError.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
 	            int filaActual = 1;
 		
-				String respuesta = "";
+				//El detalle dia a dia va en el Excel adjunto; en el correo solo queda el resumen por tienda.
+				ArrayList<Object[]> resumenTiendas = new ArrayList<Object[]>();
 				//Recuperaremos las tiendas y empezaremos a ir consultando una a una las tiendas para extraer la informaci�n
 				ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 				//Recuperamos las empresas temporales de la base de datos general
@@ -223,43 +231,21 @@ public class ReporteSemEmplTemporalExcel {
 							totalEmpresa = 0;
 							valorHoraNormal = empTemp.getValorHoraNormal();
 							valorHoraDominical = empTemp.getValorHoraDominical();
-							//Creamos el encabezado para tienda y empresa
-							respuesta = respuesta + "<table border='2'> <tr><td colspan ='6'>" + tien.getNombreTienda() + " - " + empTemp.getNombreEmpresa() + "-" + empTemp.getValorHoraNormal() + "-" + empTemp.getValorHoraDominical() + "</td></tr>";
-							respuesta = respuesta + "<tr>"
-									+  "<td><strong>Personal</strong></td>"
-									+  "<td><strong>Fecha</strong></td>"
-									+  "<td><strong>Hora Ingreso</strong></td>"
-									+  "<td><strong>Hora Salida</strong></td>"
-									+  "<td><strong>Horas Trabajadas</strong></td>"
-									+  "<td><strong>Valor Pagar</strong></td>"
-									+  "<td><strong>Observacion</strong></td>"
-									+  "<td><strong># Pedidos</strong></td>"
-									+  "</tr>";
-							//Damos un salto adicional de separaci�n 
+							//Damos un salto adicional de separaci�n
 							filaActual++;
 							//Creamos Encabezado del reporte
 							HSSFRow nombreEmpresa = sheet.createRow(filaActual);
 							Cell cellFila = nombreEmpresa.createCell((short) 0);
 							cellFila.setCellValue(tien.getNombreTienda() + " - " + empTemp.getNombreEmpresa() + "-" + empTemp.getValorHoraNormal() + "-" + empTemp.getValorHoraDominical());
+							cellFila.setCellStyle(cellheader);
 							filaActual++;
 							//Continuamos con los encabezados
 							HSSFRow encabezados = sheet.createRow(filaActual);
-							Cell cellFilaEncabezado = encabezados.createCell((short) 0);
-							cellFilaEncabezado.setCellValue("PERSONAL");
-							cellFilaEncabezado = encabezados.createCell((short) 1);
-							cellFilaEncabezado.setCellValue("FECHA");
-							cellFilaEncabezado = encabezados.createCell((short) 2);
-							cellFilaEncabezado.setCellValue("HORA INGRESO");
-							cellFilaEncabezado = encabezados.createCell((short) 3);
-							cellFilaEncabezado.setCellValue("HORA SALIDA");
-							cellFilaEncabezado = encabezados.createCell((short) 4);
-							cellFilaEncabezado.setCellValue("HOR TRABAJADAS");
-							cellFilaEncabezado = encabezados.createCell((short) 5);
-							cellFilaEncabezado.setCellValue("VALOR A PAGAR");
-							cellFilaEncabezado = encabezados.createCell((short) 6);
-							cellFilaEncabezado.setCellValue("OBSERVACION");
-							cellFilaEncabezado = encabezados.createCell((short) 7);
-							cellFilaEncabezado.setCellValue("NUM PEDIDOS");
+							for (int col = 0; col < headers.length; col++) {
+								Cell cellFilaEncabezado = encabezados.createCell((short) col);
+								cellFilaEncabezado.setCellValue(headers[col]);
+								cellFilaEncabezado.setCellStyle(cellInfoReporte);
+							}
 							filaActual++;
 							//Recuperamos los evento de empleados para la semana en cuesti�n
 							ArrayList<capaModeloPOS.EmpleadoTemporalDia> empleadosTempDia = capaDAOPOS.EmpleadoTemporalDiaDAO.obtenerEmpleadoTemporalFecha(fechaActual, fechaAnterior, empTemp.getIdEmpresa(), tien.getHostBD());
@@ -328,16 +314,6 @@ public class ReporteSemEmplTemporalExcel {
 								//Si hay error de conversi�n de las fechas se muestra diferente.
 								if(errorConversion)
 								{
-									respuesta = respuesta + "<tr>"
-											+  "<td>" + empleadoTemp.getNombre() + "</td>"
-											+  "<td>" + empleadoTemp.getFechaSistema() + "</td>"
-											+  "<td>" + empleadoTemp.getHoraIngreso() + "</td>"
-											+  "<td>" + empleadoTemp.getHoraSalida() + "</td>"
-											+  "<td>" + "ERROR CONVERSION" + "</td>"
-											+  "<td>" + "0" + "</td>"
-											+  "<td>" + empleadoTemp.getObservacion() + "</td>"
-											+  "<td>" + cantidadPedidos + "</td>"
-											+  "</tr>";
 									//Realizamos pintado de la fila en el Excel de una fila de datos
 									encabezados = sheet.createRow(filaActual);
 									Cell cellFillaDatos = encabezados.createCell((short) 0);
@@ -356,19 +332,12 @@ public class ReporteSemEmplTemporalExcel {
 									cellFillaDatos.setCellValue(empleadoTemp.getObservacion());
 									cellFillaDatos = encabezados.createCell((short) 7);
 									cellFillaDatos.setCellValue(cantidadPedidos);
+									for (int col = 0; col <= 7; col++) {
+										encabezados.getCell(col).setCellStyle(styleError);
+									}
 									filaActual++;
 								}else
 								{
-									respuesta = respuesta + "<tr>"
-											+  "<td>" + empleadoTemp.getNombre() + "</td>"
-											+  "<td>" + empleadoTemp.getFechaSistema() + "</td>"
-											+  "<td>" + empleadoTemp.getHoraIngreso() + "</td>"
-											+  "<td>" + empleadoTemp.getHoraSalida() + "</td>"
-											+  "<td>" + formatea.format(horasTrabajadas) + "</td>"
-											+  "<td>" + formatea.format(valorHoraTrabajada) + "</td>"
-											+  "<td>" + empleadoTemp.getObservacion() + "</td>"
-											+  "<td>" + cantidadPedidos + "</td>"
-											+  "</tr>";
 									//Realizamos pintado de la fila en el Excel de una fila de datos
 									encabezados = sheet.createRow(filaActual);
 									Cell cellFillaDatos = encabezados.createCell((short) 0);
@@ -387,35 +356,54 @@ public class ReporteSemEmplTemporalExcel {
 									cellFillaDatos.setCellValue(empleadoTemp.getObservacion());
 									cellFillaDatos = encabezados.createCell((short) 7);
 									cellFillaDatos.setCellValue(cantidadPedidos);
+									for (int col = 0; col <= 7; col++) {
+										encabezados.getCell(col).setCellStyle(styleInfRep);
+									}
 									filaActual++;
 								}
 							}
-							respuesta = respuesta + "<tr><td colspan ='6'>  TOTAL " + formatea.format(totalEmpresa) + "</td></tr>";
-							respuesta = respuesta + "</table> <br/>";
 							//Acumulamos el total para la tienda
 							totalTienda = totalTienda + totalEmpresa;
 						}
+						resumenTiendas.add(new Object[] { tien.getNombreTienda(), Double.valueOf(totalTienda) });
 					}
 				}
-				
+
 					//En esta parte termina la generaci�n del correo
 					workbook.write(fileOut);
 					fileOut.close();
-					
-					//Buscamos la manera de enviar el correo 
+
+					//Buscamos la manera de enviar el correo
 					String[] rutasArchivos = new String[1];
 					rutasArchivos[0] = rutaArchivoGenerado;
-					
+
+					double totalGeneral = 0;
+					for (int i = 0; i < resumenTiendas.size(); i++) {
+						totalGeneral = totalGeneral + ((Double) resumenTiendas.get(i)[1]).doubleValue();
+					}
+					StringBuilder cuerpo = new StringBuilder();
+					cuerpo.append(CorreoHtml.abrir("Reporte semanal de personal temporal",
+							"Del " + fechaAnterior + " al " + fechaActual));
+					cuerpo.append(CorreoHtml.abrirTabla("Resumen por tienda", "Tienda", "Total"));
+					for (int i = 0; i < resumenTiendas.size(); i++) {
+						cuerpo.append(CorreoHtml.fila((String) resumenTiendas.get(i)[0],
+								CorreoHtml.pesos(((Double) resumenTiendas.get(i)[1]).doubleValue())));
+					}
+					cuerpo.append(CorreoHtml.filaTotal("TOTAL GENERAL", CorreoHtml.pesos(totalGeneral)));
+					cuerpo.append(CorreoHtml.cerrarTabla());
+					cuerpo.append(CorreoHtml.cerrar("El detalle dia a dia de cada persona va en el Excel adjunto."));
+
 					//Recuperar la lista de distribuci�n para este correo
 					ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPSEMEMPLTEMPORALEXCEL");
 					Correo correo = new Correo();
 					CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-					correo.setAsunto("REPORTE SEMANAL PERSONAL TEMPORAL-" + fechaAnterior + " AL " + fechaActual);
+					correo.setAsunto("Reporte semanal de personal temporal " + fechaAnterior + " al " + fechaActual
+							+ " - " + CorreoHtml.pesos(totalGeneral));
 					correo.setContrasena(infoCorreo.getClaveCorreo());
 					correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 					//Anexamos el archivo generado
 					correo.setRutasArchivos(rutasArchivos);
-					correo.setMensaje("A continuaci�n el resumen de la semana de personal temporal desde la fecha "+ fechaAnterior + " a la fecha " + fechaActual );
+					correo.setMensaje(cuerpo.toString());
 					ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 					contro.enviarCorreoHTMLAnexo();
 		}catch(Exception e)
