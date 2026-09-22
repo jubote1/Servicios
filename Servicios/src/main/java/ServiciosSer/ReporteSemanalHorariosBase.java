@@ -61,6 +61,7 @@ import ModeloSer.PedidoPixel;
 import ModeloSer.TiempoPedido;
 import ModeloSer.Tienda;
 import utilidadesSer.ControladorEnvioCorreo;
+import utilidadesSer.CorreoHtml;
 
 /**
  * El reporte semanal de cumplimiento de horarios. UNA sola implementacion.
@@ -632,16 +633,12 @@ public class ReporteSemanalHorariosBase {
 					empleadoAnterior = fila[0];
 					salarioEmpleadoAnterior = Double.parseDouble(fila[9]);
 					idEmpleadoAnterior = Integer.parseInt(fila[8]);
-					respuesta = respuesta + "<table WIDTH='400' border='2'> <TH COLSPAN='7'> " + empleadoActual  + "</TH> </tr>";
-					respuesta = respuesta + "<tr>"
-							+  "<td width='120' nowrap><strong>NOMBRE</strong></td>"
-							+  "<td width='50' nowrap><strong>FECHA</strong></td>"
-							+  "<td width='50' nowrap><strong>DIA</strong></td>"
-							+  "<td width='50' nowrap><strong>INGRESO</strong></td>"
-							+  "<td width='50' nowrap><strong>SALIDA</strong></td>"
-							+  "<td width='40' nowrap><strong>HORAS</strong></td>"
-							+  "<td width='40' nowrap><strong>TIENDA</strong></td>"
-							+  "</tr>";
+					//La columna NOMBRE se quita del correo: repetia el mismo
+					//nombre en cada una de las siete filas del bloque, y ya esta
+					//en el titulo. En el Excel SI se deja, porque alla sirve para
+					//filtrar y ordenar.
+					respuesta = respuesta + CorreoHtml.tituloPersona(empleadoActual);
+					respuesta = respuesta + CorreoHtml.abrirTabla("", "Fecha", "Dia", "Ingreso", "Salida", "Horas", "Tienda");
 							//Damos un salto adicional de separaci�n 
 							filaActual++;
 							//Creamos Encabezado del reporte
@@ -670,7 +667,7 @@ public class ReporteSemanalHorariosBase {
 				
 				if(!empleadoAnterior.equals(empleadoActual))
 				{
-					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>TOTAL HORAS " + formatea.format(acumuladoHoras) + "</strong></td> </tr>";
+					respuesta = respuesta + CorreoHtml.filaTotal("TOTAL", "", "", "", formatea.format(acumuladoHoras), "") + CorreoHtml.cerrarTabla();
 					
 					//Lo programado de ESTE empleado, al lado de lo que trabajo.
 					//La diferencia se calcula trabajado menos programado, asi que
@@ -679,11 +676,16 @@ public class ReporteSemanalHorariosBase {
 					HorarioPlanificadoDAO.Programado progAnt =
 							HorarioPlanificadoDAO.de(programado, idEmpleadoAnterior);
 					totalTrabajadoGeneral = totalTrabajadoGeneral + acumuladoHoras;
-					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS PROGRAMADAS "
-							+ formatea.format(progAnt.horas) + " &nbsp;&nbsp; DIFERENCIA "
-							+ formatea.format(acumuladoHoras - progAnt.horas)
-							+ " &nbsp;&nbsp; (" + progAnt.turnos + " turnos, " + progAnt.diasSinTurno
-							+ " de descanso)</strong></td> </tr>";
+					//La diferencia se pinta en rojo cuando se trabajo MENOS de lo programado,
+					//que es lo que hay que mirar. Trabajar de mas ya se ve en las extras.
+					respuesta = respuesta + "<div style=\"margin:-12px 0 8px;\">"
+						+ CorreoHtml.dato("Trabajadas", formatea.format(acumuladoHoras), null)
+						+ CorreoHtml.dato("Programadas", formatea.format(progAnt.horas), null)
+						+ CorreoHtml.dato("Diferencia", formatea.format(acumuladoHoras - progAnt.horas),
+								(acumuladoHoras - progAnt.horas) < 0 ? "#c21c1f" : "#16704f")
+						+ CorreoHtml.dato("Turnos", String.valueOf(progAnt.turnos), null)
+						+ CorreoHtml.dato("Descansos", String.valueOf(progAnt.diasSinTurno), null)
+						+ "</div>";
 
 					//Insertamos el pie
 					Row pie = sheet.createRow(filaActual);
@@ -738,32 +740,25 @@ public class ReporteSemanalHorariosBase {
 						horasExtrasOrdinarias = 0;
 					}
 					//Realizamos la inclusi�n de la informaci�n en la tabla HTML
-					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS ORD " + formatea.format(horasExtrasOrdinarias) + "</strong></td> </tr>";
-					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS DOMI " + formatea.format(horasExtrasDominicales) + "</strong></td> </tr>";
-					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS FESTIVA " + formatea.format(horasFestivas) + "</strong></td> </tr>";
-					respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS RECARGO NOCTURNO " + formatea.format(recargoNocTotal) + "</strong></td> </tr>";
-					respuesta = respuesta + "</table> <br/>";
+					respuesta = respuesta + "<div style=\"margin:-12px 0 8px;\">"
+						+ CorreoHtml.dato("Extras ordinarias", formatea.format(horasExtrasOrdinarias), null)
+						+ CorreoHtml.dato("Extras dominicales", formatea.format(horasExtrasDominicales), null)
+						+ CorreoHtml.dato("Festivas", formatea.format(horasFestivas), null)
+						+ CorreoHtml.dato("Recargo nocturno", formatea.format(recargoNocTotal), null)
+						+ "</div>";
 					//Insertamos el resumen
 					HorarioResumen horarioResumen = new HorarioResumen(0, idEmpleadoAnterior, acumuladoHoras, horasExtrasOrdinarias,horasExtrasDominicales, horasFestivas, recargoNocTotal,fechaAnterior,fechaActual );
 					HorarioResumenDAO.insertarHorarioResumen(horarioResumen);
 					
 					filaActual = filaActual + 2;
 					//Aqui tendremos un gran doble salto para pasar de empleado
-					respuesta = respuesta + "<table WIDTH='400' border='2'> <TH COLSPAN='6'> " + empleadoActual  + "</TH> </tr>";
+					respuesta = respuesta + CorreoHtml.tituloPersona(empleadoActual);
 					//Creamos Encabezado del reporte
 					Row nombrePersona = sheet.createRow(filaActual);
 					Cell cellFila = nombrePersona.createCell((short) 0);
 					cellFila.setCellValue(empleadoActual);					cellFila.setCellStyle(estiloNombre);
 					filaActual++;
-					respuesta = respuesta + "<tr>"
-							+  "<td width='120' nowrap><strong>NOMBRE</strong></td>"
-							+  "<td width='50' nowrap><strong>FECHA</strong></td>"
-							+  "<td width='50' nowrap><strong>DIA</strong></td>"
-							+  "<td width='50' nowrap><strong>INGRESO</strong></td>"
-							+  "<td width='50' nowrap><strong>SALIDA</strong></td>"
-							+  "<td width='40' nowrap><strong>HORAS</strong></td>"
-							+  "<td width='40' nowrap><strong>TIENDA</strong></td>"
-							+  "</tr>";
+					respuesta = respuesta + CorreoHtml.abrirTabla("", "Fecha", "Dia", "Ingreso", "Salida", "Horas", "Tienda");
 					//Continuamos con los encabezados
 					Row encabezados = sheet.createRow(filaActual);
 					Cell cellFilaEncabezado = encabezados.createCell((short) 0);
@@ -858,7 +853,7 @@ public class ReporteSemanalHorariosBase {
 					tienda = "No Identificada";
 				}
 				//Realizamos el pintado de la fila
-				respuesta = respuesta + "<tr><td width='120' nowrap>" + fila[0] + "</td><td width='50' nowrap> " + fila[1] + "</td><td width='50' nowrap> " + fila[2] + "</td><td width='50' nowrap> " + fila[3] + "</td><td width='50' nowrap> "+ fila[4] + "</td><td width='50' nowrap> " + strHoras + "</td><td width='50' nowrap> " + tienda +"</td></tr>";
+				respuesta = respuesta + CorreoHtml.fila(fila[1], fila[2], fila[3], fila[4], strHoras, tienda);
 				//Realizamos inserci�n de la tabla
 				HorarioTrabajado horario = new HorarioTrabajado(0, Integer.parseInt(fila[8]),fila[1], fila[2], fila[3], fila[4],horas,idTienda );
 				HorarioTrabajadoDAO.insertarHorarioTrabajado(horario);
@@ -885,7 +880,7 @@ public class ReporteSemanalHorariosBase {
 				salarioEmpleadoAnterior = salarioEmpleadoActual;
 				idEmpleadoAnterior = idEmpleadoActual;
 			}
-			respuesta = respuesta + "<tr> <td COLSPAN='6' width='400' nowrap><strong>TOTAL HORAS " + formatea.format(acumuladoHoras) + "</strong></td> </tr>";
+			respuesta = respuesta + CorreoHtml.filaTotal("TOTAL", "", "", "", formatea.format(acumuladoHoras), "") + CorreoHtml.cerrarTabla();
 			//En este punto realizamos los c�lculos
 			if(tieneFestivo)
 			{
@@ -931,11 +926,12 @@ public class ReporteSemanalHorariosBase {
 				horasExtrasOrdinarias = 0;
 			}
 			//Realizamos la inclusi�n de la informaci�n en la tabla HTML
-			respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS ORD " + formatea.format(horasExtrasOrdinarias) + "</strong></td> </tr>";
-			respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS EXTRAS DOMI " + formatea.format(horasExtrasDominicales) + "</strong></td> </tr>";
-			respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS FESTIVA " + formatea.format(horasFestivas) + "</strong></td> </tr>";
-			respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS RECARGO NOCTURNO " + formatea.format(recargoNocTotal) + "</strong></td> </tr>";
-			respuesta = respuesta + "</table> <br/>";
+			respuesta = respuesta + "<div style=\"margin:-12px 0 8px;\">"
+				+ CorreoHtml.dato("Extras ordinarias", formatea.format(horasExtrasOrdinarias), null)
+				+ CorreoHtml.dato("Extras dominicales", formatea.format(horasExtrasDominicales), null)
+				+ CorreoHtml.dato("Festivas", formatea.format(horasFestivas), null)
+				+ CorreoHtml.dato("Recargo nocturno", formatea.format(recargoNocTotal), null)
+				+ "</div>";
 			//Insertamos el resumen del �ltimo
 			HorarioResumen horarioResumen = new HorarioResumen(0, Integer.parseInt(fila[8]), acumuladoHoras, horasExtrasOrdinarias,horasExtrasDominicales, horasFestivas, recargoNocTotal,fechaAnterior,fechaActual );
 			HorarioResumenDAO.insertarHorarioResumen(horarioResumen);
@@ -943,11 +939,16 @@ public class ReporteSemanalHorariosBase {
 			HorarioPlanificadoDAO.Programado progUlt =
 					HorarioPlanificadoDAO.de(programado, idEmpleadoAnterior);
 			totalTrabajadoGeneral = totalTrabajadoGeneral + acumuladoHoras;
-			respuesta = respuesta + "<tr> <td COLSPAN='7' width='400' nowrap><strong>HORAS PROGRAMADAS "
-					+ formatea.format(progUlt.horas) + " &nbsp;&nbsp; DIFERENCIA "
-					+ formatea.format(acumuladoHoras - progUlt.horas)
-					+ " &nbsp;&nbsp; (" + progUlt.turnos + " turnos, " + progUlt.diasSinTurno
-					+ " de descanso)</strong></td> </tr>";
+			//La diferencia se pinta en rojo cuando se trabajo MENOS de lo programado,
+			//que es lo que hay que mirar. Trabajar de mas ya se ve en las extras.
+			respuesta = respuesta + "<div style=\"margin:-12px 0 8px;\">"
+				+ CorreoHtml.dato("Trabajadas", formatea.format(acumuladoHoras), null)
+				+ CorreoHtml.dato("Programadas", formatea.format(progUlt.horas), null)
+				+ CorreoHtml.dato("Diferencia", formatea.format(acumuladoHoras - progUlt.horas),
+						(acumuladoHoras - progUlt.horas) < 0 ? "#c21c1f" : "#16704f")
+				+ CorreoHtml.dato("Turnos", String.valueOf(progUlt.turnos), null)
+				+ CorreoHtml.dato("Descansos", String.valueOf(progUlt.diasSinTurno), null)
+				+ "</div>";
 
 			Row pie = sheet.createRow(filaActual);
 			Cell cellFilaPie = pie.createCell((short) 0);
@@ -968,22 +969,14 @@ public class ReporteSemanalHorariosBase {
 			 * decir si se trabajo de mas o de menos frente a lo planeado.
 			 */
 			HorarioPlanificadoDAO.Programado progTotal = HorarioPlanificadoDAO.total(programado);
-			respuesta = respuesta + "<table WIDTH='400' border='2'>"
-					+ "<TH COLSPAN='7'>TOTAL GENERAL DE LA SEMANA</TH></tr>"
-					+ "<tr><td width='200' nowrap><strong>HORAS TRABAJADAS</strong></td>"
-					+ "<td width='200' nowrap><strong>" + formatea.format(totalTrabajadoGeneral)
-					+ "</strong></td></tr>"
-					+ "<tr><td width='200' nowrap><strong>HORAS PROGRAMADAS</strong></td>"
-					+ "<td width='200' nowrap><strong>" + formatea.format(progTotal.horas)
-					+ "</strong></td></tr>"
-					+ "<tr><td width='200' nowrap><strong>DIFERENCIA</strong></td>"
-					+ "<td width='200' nowrap><strong>"
-					+ formatea.format(totalTrabajadoGeneral - progTotal.horas) + "</strong></td></tr>"
-					+ "<tr><td width='200' nowrap>Turnos programados</td>"
-					+ "<td width='200' nowrap>" + progTotal.turnos + "</td></tr>"
-					+ "<tr><td width='200' nowrap>Dias de descanso o vacaciones</td>"
-					+ "<td width='200' nowrap>" + progTotal.diasSinTurno + "</td></tr>"
-					+ "</table> <br/>";
+			respuesta = respuesta + CorreoHtml.abrirTabla("Total general de la semana", "Concepto", "Valor")
+					+ CorreoHtml.fila("Horas trabajadas", formatea.format(totalTrabajadoGeneral))
+					+ CorreoHtml.fila("Horas programadas", formatea.format(progTotal.horas))
+					+ CorreoHtml.fila("Turnos programados", String.valueOf(progTotal.turnos))
+					+ CorreoHtml.fila("Dias de descanso o vacaciones", String.valueOf(progTotal.diasSinTurno))
+					+ CorreoHtml.filaTotal("Diferencia",
+							formatea.format(totalTrabajadoGeneral - progTotal.horas))
+					+ CorreoHtml.cerrarTabla();
 
 			Row totalGeneral = sheet.createRow(filaActual);
 			Cell celTot = totalGeneral.createCell((short) 0);
@@ -1026,7 +1019,15 @@ public class ReporteSemanalHorariosBase {
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 			//Anexamos el archivo generado
 			correo.setRutasArchivos(rutasArchivos);
-			correo.setMensaje("Resumen de los horarios cumplidos por Empleado: \n" + respuesta);
+			//El encabezado y el pie se ponen aqui y no al armar respuesta, para
+			//no tener que arrastrar las fechas hasta el comienzo del recorrido.
+			correo.setMensaje(CorreoHtml.abrir("Cumplimiento de horarios",
+					//Sin entidades HTML aqui: el subtitulo pasa por h(), que escapa el
+					//ampersand y las dejaria a la vista como texto.
+					cfg.nombre + " - semana del " + fechaAnterior + " al " + fechaActual)
+					+ respuesta
+					+ CorreoHtml.cerrar("El detalle completo va en el archivo adjunto."
+							+ " Generado automaticamente por Servicios Pizza Americana."));
 			ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTMLAnexo();
 
@@ -1037,14 +1038,10 @@ public class ReporteSemanalHorariosBase {
 			if (cfg.asuntoNoUso != null) {
 			//Generamos otro correo con el fin de revisar las personas que no usaron biometria dentro de la semana que acaba de finalizar
 			respuesta = "";
-			respuesta = respuesta + "<table WIDTH='350' border='2'> <TH COLSPAN='5'> " + "NO REGISTRO DE HUELLA DACTILAR"  + "</TH> </tr>";
-			respuesta = respuesta + "<tr>"
-					+  "<td width='150' nowrap><strong>NOMBRE</strong></td>"
-					+  "<td width='50' nowrap><strong>FECHA</strong></td>"
-					+  "<td width='50' nowrap><strong>DIA</strong></td>"
-					+  "<td width='50' nowrap><strong>EVENTO</strong></td>"
-					+  "<td width='50' nowrap><strong>TIENDA</strong></td>"
-					+  "</tr>";
+			respuesta = respuesta + CorreoHtml.abrir("No registro de huella dactilar",
+					"Semana del " + fechaAnterior + " al " + fechaActual);
+			respuesta = respuesta + CorreoHtml.abrirTabla("Momentos sin marcacion",
+					"Nombre", "Fecha", "Dia", "Evento", "Tienda");
 			ArrayList reporteNoUso = ReporteHorariosDAO.obtenerReporteNoUsoHuellero(fechaAnterior, fechaActual);
 			for(int i = 0; i < reporteNoUso.size(); i++)
 			{
@@ -1070,10 +1067,12 @@ public class ReporteSemanalHorariosBase {
 				{
 					tienda = "No Identificada";
 				}
-				respuesta = respuesta + "<tr><td width='150' nowrap>" + fila[0] + "</td><td width='50' nowrap> " + fila[1] + "</td><td width='50' nowrap> " + fila[2] + "</td><td width='50' nowrap> " + fila[3] + "</td><td width='50' nowrap> " + tienda +"</td></tr>";
+				respuesta = respuesta + CorreoHtml.fila(fila[0], fila[1], fila[2], fila[3], tienda);
 			}
 			correo.setAsunto(cfg.asuntoNoUso + " DE " + fechaAnterior + " HASTA " + fechaActual);
-			correo.setMensaje("Resumen de momentos y empleados que no usaron el huellero: \n" + respuesta);
+			correo.setMensaje(respuesta + CorreoHtml.cerrarTabla()
+					+ CorreoHtml.cerrar("Estas son las marcaciones que el sistema esperaba y no encontro."
+							+ " Generado automaticamente por Servicios Pizza Americana."));
 			contro = new ControladorEnvioCorreo(correo, correos);
 			contro.enviarCorreoHTML();
 			}
