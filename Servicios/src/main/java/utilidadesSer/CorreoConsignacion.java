@@ -142,6 +142,67 @@ public class CorreoConsignacion {
 		return "</table><div style=\"height:20px;line-height:20px;\">&nbsp;</div>";
 	}
 
+	/**
+	 * Una fila del comparativo, con la ULTIMA celda pintada segun la diferencia.
+	 *
+	 * Verde cuando Bold cobro MAS de lo que quedo registrado en los pedidos, y
+	 * rojo cuando fue al reves. El criterio es el de caja, no el contable: en
+	 * rojo la tienda registro plata que Bold no consigno -falta plata-, y en
+	 * verde entro plata que nadie registro, que hay que averiguar pero no es
+	 * una perdida.
+	 *
+	 * Los colores van en el fondo de la celda y NO como color de letra sola:
+	 * varios clientes de correo, y las impresiones en blanco y negro, se comen
+	 * el color del texto. Por eso ademas del color va el signo, para que la
+	 * fila se entienda aunque el color no se vea.
+	 *
+	 * @param diferencia null cuando no se pudo consultar la tienda
+	 */
+	public static String filaComparativo(final String tienda, final String pagosPos,
+			final String valorPos, final String cobrosBold, final String valorBold,
+			final Double diferencia) {
+		final String fondo;
+		final String letra;
+		final String texto;
+		if (diferencia == null) {
+			fondo = "#f4f5f7";
+			letra = GRIS;
+			texto = "sin datos";
+		} else if (diferencia.doubleValue() > 0) {
+			fondo = "#e4f1eb";
+			letra = "#16704f";
+			texto = "+" + pesos(diferencia.doubleValue());
+		} else if (diferencia.doubleValue() < 0) {
+			fondo = "#fadbdb";
+			letra = "#c21c1f";
+			texto = "-" + pesos(Math.abs(diferencia.doubleValue()));
+		} else {
+			fondo = "#ffffff";
+			letra = GRIS;
+			texto = "cuadra";
+		}
+		final StringBuilder sb = new StringBuilder("<tr>");
+		final String[] primeras = { tienda, pagosPos, valorPos, cobrosBold, valorBold };
+		for (int i = 0; i < primeras.length; i++) {
+			sb.append("<td style=\"padding:8px 12px;border-bottom:1px solid #e7e9ee;text-align:")
+					.append(i == 0 ? "left" : "right").append(";\">").append(h(primeras[i])).append("</td>");
+		}
+		sb.append("<td style=\"padding:8px 12px;border-bottom:1px solid #e7e9ee;text-align:right;")
+				.append("background:").append(fondo).append(";color:").append(letra)
+				.append(";font-weight:bold;\">").append(h(texto)).append("</td>");
+		return sb.append("</tr>").toString();
+	}
+
+	/** La leyenda del comparativo. Sin ella el color no dice que significa. */
+	public static String leyendaComparativo() {
+		return "<div style=\"font-size:12px;color:" + GRIS + ";margin:-12px 0 20px;\">"
+				+ "<span style=\"background:#e4f1eb;color:#16704f;font-weight:bold;padding:2px 8px;\">verde</span>"
+				+ " Bold cobr&#243; m&#225;s de lo que se registr&#243; en los pedidos &#183; "
+				+ "<span style=\"background:#fadbdb;color:#c21c1f;font-weight:bold;padding:2px 8px;\">rojo</span>"
+				+ " se registr&#243; m&#225;s de lo que Bold cobr&#243;, revise esa tienda."
+				+ "</div>";
+	}
+
 	/** Recuadro rojo para lo que el lector no debe pasar por alto. */
 	public static String aviso(final String texto) {
 		return "<div style=\"border-left:5px solid " + ROJO + ";background:#fdeceb;color:#8a1c1f;padding:12px 14px;"

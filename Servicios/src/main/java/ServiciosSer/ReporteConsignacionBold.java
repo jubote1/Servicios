@@ -61,9 +61,12 @@ public class ReporteConsignacionBold {
 
 		final ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		final StringBuilder filas = new StringBuilder();
+		final StringBuilder filasComparativo = new StringBuilder();
 		final ArrayList<String> sinRespuesta = new ArrayList<String>();
+		final ArrayList<String> conOtrosEventos = new ArrayList<String>();
 		double totalGeneral = 0;
 		int cantidadGeneral = 0;
+		int tiendasConDiferencia = 0;
 		for (final Tienda tienda : tiendas) {
 			final String host = tienda.getHostBD();
 			if (host == null || host.trim().length() == 0) {
@@ -73,6 +76,8 @@ public class ReporteConsignacionBold {
 			if (qr == null) {
 				sinRespuesta.add(tienda.getNombreTienda());
 				filas.append(CorreoConsignacion.fila(tienda.getNombreTienda(), "sin respuesta", "-", "-"));
+				filasComparativo.append(CorreoConsignacion.filaComparativo(tienda.getNombreTienda(),
+						"-", "-", "-", "-", null));
 				continue;
 			}
 			totalGeneral += qr[0];
@@ -80,6 +85,30 @@ public class ReporteConsignacionBold {
 			filas.append(CorreoConsignacion.fila(tienda.getNombreTienda(),
 					CorreoConsignacion.entero((long) qr[1]), CorreoConsignacion.pesos(qr[0]),
 					CorreoConsignacion.pesos(qr[0] - qr[0] * porcentajeComision / 100)));
+
+			//Lo que Bold dice que cobro, para contrastarlo con lo que quedo
+			//registrado en los pedidos. Va en su propia consulta y no en la de
+			//arriba porque son dos tablas distintas y una puede responder sin
+			//la otra: la tienda podria tener pedidos y no tener todavia el
+			//webhook de Bold configurado.
+			final double[] bold = ConsignacionBoldDAO.obtenerMovimientosBoldDia(fechaConsignacion, host);
+			if (bold == null) {
+				filasComparativo.append(CorreoConsignacion.filaComparativo(tienda.getNombreTienda(),
+						CorreoConsignacion.entero((long) qr[1]), CorreoConsignacion.pesos(qr[0]),
+						"-", "-", null));
+				continue;
+			}
+			if (bold[2] > 0) {
+				conOtrosEventos.add(tienda.getNombreTienda());
+			}
+			final double diferencia = bold[0] - qr[0];
+			if (diferencia != 0) {
+				tiendasConDiferencia++;
+			}
+			filasComparativo.append(CorreoConsignacion.filaComparativo(tienda.getNombreTienda(),
+					CorreoConsignacion.entero((long) qr[1]), CorreoConsignacion.pesos(qr[0]),
+					CorreoConsignacion.entero((long) bold[1]), CorreoConsignacion.pesos(bold[0]),
+					Double.valueOf(diferencia)));
 		}
 		final double comisionTotal = totalGeneral * porcentajeComision / 100;
 		final double totalAConsignar = totalGeneral - comisionTotal;
@@ -110,6 +139,42 @@ public class ReporteConsignacionBold {
 		cuerpo.append(CorreoConsignacion.filaTotal("TOTAL GENERAL", CorreoConsignacion.entero(cantidadGeneral),
 				CorreoConsignacion.pesos(totalGeneral), CorreoConsignacion.pesos(totalAConsignar)));
 		cuerpo.append(CorreoConsignacion.cerrarTabla());
+
+		/*
+		 * El comparativo: lo que el cajero REGISTRO como pago QR contra lo que
+		 * Bold dice que COBRO.
+		 *
+		 * Las dos cifras salen de la misma tienda pero de tablas distintas, y
+		 * por eso sirven de control cruzado: pedido_forma_pago es lo que se
+		 * digito, sonoqr_movimiento es lo que el datafono efectivamente proceso.
+		 *
+		 * La primera corrida contra Manrique del 2026-09-21 encontro dos cosas
+		 * en una sola noche: un pedido con 14.000 registrados contra 14.500
+		 * cobrados, y un cobro de 1.000 que no quedo en ningun pedido.
+		 *
+		 * CUIDADO CON EL TOTAL: no se suma una fila de total, a proposito. Los
+		 * dos lados se miden en ventanas que casi siempre coinciden pero no
+		 * son la misma -los pedidos van por jornada y los cobros por dia
+		 * corrido-, asi que un gran total invitaria a restar dos numeros que
+		 * no son exactamente comparables. Lo que importa es la fila por tienda.
+		 */
+		cuerpo.append(CorreoConsignacion.abrirTabla("Pedidos contra cobros de Bold", "Tienda",
+				"Pagos QR", "Valor en pedidos", "Cobros Bold", "Valor Bold", "Diferencia"));
+		cuerpo.append(filasComparativo);
+		cuerpo.append(CorreoConsignacion.cerrarTabla());
+		cuerpo.append(CorreoConsignacion.leyendaComparativo());
+		if (tiendasConDiferencia > 0) {
+			cuerpo.append(CorreoConsignacion.aviso(tiendasConDiferencia == 1
+					? "Una tienda no cuadra entre lo registrado en los pedidos y lo que cobró Bold."
+					: tiendasConDiferencia + " tiendas no cuadran entre lo registrado en los pedidos"
+							+ " y lo que cobró Bold."));
+		}
+		if (!conOtrosEventos.isEmpty()) {
+			cuerpo.append(CorreoConsignacion.aviso("Bold reportó eventos distintos de una venta aprobada"
+					+ " (anulaciones o devoluciones) en: " + join(conOtrosEventos)
+					+ ". Esos NO están sumados en la columna de Bold; revíselos en la tienda."));
+		}
+
 		cuerpo.append(CorreoConsignacion.cerrar("Generado automáticamente por Servicios Pizza Americana el "
 				+ new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()) + "."));
 
