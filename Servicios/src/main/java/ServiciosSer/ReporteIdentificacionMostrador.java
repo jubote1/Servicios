@@ -104,6 +104,11 @@ public class ReporteIdentificacionMostrador {
 				fila.pedidos = fila.pedidos + c.pedidos;
 				fila.identificados = fila.identificados + c.identificados;
 				fila.seNegaron = fila.seNegaron + c.preguntadosSinDar;
+				//La autorizacion de datos: el otro lado del mismo momento en la
+				//caja. Se suma siempre, tenga o no pedidos de mostrador este
+				//cajero, porque pudo haber preguntado en un pedido de otro tipo.
+				fila.autPreguntadas = fila.autPreguntadas + c.autorizacionPreguntadas;
+				fila.autSi = fila.autSi + c.autorizacionSi;
 				//El detalle por cajero solo para los que tienen volumen: con tres
 				//pedidos un porcentaje no significa nada y estorba en la lista.
 				if (c.pedidos >= MINIMO_PEDIDOS_CAJERO) {

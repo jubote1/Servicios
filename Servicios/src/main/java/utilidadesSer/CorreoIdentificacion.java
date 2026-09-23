@@ -52,10 +52,43 @@ public final class CorreoIdentificacion {
 		 */
 		public int seNegaron = 0;
 
+		/**
+		 * Cuantas veces salio la pantalla de autorizacion de datos en esta
+		 * tienda, y cuantas el cliente dijo que SI.
+		 *
+		 * La pantalla solo aparece cuando el cliente quedo identificado y no se
+		 * le ha preguntado en los ultimos 90 dias, asi que estas cifras son
+		 * mucho menores que los pedidos y NO se pueden leer como porcentaje de
+		 * las ventas. Por eso van en una tabla aparte y no como dos columnas
+		 * mas de la de arriba.
+		 */
+		public int autPreguntadas = 0;
+		public int autSi = 0;
+
 		public ArrayList<String[]> cajeros = new ArrayList<String[]>();
 
 		public int porcentaje() {
 			return (this.pedidos == 0 ? 0 : (this.identificados * 100) / this.pedidos);
+		}
+
+		public int porcentajeAut() {
+			return (this.autPreguntadas == 0 ? 0 : (this.autSi * 100) / this.autPreguntadas);
+		}
+
+		/**
+		 * Si el resultado de esta tienda es tan improbable que hay que mirarlo.
+		 *
+		 * No acusa a nadie: dice que el numero no se explica por el azar. Con la
+		 * tasa general alrededor del 24%, que 15 respuestas seguidas caigan
+		 * todas en NO tiene una probabilidad menor al 2%. Cuando eso pasa, casi
+		 * siempre es la caja oprimiendo NO para quitarse la pantalla de encima,
+		 * no quince clientes decidiendo lo mismo.
+		 *
+		 * El piso de 15 no sobra: sin el, una tienda con dos respuestas en NO
+		 * saldria sennalada y el aviso perderia sentido a la semana.
+		 */
+		public boolean sospechoso() {
+			return (this.autPreguntadas >= 15 && this.porcentajeAut() <= 5);
 		}
 
 		/** Ni identificado ni preguntado. */
@@ -150,6 +183,8 @@ public final class CorreoIdentificacion {
 				.append("\"Se nego\" sale en cero porque alli nadie esta preguntando.")
 				.append("</td></tr>");
 
+		m.append(bloqueAutorizacion(filas));
+
 		m.append("<tr><td style=\"padding:14px 22px 20px;border-top:1px solid ").append(LINEA)
 				.append(";font-size:11.5px;color:#8A9199;line-height:1.5;\">")
 				.append("Correo automatico. No responda a esta direccion.")
@@ -157,6 +192,129 @@ public final class CorreoIdentificacion {
 
 		m.append("</table></div>");
 		return (m.toString());
+	}
+
+	/**
+	 * El segundo bloque del correo: la autorizacion de datos.
+	 *
+	 * VA EN EL MISMO CORREO Y NO EN UNO APARTE
+	 *
+	 * Son los dos lados del mismo momento en la caja: primero se identifica al
+	 * cliente y, si hace falta, se le pide permiso para escribirle. Mandarlos
+	 * separados obligaria a abrir dos correos para entender una sola
+	 * conversacion, y el segundo terminaria sin abrirse.
+	 *
+	 * PERO EN SU PROPIA TABLA
+	 *
+	 * La pantalla de autorizacion solo sale cuando el cliente quedo
+	 * identificado y no se le ha preguntado en 90 dias. Son decenas de
+	 * respuestas contra miles de pedidos: ponerlas como dos columnas mas de la
+	 * tabla de arriba invitaria a dividir una cifra por la otra, y ese
+	 * porcentaje no significa nada.
+	 *
+	 * Si ninguna tienda ha respondido nada, el bloque no se pinta: un cuadro
+	 * lleno de ceros hace pensar que el sistema esta mal cuando lo que pasa es
+	 * que la funcion todavia no esta prendida.
+	 */
+	private static String bloqueAutorizacion(final ArrayList<FilaTienda> filas) {
+		int totalPreg = 0;
+		int totalSi = 0;
+		for (int i = 0; i < filas.size(); i++) {
+			totalPreg = totalPreg + filas.get(i).autPreguntadas;
+			totalSi = totalSi + filas.get(i).autSi;
+		}
+		if (totalPreg == 0) {
+			return ("");
+		}
+		final int totalPct = (totalSi * 100) / totalPreg;
+
+		//De peor a mejor, al reves de la tabla de arriba. Aqui lo que hay que
+		//mirar son las tiendas en cero, y si quedaran de ultimas nadie bajaria
+		//hasta alla.
+		final ArrayList<FilaTienda> orden = new ArrayList<FilaTienda>(filas);
+		java.util.Collections.sort(orden, new java.util.Comparator<FilaTienda>() {
+			@Override
+			public int compare(final FilaTienda a, final FilaTienda b) {
+				return (a.porcentajeAut() - b.porcentajeAut());
+			}
+		});
+
+		final StringBuilder m = new StringBuilder();
+		m.append("<tr><td style=\"padding:6px 22px 0;border-top:1px solid ").append(LINEA).append(";\">")
+				.append("<div style=\"font-size:20px;font-weight:bold;color:").append(TINTA)
+				.append(";padding-top:16px;\">Autorizacion para escribirle al cliente</div>")
+				.append("</td></tr>");
+
+		m.append("<tr><td style=\"padding:10px 22px 4px;\">")
+				.append("<div style=\"font-size:34px;font-weight:bold;color:").append(colorAutorizacion(totalPct, totalPct))
+				.append(";\">").append(totalPct).append("%</div>")
+				.append("<div style=\"font-size:13px;color:").append(TINTA_2).append(";\">")
+				.append(totalSi).append(" de ").append(totalPreg)
+				.append(" clientes a los que les salio la pregunta dijeron que SI.</div>")
+				.append("</td></tr>");
+
+		m.append("<tr><td style=\"padding:14px 22px 18px;\">");
+		m.append("<table cellpadding='6' cellspacing='0' border='0'")
+				.append(" style=\"border-collapse:collapse;width:100%;font-size:13px;\">");
+		m.append("<tr>").append(th("Tienda")).append(th("Se pregunto")).append(th("Dijeron que si"))
+				.append(th("%")).append(th("")).append("</tr>");
+		boolean haySospecha = false;
+		for (int i = 0; i < orden.size(); i++) {
+			final FilaTienda f = orden.get(i);
+			if (f.autPreguntadas == 0) {
+				continue;
+			}
+			final boolean ojo = f.sospechoso();
+			haySospecha = haySospecha || ojo;
+			m.append("<tr>")
+					.append(td("<b>" + escapar(f.tienda) + "</b>", TINTA, "left"))
+					.append(td(Integer.toString(f.autPreguntadas), TINTA, "right"))
+					.append(td(Integer.toString(f.autSi), TINTA, "right"))
+					.append(td("<b>" + f.porcentajeAut() + "%</b>", colorAutorizacion(f.porcentajeAut(), totalPct), "right"))
+					.append(td(ojo ? "<b style=\"color:" + ROJO + ";\">revisar</b>" : "", TINTA_2, "left"))
+					.append("</tr>");
+		}
+		m.append("</table></td></tr>");
+
+		m.append("<tr><td style=\"padding:0 22px 18px;font-size:13px;color:").append(TINTA)
+				.append(";line-height:1.55;\">")
+				.append("La pregunta solo sale cuando el cliente qued&oacute; identificado y no se le ha ")
+				.append("preguntado en los &uacute;ltimos 90 d&iacute;as. Por eso son muchas menos que los ")
+				.append("pedidos: <b>no se pueden leer como porcentaje de las ventas</b>.");
+		if (haySospecha) {
+			m.append("<br><br>")
+					.append("<b>Revisar</b> no acusa a nadie: dice que ese resultado no se explica por el azar. ")
+					.append("Con la tasa general en ").append(totalPct)
+					.append("%, que quince respuestas seguidas caigan todas en NO es muy improbable. ")
+					.append("Cuando pasa, casi siempre es la caja oprimiendo NO para quitarse la pantalla, ")
+					.append("no quince clientes decidiendo lo mismo. Vale la pena sentarse con esa tienda ")
+					.append("antes de sacar conclusiones.");
+		}
+		m.append("</td></tr>");
+		return (m.toString());
+	}
+
+	/**
+	 * El color de la autorizacion se mide contra el PROMEDIO, no contra una meta.
+	 *
+	 * La escala de la identificacion -verde en 70%- no sirve aqui: la
+	 * autorizacion general anda por el 24% y pintaria las once tiendas en rojo,
+	 * que es lo mismo que no pintar nada. Y una meta no se puede inventar:
+	 * todavia nadie sabe que porcentaje de clientes deberia aceptar.
+	 *
+	 * Lo que si se puede afirmar es que once tiendas con la MISMA pantalla y el
+	 * MISMO texto deberian dar parecido. Por eso el color compara cada tienda
+	 * con el promedio de todas: dice "esta tienda esta peor que las demas", que
+	 * es cierto y accionable, en vez de "no llega a una meta" que nadie fijo.
+	 */
+	private static String colorAutorizacion(final int pct, final int promedio) {
+		if (pct >= promedio + 10) {
+			return (VERDE);
+		}
+		if (pct * 2 <= promedio) {
+			return (ROJO);
+		}
+		return (AMBAR);
 	}
 
 	private static String color(final int pct) {
