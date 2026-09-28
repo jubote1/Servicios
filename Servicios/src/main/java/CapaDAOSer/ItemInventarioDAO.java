@@ -26,7 +26,30 @@ public class ItemInventarioDAO {
 						" ifnull((SELECT b.cantidad FROM item_inventario_historico b WHERE a.iditem = b.iditem AND B.fecha = '" + fechaAnterior + "'),0) AS INVENTARIO_INICIAL " +
 						" ,ifnull( (SELECT SUM(d.cantidad) FROM ingreso_inventario c, ingreso_inventario_detalle d WHERE c.idingreso_inventario = d.idingreso_inventario AND d.iditem = a.iditem AND c.fecha_sistema >= '" + fechaAnterior + "' AND c.fecha_sistema <= '" + fechaActual + "'),0)  AS ENVIADO_A_TIENDA" +
 						" ,ifnull( (select sum(c.cantidad) from retiro_inventario d, retiro_inventario_detalle c where c.idretiro_inventario = d.idretiro_inventario and c.iditem = a.iditem and d.fecha_sistema >= '" + fechaAnterior +"' AND d.fecha_sistema <= '" + fechaActual + "' ),0) AS RETIROS_OTRAS_TIENDAS " + 
-						" , a.cantidad AS INVENTARIO_FINAL   from item_inventario a WHERE " +
+						/*
+						 * El inventario FINAL: primero la FOTO, y solo si no existe, el
+						 * inventario vivo.
+						 *
+						 * Antes leia unicamente a.cantidad -lo que la tienda tiene AHORA-.
+						 * Eso da bien cuando el proceso corre el domingo por la noche,
+						 * porque en ese momento lo vivo ES el cierre; pero hace que el
+						 * cierre NO sea reproducible: reprocesar el miercoles daba otro
+						 * numero, porque entre medias la tienda siguio consumiendo.
+						 *
+						 * Y ojo con la fecha: item_inventario_historico guarda, en la
+						 * fila de la fecha X, el inventario con el que ARRANCA ese dia,
+						 * o sea el cierre del dia anterior. Verificado con datos: en
+						 * Niquia la varianza del 26 quedo en 900 y el historico del 27
+						 * tambien; el del 27 fue 300. Por eso el cierre de la semana que
+						 * termina el domingo se lee en la foto del LUNES, no la del
+						 * domingo. Es la misma fecha que usa el reproceso
+						 * (obtenerCierreSemanalInsumosReproceso con fechaActualSiguiente).
+						 *
+						 * El domingo por la noche esa foto todavia no existe, y ahi el
+						 * coalesce cae a a.cantidad, que es exactamente el comportamiento
+						 * de siempre.
+						 */
+						" , coalesce((SELECT b.cantidad FROM item_inventario_historico b WHERE b.iditem = a.iditem AND b.fecha = DATE_ADD('" + fechaActual + "', INTERVAL 1 DAY)), a.cantidad) AS INVENTARIO_FINAL   from item_inventario a WHERE " +
 						" a.categoria LIKE '" + tipoItemInventario + "%'";
 				ResultSet rs = stm.executeQuery(consulta);
 				ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
@@ -78,7 +101,30 @@ public class ItemInventarioDAO {
 						" ifnull((SELECT b.cantidad FROM item_inventario_varianza b, inventario_varianza iv WHERE iv.idinventario_varianza = b.idinventario_varianza and a.iditem = b.iditem AND iv.fecha_sistema = '" + preFechaAnterior + "' order by b.idinventario_varianza desc limit 1),0) AS INVENTARIO_INICIAL " +
 						" ,ifnull( (SELECT SUM(d.cantidad) FROM ingreso_inventario c, ingreso_inventario_detalle d WHERE c.idingreso_inventario = d.idingreso_inventario AND d.iditem = a.iditem AND c.fecha_sistema >= '" + fechaAnterior + "' AND c.fecha_sistema <= '" + fechaActual + "'),0)  AS ENVIADO_A_TIENDA" +
 						" ,ifnull( (select sum(c.cantidad) from retiro_inventario d, retiro_inventario_detalle c where c.idretiro_inventario = d.idretiro_inventario and c.iditem = a.iditem and d.fecha_sistema >= '" + fechaAnterior +"' AND d.fecha_sistema <= '" + fechaActual + "' ),0) AS RETIROS_OTRAS_TIENDAS " + 
-						" , a.cantidad AS INVENTARIO_FINAL   from item_inventario a WHERE " +
+						/*
+						 * El inventario FINAL: primero la FOTO, y solo si no existe, el
+						 * inventario vivo.
+						 *
+						 * Antes leia unicamente a.cantidad -lo que la tienda tiene AHORA-.
+						 * Eso da bien cuando el proceso corre el domingo por la noche,
+						 * porque en ese momento lo vivo ES el cierre; pero hace que el
+						 * cierre NO sea reproducible: reprocesar el miercoles daba otro
+						 * numero, porque entre medias la tienda siguio consumiendo.
+						 *
+						 * Y ojo con la fecha: item_inventario_historico guarda, en la
+						 * fila de la fecha X, el inventario con el que ARRANCA ese dia,
+						 * o sea el cierre del dia anterior. Verificado con datos: en
+						 * Niquia la varianza del 26 quedo en 900 y el historico del 27
+						 * tambien; el del 27 fue 300. Por eso el cierre de la semana que
+						 * termina el domingo se lee en la foto del LUNES, no la del
+						 * domingo. Es la misma fecha que usa el reproceso
+						 * (obtenerCierreSemanalInsumosReproceso con fechaActualSiguiente).
+						 *
+						 * El domingo por la noche esa foto todavia no existe, y ahi el
+						 * coalesce cae a a.cantidad, que es exactamente el comportamiento
+						 * de siempre.
+						 */
+						" , coalesce((SELECT b.cantidad FROM item_inventario_historico b WHERE b.iditem = a.iditem AND b.fecha = DATE_ADD('" + fechaActual + "', INTERVAL 1 DAY)), a.cantidad) AS INVENTARIO_FINAL   from item_inventario a WHERE " +
 						" a.categoria LIKE '" + tipoItemInventario + "%'";
 				ResultSet rs = stm.executeQuery(consulta);
 				ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();

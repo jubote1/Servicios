@@ -57,6 +57,9 @@ public class ReporteCierreInventarioReprocesoCtrl {
 	String respuesta = "";
 	String respuestaConDescuentos = "";
 	DecimalFormat formatea = new DecimalFormat("###,###.##");
+
+	/** Un decimal basta para un porcentaje de comida. */
+	DecimalFormat formateaPorcentaje = new DecimalFormat("##0.0");
 	
 public static void main(String[] args)
 {
@@ -424,6 +427,15 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	        double retiroTienda;
 	        double inventarioFinal;
 	        double consumo;
+	        /*
+	         * Los insumos con consumo NEGATIVO, que es fisicamente imposible:
+	         * dice que la tienda termino con mas de lo que tenia mas lo que le
+	         * enviaron. Siempre es un conteo mal digitado, casi siempre la coma
+	         * (0,97 escrito 97). Un solo renglon asi tumba el indicador de toda
+	         * la tienda. Ver el comentario largo en ReporteCierreInventario.
+	         */
+	        StringBuilder insumosNegativos = new StringBuilder();
+	        int cuantosNegativos = 0;
 	        double costoUnidad = 0;
 	        double embalajeCosto = 0;
 	        double costoTotal = 0;
@@ -455,6 +467,19 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            inventarioFinal= Double.parseDouble((String) d[6]);
 	            cierreInv.setInventarioFinal(inventarioFinal);
 	            consumo = inventarioInicial + enviadoTienda - retiroTienda - inventarioFinal;
+	            //Se anota, no se corrige: el dato crudo sigue viendose en el Excel
+	            //y en la tabla del central. Lo que se bloquea es el porcentaje.
+	            if (consumo < 0)
+	            {
+	            	cuantosNegativos++;
+	            	if (insumosNegativos.length() > 0)
+	            	{
+	            		insumosNegativos.append(", ");
+	            	}
+	            	insumosNegativos.append(nombreInsumo).append(" (inicial ")
+	            			.append(formatea.format(inventarioInicial)).append(", final ")
+	            			.append(formatea.format(inventarioFinal)).append(")");
+	            }
 	            cierreInv.setConsumo(consumo);
 	            //Buscamos el insumo para saber su costounidad
 	            for(int y = 0; y < insumos.size(); y++ )
@@ -549,6 +574,19 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            inventarioFinal= Double.parseDouble((String) d[6]);
 	            cierreInv.setInventarioFinal(inventarioFinal);
 	            consumo = inventarioInicial + enviadoTienda - retiroTienda - inventarioFinal;
+	            //Se anota, no se corrige: el dato crudo sigue viendose en el Excel
+	            //y en la tabla del central. Lo que se bloquea es el porcentaje.
+	            if (consumo < 0)
+	            {
+	            	cuantosNegativos++;
+	            	if (insumosNegativos.length() > 0)
+	            	{
+	            		insumosNegativos.append(", ");
+	            	}
+	            	insumosNegativos.append(nombreInsumo).append(" (inicial ")
+	            			.append(formatea.format(inventarioInicial)).append(", final ")
+	            			.append(formatea.format(inventarioFinal)).append(")");
+	            }
 	            cierreInv.setConsumo(consumo);
 	            //Buscamos el insumo para saber su costounidad
 	            for(int z = 0; z < insumos.size(); z++ )
@@ -618,8 +656,31 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             datos.setCellStyle(styleInfRep);
             datos = dataInt2.createCell(8);
             porcentajeComida = (costoTotalComida/totalVentaSemana)*100;
+            /*
+             * Igual que en el proceso titular: antes de publicar el porcentaje
+             * se mira si se puede creer. Venta en cero da NaN en Java -que se
+             * imprimia tal cual-, y un insumo con consumo negativo puede dejar
+             * el porcentaje de la tienda en -74%. En los dos casos se dice POR
+             * QUE no hay numero, en vez de dar uno falso.
+             */
+            String celdaPorcentaje;
+            if (totalVentaSemana <= 0)
+            {
+            	celdaPorcentaje = "<span style='color:#8A6400'>sin venta en la semana</span>";
+            }
+            else if (cuantosNegativos > 0)
+            {
+            	celdaPorcentaje = "<b style='color:#C21C1F'>REVISAR</b><br>"
+            			+ "<span style='font-size:11px'>" + cuantosNegativos
+            			+ " insumo(s) con consumo negativo: " + insumosNegativos.toString()
+            			+ "</span>";
+            }
+            else
+            {
+            	celdaPorcentaje = formateaPorcentaje.format(porcentajeComida) + "%";
+            }
             //En este punto tenemos el porcentaje de comida total con GASEOSA para la tienda
-            respuesta = respuesta + "<tr><td>" + tienda.getNombreTienda() +  "</td><td>" + Double.toString(porcentajeComida) + "</td></tr>";
+            respuesta = respuesta + "<tr><td>" + tienda.getNombreTienda() +  "</td><td>" + celdaPorcentaje + "</td></tr>";
             //Generamos otro correo con información más detallada
             double porcentajeComidaConDes = (costoTotalComida/(totalVentaSemana+totalDescuentosReembolsables))*100;
             respuestaConDescuentos = respuestaConDescuentos + "<tr><td>" + tienda.getNombreTienda() +  "</td><td>" + Double.toString(porcentajeComida) + "</td><td>" + formatea.format(totalVentaSemana+totalDescuentosReembolsables) + "</td><td>" + formatea.format(totalDescuentosReembolsables) + "</td><td>" + Double.toString(porcentajeComidaConDes) + "</td></tr>";
