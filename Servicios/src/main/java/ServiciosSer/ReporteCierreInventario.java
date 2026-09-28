@@ -58,6 +58,61 @@ public class ReporteCierreInventario {
 
 	/** Un decimal basta para un porcentaje de comida. Ver la celda del correo. */
 	DecimalFormat formateaPorcentaje = new DecimalFormat("##0.0");
+
+	/*
+	 * DOS BANDAS DISTINTAS, Y LA DIFERENCIA IMPORTA.
+	 *
+	 * La primera es lo IMPOSIBLE: por debajo de 0 o por encima de 100 el numero
+	 * no puede ser cierto -consumir menos que nada, o costar mas de lo que se
+	 * vendio-. Ahi no se publica la cifra, porque publicarla es mentir.
+	 *
+	 * La segunda es lo SOSPECHOSO: fuera de 20%-50% el dato probablemente esta
+	 * mal, pero puede no estarlo. Ahi SI se publica, resaltado, porque esconder
+	 * el numero le quita a operacion el dato que necesita para trabajar.
+	 *
+	 * Esa es la leccion del primer intento: se bloqueaba el porcentaje ante
+	 * cualquier insumo negativo, y en Bello un renglon de pitillos -165 contra
+	 * 169, cuatro unidades- tapaba un 34% que estaba perfectamente bien.
+	 */
+	private static final double PORC_IMPOSIBLE_MIN = 0;
+	private static final double PORC_IMPOSIBLE_MAX = 100;
+	private static final double PORC_ESPERADO_MIN = 20;
+	private static final double PORC_ESPERADO_MAX = 50;
+
+	/**
+	 * La celda de porcentaje del correo, con su aviso si hace falta.
+	 *
+	 * REVISAR es una ADVERTENCIA, no un bloqueo: acompana al numero en vez de
+	 * reemplazarlo. Solo se calla la cifra cuando de plano no puede ser cierta.
+	 */
+	private String celdaPorcentaje(double porcentaje, double venta, int cuantosNegativos,
+			String insumosNegativos)
+	{
+		String aviso = "";
+		if (cuantosNegativos > 0)
+		{
+			aviso = "<br><b style='color:#C21C1F'>REVISAR</b>"
+					+ "<span style='font-size:11px'> &mdash; " + cuantosNegativos
+					+ " insumo(s) con consumo negativo: " + insumosNegativos + "</span>";
+		}
+		if (venta <= 0)
+		{
+			//Dividir por cero en double no revienta: da NaN, y eso se imprimia tal cual.
+			return ("<span style='color:#8A6400'>sin venta en la semana</span>" + aviso);
+		}
+		if (porcentaje < PORC_IMPOSIBLE_MIN || porcentaje > PORC_IMPOSIBLE_MAX)
+		{
+			return ("<b style='color:#C21C1F'>sin dato confiable</b>"
+					+ "<span style='font-size:11px'><br>el c&aacute;lculo dio "
+					+ formateaPorcentaje.format(porcentaje) + "%, que no es posible</span>" + aviso);
+		}
+		if (porcentaje < PORC_ESPERADO_MIN || porcentaje > PORC_ESPERADO_MAX)
+		{
+			return ("<b style='color:#8A6400'>" + formateaPorcentaje.format(porcentaje)
+					+ "%</b> <span style='font-size:11px'>(fuera de lo habitual)</span>" + aviso);
+		}
+		return (formateaPorcentaje.format(porcentaje) + "%" + aviso);
+	}
 	
 public static void main(String[] args)
 {
@@ -714,42 +769,10 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             datos.setCellStyle(styleInfRep);
             datos = dataInt2.createCell(8);
             porcentajeComida = (costoTotalComida/totalVentaSemana)*100;
-            /*
-             * ANTES DE PUBLICAR EL PORCENTAJE SE MIRA SI SE PUEDE CREER.
-             *
-             * Habia dos formas de sacar un numero que no significaba nada:
-             *
-             * 1. Venta en cero -la Bodega, que no vende-. En Java dividir un
-             *    double por cero no revienta: da NaN, y el correo imprimia
-             *    "NaN" tal cual en la columna de porcentaje.
-             * 2. Algun insumo con consumo negativo. Un solo renglon mal
-             *    digitado tumba el total de la tienda: America salio en
-             *    -74,6% por un sirope contado como 1000 en vez de 1.
-             *
-             * En los dos casos ahora se muestra POR QUE no hay numero, en vez
-             * de un numero falso. Un reporte que miente una vez deja de
-             * leerse, y este se manda a direccion general.
-             *
-             * Y el porcentaje bueno se redondea a un decimal: los catorce que
-             * salian de Double.toString no aportan nada y hacen ver el correo
-             * descuidado.
-             */
-            String celdaPorcentaje;
-            if (totalVentaSemana <= 0)
-            {
-            	celdaPorcentaje = "<span style='color:#8A6400'>sin venta en la semana</span>";
-            }
-            else if (cuantosNegativos > 0)
-            {
-            	celdaPorcentaje = "<b style='color:#C21C1F'>REVISAR</b><br>"
-            			+ "<span style='font-size:11px'>" + cuantosNegativos
-            			+ " insumo(s) con consumo negativo: " + insumosNegativos.toString()
-            			+ "</span>";
-            }
-            else
-            {
-            	celdaPorcentaje = formateaPorcentaje.format(porcentajeComida) + "%";
-            }
+            //El numero SE PUBLICA aunque haya insumos raros; REVISAR lo acompana
+            //en vez de reemplazarlo. Ver celdaPorcentaje().
+            String celdaPorcentaje = celdaPorcentaje(porcentajeComida, totalVentaSemana,
+            		cuantosNegativos, insumosNegativos.toString());
             //En este punto tenemos el porcentaje de comida total con GASEOSA para la tienda
             respuesta = respuesta + "<tr><td>" + tienda.getNombreTienda() + "</td><td>" + formatea.format(totalVentaSemana) +"</td><td>" + celdaPorcentaje + "</td></tr>";
             //Generamos otro correo con informaci�n m�s detallada
