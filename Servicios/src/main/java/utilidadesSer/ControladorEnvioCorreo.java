@@ -56,9 +56,21 @@ public boolean enviarCorreo()
 			String cadenaCompleta = archAnexos[i];
 			if(!(cadenaCompleta == null))
 			{
+				//La convencion es "ruta%&nombre_que_ve_el_destinatario". Antes se
+				//pedian los dos pedazos sin preguntar si el segundo existia, y un
+				//proceso que mandara solo la ruta reventaba con NoSuchElementException
+				//ANTES de armar el mensaje: no salia el correo, y en el log quedaba
+				//el nombre pelado de la excepcion, sin decir de que archivo ni de
+				//que reporte. Paso con el cierre semanal de consignaciones.
+				//
+				//Ahora, si no viene el nombre, se toma el del propio archivo. El
+				//correo sale y el adjunto se llama como corresponde. Cuando si
+				//viene, no cambia nada.
 				StringTokenizer tokens = new StringTokenizer(cadenaCompleta,"%&");
-				String ruta = tokens.nextToken();
-				String nombreArchivo = tokens.nextToken();
+				String ruta = tokens.hasMoreTokens() ? tokens.nextToken() : cadenaCompleta;
+				String nombreArchivo = tokens.hasMoreTokens()
+						? tokens.nextToken()
+						: new java.io.File(ruta).getName();
 				adjunto.setDataHandler(new DataHandler(new FileDataSource(ruta)));
 				adjunto.setFileName(nombreArchivo);
 				m.addBodyPart(adjunto);
@@ -170,9 +182,21 @@ public boolean enviarCorreoHTMLAnexo()
 			String cadenaCompleta = archAnexos[i];
 			if(!(cadenaCompleta == null))
 			{
+				//La convencion es "ruta%&nombre_que_ve_el_destinatario". Antes se
+				//pedian los dos pedazos sin preguntar si el segundo existia, y un
+				//proceso que mandara solo la ruta reventaba con NoSuchElementException
+				//ANTES de armar el mensaje: no salia el correo, y en el log quedaba
+				//el nombre pelado de la excepcion, sin decir de que archivo ni de
+				//que reporte. Paso con el cierre semanal de consignaciones.
+				//
+				//Ahora, si no viene el nombre, se toma el del propio archivo. El
+				//correo sale y el adjunto se llama como corresponde. Cuando si
+				//viene, no cambia nada.
 				StringTokenizer tokens = new StringTokenizer(cadenaCompleta,"%&");
-				String ruta = tokens.nextToken();
-				String nombreArchivo = tokens.nextToken();
+				String ruta = tokens.hasMoreTokens() ? tokens.nextToken() : cadenaCompleta;
+				String nombreArchivo = tokens.hasMoreTokens()
+						? tokens.nextToken()
+						: new java.io.File(ruta).getName();
 				adjunto.setDataHandler(new DataHandler(new FileDataSource(ruta)));
 				adjunto.setFileName(nombreArchivo);
 				m.addBodyPart(adjunto);

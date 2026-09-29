@@ -445,8 +445,18 @@ public class ReporteSemanalConsignaciones {
 		correo.setContrasena(infoCorreo.getClaveCorreo());
 		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
 		correo.setMensaje(cuerpo.toString());
-		correo.setRutasArchivos(new String[] { rutaArchivo });
-		new ControladorEnvioCorreo(correo, correos).enviarCorreoHTMLAnexo();
+		//El adjunto va como "ruta%&nombre_que_ve_el_destinatario". Es la convencion
+		//de ControladorEnvioCorreo y no es opcional: sin el separador, el envio
+		//moria con un NoSuchElementException que en el log solo se veia como el
+		//nombre de la excepcion, sin decir de que archivo ni de que correo. El
+		//Excel ya estaba guardado, asi que parecia que el proceso entero habia
+		//fallado cuando lo unico que no salio fue el correo.
+		correo.setRutasArchivos(new String[] {
+				rutaArchivo + "%&" + "Consignaciones-" + semanaInicio + "--" + semanaFin + ".xlsx" });
+		final boolean enviado = new ControladorEnvioCorreo(correo, correos).enviarCorreoHTMLAnexo();
+		System.out.println("ReporteSemanalConsignaciones: " + (enviado
+				? "correo enviado a " + correos.size() + " destinatario(s)."
+				: "NO se pudo enviar el correo. El Excel quedo en " + rutaArchivo));
 	}
 
 	private String join(final ArrayList<String> nombres) {
