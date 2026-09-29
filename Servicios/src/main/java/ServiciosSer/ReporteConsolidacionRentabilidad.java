@@ -95,6 +95,10 @@ public class ReporteConsolidacionRentabilidad {
 		double valorCalculo = 0;
 		double valorGasto = 0;
 		GastoSemanal gastoSemanalTemp;
+		//Cuenta de lo que NO se pudo calcular. Antes esto no existia porque un
+		//error devolvia cero y se guardaba como si fuera un dato.
+		int noSePudo = 0;
+		StringBuilder detalleNoSePudo = new StringBuilder();
 		for(int j = 0; j < tiendas.size(); j++)
 		{
 			tiendaTemp = tiendas.get(j);
@@ -112,6 +116,17 @@ public class ReporteConsolidacionRentabilidad {
 						consultaSQL = consultaSQL.replace("%idtienda%",  Integer.toString(tiendaTemp.getIdTienda()));
 						//Posteriormente deberemos de ejecutar la consulta para tener el valor del cálculo
 						valorCalculo = GastoSemanalDAO.obtenerValorCalculo(tiendaTemp.getHosbd(), consultaSQL, gastoTiendaTemp.getOrigen());
+						//Si la consulta no se pudo ejecutar, NO se guarda la fila. Un cero
+						//guardado es indistinguible de un cero real, y asi fue como la
+						//linea de Rappi paso cuatro anos en cero sin que nadie lo viera.
+						//Una fila que falta se ve; un cero se suma.
+						if(Double.isNaN(valorCalculo))
+						{
+							noSePudo++;
+							detalleNoSePudo.append("\n   - ").append(tiendaTemp.getNombreTienda())
+								.append(" / ").append(gastoTiendaTemp.getNombreGasto());
+							continue;
+						}
 						if(porcentajeGasto != 0)
 						{
 							valorGasto = valorCalculo*(porcentajeGasto/100);
@@ -129,6 +144,20 @@ public class ReporteConsolidacionRentabilidad {
 
 		}
 		
+		//El resumen de lo que no se pudo calcular queda en el log del proceso.
+		//Sin esto, una tienda apagada o una consulta rota se veria igual que una
+		//semana sin gastos: simplemente no habria filas, y nadie las echaria de
+		//menos. Con esto queda escrito cuales faltan y por que.
+		if(noSePudo > 0)
+		{
+			System.out.println("ATENCION: " + noSePudo + " concepto(s) no se pudieron calcular "
+					+ "y NO se guardaron:" + detalleNoSePudo.toString());
+		}else
+		{
+			System.out.println("Todos los conceptos se calcularon para la semana "
+					+ fechaAnterior + " a " + fechaActual);
+		}
+
 		//Volvemos a recorrer las tiendas para extraer la información de los ingresos y egresos.
 		ArrayList<Egreso> egresosTienda;
 		ArrayList<Ingreso> ingresosTienda;
