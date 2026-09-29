@@ -84,10 +84,17 @@ public class ReporteSemanalConsignaciones {
 	}
 
 	/**
-	 * El periodo lunes-domingo que cierra con una fecha de corte. Igual que
-	 * ServicioSemanalVentaIntegral: se acepta corte domingo (la semana que acaba de
-	 * terminar) o lunes (por si el Task Scheduler quedo programado de madrugada del
-	 * dia siguiente), para no atar el codigo a una hora exacta de corrida.
+	 * El periodo lunes-domingo que cierra con una fecha de corte. Se acepta corte
+	 * domingo (la semana que acaba de terminar) o lunes (por si el Task Scheduler
+	 * quedo programado de madrugada del dia siguiente), para no atar el codigo a una
+	 * hora exacta de corrida -y para que un reproceso a mano de un domingo con
+	 * FECHAREPROCESO en cualquiera de los dos dias caiga en la MISMA semana-.
+	 *
+	 * OJO, esto no es lo mismo que en ServicioSemanalVentaIntegral: alla, un corte
+	 * lunes deja el "fin" como ese mismo lunes -el rango queda de 8 dias, no 7,
+	 * colando un lunes que no es parte de la semana que se quiere-. Aca se corrige:
+	 * con corte lunes, el fin real es el domingo anterior (corte - 1 dia), asi que
+	 * domingo y lunes dan exactamente el mismo rango de 7 dias.
 	 */
 	private String[] periodo(final String fechaCorte) {
 		if (fechaCorte == null || fechaCorte.trim().length() < 10) {
@@ -107,9 +114,12 @@ public class ReporteSemanalConsignaciones {
 					+ " no cae domingo ni lunes, no se procesa.");
 			return (null);
 		}
+		if (dia == Calendar.MONDAY) {
+			calendario.add(Calendar.DAY_OF_YEAR, -1);
+		}
 		final SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
 		final String fin = formatoFecha.format(calendario.getTime());
-		calendario.add(Calendar.DAY_OF_YEAR, (dia == Calendar.SUNDAY ? -6 : -7));
+		calendario.add(Calendar.DAY_OF_YEAR, -6);
 		return (new String[] { formatoFecha.format(calendario.getTime()), fin });
 	}
 
