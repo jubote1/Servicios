@@ -19,6 +19,86 @@ import ModeloSer.Usuario;
  */
 public class UsuarioDAO {
 
+	/**
+	 * Los roles que la tabla tipo_empleado marca como administrativos.
+	 *
+	 * Se lee UNA vez: esto se consulta por cada empleado y por cada tienda -217
+	 * por 11-, y preguntarlo cada vez serian dos mil viajes a la base para
+	 * responder siempre lo mismo.
+	 */
+	private static java.util.Set<Integer> rolesAdministrativos = null;
+
+	private static synchronized java.util.Set<Integer> rolesAdministrativos() {
+		if (rolesAdministrativos != null) {
+			return rolesAdministrativos;
+		}
+		final java.util.Set<Integer> roles = new java.util.HashSet<Integer>();
+		Connection con1 = null;
+		try {
+			con1 = new ConexionBaseDatos().obtenerConexionBDGeneral();
+			Statement stm = con1.createStatement();
+			ResultSet rs = stm.executeQuery(
+					"select idtipoempleado from tipo_empleado where es_administrador = 1");
+			while (rs.next()) {
+				roles.add(Integer.valueOf(rs.getInt(1)));
+			}
+			rs.close();
+			stm.close();
+		} catch (Exception e) {
+			System.out.println("UsuarioDAO.rolesAdministrativos: " + e.toString());
+		} finally {
+			try {
+				if (con1 != null) {
+					con1.close();
+				}
+			} catch (Exception e) {
+			}
+		}
+		//Si la consulta falla NO se deja la lista vacia en cache: quedaria
+		//devolviendo "ningun rol es administrativo" hasta el proximo reinicio, y
+		//los administradores de apoyo entrarian sin permisos sin que nadie
+		//entienda por que. Mejor volver a intentar en la siguiente llamada.
+		if (!roles.isEmpty()) {
+			rolesAdministrativos = roles;
+		}
+		return (roles);
+	}
+
+	/**
+	 * El rol con el que este empleado tiene que entrar al POS.
+	 *
+	 * POR QUE NO ES SIMPLEMENTE idtipoempleado
+	 *
+	 * Hay gente que es pizzera o de servicio al cliente y que ADEMAS apoya como
+	 * administradora del punto de venta. A esa gente se le deja su oficio real
+	 * en idtipoempleado -pizzera, rol 5- y el rol administrativo en
+	 * idtipoempleado2 -auxiliar administrador, rol 1-, y se le marca
+	 * administrador en S.
+	 *
+	 * La tabla usuario de la tienda, que es de donde el POS saca los permisos al
+	 * entrar, SOLO tiene idtipoempleado. Hasta ahora se le mandaba el 5, asi que
+	 * llegaba marcada como administradora pero con permisos de pizzera: el caso
+	 * de Saray Rojas, empleada 603.
+	 *
+	 * Los roles administrativos no se escriben aqui a mano sino que salen de
+	 * tipo_empleado.es_administrador, que es donde ya estan definidos. Hoy son
+	 * el 1, el 2 y el 6; el dia que agreguen otro, esto no hay que tocarlo.
+	 *
+	 * El oficio real NO se pierde: la tabla empleado de la tienda sigue
+	 * recibiendo los dos campos.
+	 */
+	public static int tipoEmpleadoParaPOS(Usuario usuario) {
+		int base = usuario.getIdTipoEmpleado();
+		if (!"S".equals(usuario.getAdministrador())) {
+			return (base);
+		}
+		int apoyo = usuario.getIdTipoEmpleado2();
+		if (apoyo > 0 && apoyo != base && rolesAdministrativos().contains(Integer.valueOf(apoyo))) {
+			return (apoyo);
+		}
+		return (base);
+	}
+
 //LA PRIMERA FASE TIENE COMO OBJETIVO RECOPILAR LA INFO DE LA BASE DE DATOS GENERAL
 /*
  * M�todo que se encargar� de retornar todos los empleados de la base de datos general
@@ -375,7 +455,7 @@ public class UsuarioDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			insert = "insert into usuario (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, es_empleado, claverapida) values (" + usuario.getIdUsuario() + " ,'" + usuario.getNombreUsuario() + "' , '" + usuario.getContrasena() + "' , '" + usuario.getNombreLargo() + "' , '" + usuario.getAdministrador() + "', " + usuario.getidTipoEmpleado() + " , '" + usuario.getTipoInicio() + "' ," + usuario.getEsEmpleado() + " , '" + usuario.getClaveRapida()  + "')"; 
+			insert = "insert into usuario (id,nombre, password,  nombre_largo,administrador, idtipoempleado, tipoinicio, es_empleado, claverapida) values (" + usuario.getIdUsuario() + " ,'" + usuario.getNombreUsuario() + "' , '" + usuario.getContrasena() + "' , '" + usuario.getNombreLargo() + "' , '" + usuario.getAdministrador() + "', " + tipoEmpleadoParaPOS(usuario) + " , '" + usuario.getTipoInicio() + "' ," + usuario.getEsEmpleado() + " , '" + usuario.getClaveRapida()  + "')"; 
 			stm.executeUpdate(insert, Statement.RETURN_GENERATED_KEYS);
 			ResultSet rs = stm.getGeneratedKeys();
 			if (rs.next()){
@@ -418,7 +498,7 @@ public class UsuarioDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String update = "update usuario set nombre = '" + usuario.getNombreUsuario() + "' , password  = '" + usuario.getContrasena() + "' ,  nombre_largo = '" + usuario.getNombreLargo() + "' , administrador = '" + usuario.getAdministrador() + "' , idtipoempleado = " + usuario.getIdTipoEmpleado() + " , tipoinicio = '" + usuario.getTipoInicio() +"' , es_empleado = " + usuario.getEsEmpleado() + " , claverapida = '" + usuario.getClaveRapida() + "' where id = " + usuario.getIdUsuario(); 
+			String update = "update usuario set nombre = '" + usuario.getNombreUsuario() + "' , password  = '" + usuario.getContrasena() + "' ,  nombre_largo = '" + usuario.getNombreLargo() + "' , administrador = '" + usuario.getAdministrador() + "' , idtipoempleado = " + tipoEmpleadoParaPOS(usuario) + " , tipoinicio = '" + usuario.getTipoInicio() +"' , es_empleado = " + usuario.getEsEmpleado() + " , claverapida = '" + usuario.getClaveRapida() + "' where id = " + usuario.getIdUsuario(); 
 			stm.executeUpdate(update);
 			stm.close();
 			con1.close();
