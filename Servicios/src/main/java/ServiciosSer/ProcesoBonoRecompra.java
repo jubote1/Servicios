@@ -69,7 +69,7 @@ public class ProcesoBonoRecompra {
 		}
 
 		try {
-			final ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
+			final ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocalSinBodega();
 
 			for (int c = 0; c < campanas.size(); c++) {
 				final BonoRecompraDAO.Campana campana = campanas.get(c);
