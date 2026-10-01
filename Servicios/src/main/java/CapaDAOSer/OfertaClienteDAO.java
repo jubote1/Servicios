@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 import ConexionSer.ConexionBaseDatos;
 import ModeloSer.ClienteZapier;
 import ModeloSer.OfertaCliente;
+import ModeloSer.ResumenOferta;
 
 
 /**
@@ -20,7 +21,28 @@ import ModeloSer.OfertaCliente;
  *
  */
 public class OfertaClienteDAO {
-	
+
+	/**
+	 * De donde salio la oferta, deducido de como quedo el registro.
+	 *
+	 * oferta_cliente no tiene una columna de origen. Pero cada camino que la
+	 * llena deja una marca distinta y confiable, mas confiable que leer la
+	 * "observacion" en texto libre:
+	 *   - Envio de Publicidad (CampanaDAO/EnviadorPublicidadDirecta) siempre
+	 *     pone idenvio.
+	 *   - La ruleta de premios (RuletaCtrl) siempre pone usuario_ingreso = 'RULETA'.
+	 *   - El bono de recompra (ProcesoBonoRecompra) siempre llama a cerrar()
+	 *     con usuario = 'bono-nocturno'.
+	 *   - Lo que no encaja en ninguna de las tres es una emision manual desde
+	 *     la pantalla de Ofertas (CRUDOfertaCliente).
+	 */
+	private static final String SQL_ORIGEN =
+			"case"
+			+ " when a.idenvio is not null then 'Campaña CRM'"
+			+ " when a.usuario_ingreso = 'RULETA' then 'Ruleta de premios'"
+			+ " when a.usuario_ingreso = 'bono-nocturno' then 'Bono de Recompra'"
+			+ " else 'Manual / otro'"
+			+ " end";
 
 	public static ArrayList<OfertaCliente> obtenerOfertasNuevasSemana(String fechaSuperior, String fechaInferior)
 	{
@@ -30,7 +52,10 @@ public class OfertaClienteDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String consulta = "select a.*, b.nombre_oferta from oferta_cliente a, oferta b where a.idoferta = b.idoferta and a.ingreso_oferta >=  '" + fechaInferior + "'  and a.ingreso_oferta <= '" + fechaSuperior + "'";
+			String consulta = "select a.*, b.nombre_oferta, " + SQL_ORIGEN + " as origen"
+					+ " from oferta_cliente a, oferta b where a.idoferta = b.idoferta"
+					+ " and a.ingreso_oferta >=  '" + fechaInferior + "'  and a.ingreso_oferta <= '" + fechaSuperior + "'"
+					+ " order by a.ingreso_oferta desc";
 			System.out.println(consulta);
 			ResultSet rs = stm.executeQuery(consulta);
 			int idOfertaCliente;
@@ -55,6 +80,8 @@ public class OfertaClienteDAO {
 				PQRS = rs.getInt("PQRS");
 				ofertaTemp = new OfertaCliente(idOfertaCliente, idOferta, idCliente, utilizada, PQRS,ingresoOferta, usoOferta, observacion);
 				ofertaTemp.setNombreOferta(nombreOferta);
+				ofertaTemp.setOrigen(rs.getString("origen"));
+				ofertaTemp.setValor(rs.getDouble("saldo"));
 				ofertas.add(ofertaTemp);
 			}
 			rs.close();
@@ -70,7 +97,66 @@ public class OfertaClienteDAO {
 			}
 		}
 		return(ofertas);
-		
+
+	}
+
+	/** Cuanto se envio esta semana, agrupado por oferta y origen. */
+	public static ArrayList<ResumenOferta> obtenerResumenEnviadasSemana(String fechaInferior, String fechaSuperior)
+	{
+		return (resumen("a.ingreso_oferta", fechaInferior, fechaSuperior, false));
+	}
+
+	/** Cuanto se redimio esta semana, agrupado por oferta y origen. */
+	public static ArrayList<ResumenOferta> obtenerResumenRedimidasSemana(String fechaInferior, String fechaSuperior)
+	{
+		return (resumen("a.uso_oferta", fechaInferior, fechaSuperior, true));
+	}
+
+	private static ArrayList<ResumenOferta> resumen(String columnaFecha, String fechaInferior,
+			String fechaSuperior, boolean soloUtilizadas)
+	{
+		final ArrayList<ResumenOferta> lista = new ArrayList<>();
+		final ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDContactLocal();
+		try
+		{
+			final Statement stm = con1.createStatement();
+			final String consulta = "select b.nombre_oferta, " + SQL_ORIGEN + " as origen,"
+					+ " count(*) as cuantas, sum(a.saldo) as valor"
+					+ " from oferta_cliente a, oferta b"
+					+ " where a.idoferta = b.idoferta"
+					+ (soloUtilizadas ? " and a.utilizada = 'S'" : "")
+					+ " and " + columnaFecha + " >= '" + fechaInferior + "'"
+					+ " and " + columnaFecha + " <= '" + fechaSuperior + "'"
+					+ " group by b.nombre_oferta, origen";
+			System.out.println(consulta);
+			final ResultSet rs = stm.executeQuery(consulta);
+			while (rs.next()) {
+				final ResumenOferta r = new ResumenOferta();
+				r.setNombreOferta(rs.getString("nombre_oferta"));
+				r.setOrigen(rs.getString("origen"));
+				if (soloUtilizadas) {
+					r.setRedimidas(rs.getInt("cuantas"));
+					r.setValorRedimido(rs.getDouble("valor"));
+				} else {
+					r.setEnviadas(rs.getInt("cuantas"));
+					r.setValorEnviado(rs.getDouble("valor"));
+				}
+				lista.add(r);
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e){
+			System.out.println(e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+		}
+		return (lista);
 	}
 	
 	/**

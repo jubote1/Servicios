@@ -11,9 +11,22 @@ public class OfertaCliente {
 	private String usoOferta;
 	private String observacion;
 	private int PQRS;
-	
-	
-	
+	private String origen;
+	private double valor;
+
+	public String getOrigen() {
+		return origen;
+	}
+	public void setOrigen(String origen) {
+		this.origen = origen;
+	}
+	public double getValor() {
+		return valor;
+	}
+	public void setValor(double valor) {
+		this.valor = valor;
+	}
+
 	public int getPQRS() {
 		return PQRS;
 	}
