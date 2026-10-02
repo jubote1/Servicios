@@ -256,6 +256,137 @@ public class PromocionReporteDAO {
 	}
 
 	/**
+	 * Los dias de la ventana que todavia no quedaron COMPLETA, del mas viejo al
+	 * mas nuevo.
+	 *
+	 * POR QUE SE PREGUNTA POR LAS CORRIDAS Y NO POR LOS DATOS
+	 *
+	 * Lo natural seria buscar que fechas no tienen filas en promocion_dia, pero
+	 * un dia sin filas puede ser un dia que no se migro O un dia en que de
+	 * verdad no se vendio ninguna promocion. Los dos se ven igual, y con esa
+	 * regla un festivo sin ventas se intentaria recuperar todas las noches para
+	 * siempre.
+	 *
+	 * Por eso manda promocion_dia_corrida, donde el proceso deja constancia
+	 * explicita de cada dia que trabajo. Un dia esta pendiente cuando no tiene
+	 * fila, o cuando la tiene en INCOMPLETA porque alguna tienda no respondio.
+	 *
+	 * No incluye el dia que se va a reportar: ese se procesa siempre.
+	 */
+	public static ArrayList<String> diasPendientes(final String hasta, final int diasAtras) {
+		final ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection cn = null;
+		final ArrayList<String> pendientes = new ArrayList<String>();
+		try {
+			cn = con.obtenerConexionBDDatamartLocal();
+			//Se arma la lista de fechas en Java y se pregunta por las que YA
+			//estan completas: es una sola consulta, y la base no tiene que
+			//generar una serie de fechas, que en MySQL 8 es incomodo.
+			final ArrayList<String> ventana = new ArrayList<String>();
+			final java.text.SimpleDateFormat formato = new java.text.SimpleDateFormat("yyyy-MM-dd");
+			final java.util.Calendar cal = java.util.Calendar.getInstance();
+			cal.setTime(formato.parse(hasta));
+			for (int i = 1; i <= diasAtras; i++) {
+				cal.add(java.util.Calendar.DAY_OF_YEAR, -1);
+				ventana.add(formato.format(cal.getTime()));
+			}
+			if (ventana.isEmpty()) {
+				return (pendientes);
+			}
+
+			final StringBuilder lista = new StringBuilder();
+			for (int i = 0; i < ventana.size(); i++) {
+				if (lista.length() > 0) {
+					lista.append(",");
+				}
+				lista.append("'").append(ventana.get(i)).append("'");
+			}
+
+			final java.util.HashSet<String> completas = new java.util.HashSet<String>();
+			final Statement stm = cn.createStatement();
+			final ResultSet rs = stm.executeQuery(
+					"SELECT fecha FROM promocion_dia_corrida"
+					+ " WHERE estado = 'COMPLETA' AND fecha IN (" + lista.toString() + ")");
+			while (rs.next()) {
+				completas.add(rs.getString(1));
+			}
+			rs.close();
+			stm.close();
+
+			//Del mas viejo al mas nuevo: si hay varios, se recuperan en orden
+			//cronologico, que es como se leen despues.
+			for (int i = ventana.size() - 1; i >= 0; i--) {
+				if (!completas.contains(ventana.get(i))) {
+					pendientes.add(ventana.get(i));
+				}
+			}
+		} catch (final Exception e) {
+			System.out.println("PromocionReporteDAO.diasPendientes: " + e.toString());
+		} finally {
+			cerrar(cn);
+		}
+		return (pendientes);
+	}
+
+	/**
+	 * Deja constancia de lo que paso con un dia.
+	 *
+	 * Se escribe SIEMPRE, incluso cuando el dia no se pudo guardar: justamente
+	 * para eso sirve. Un dia que quedo INCOMPLETA se vuelve a intentar la noche
+	 * siguiente; uno COMPLETA no se toca mas.
+	 */
+	public static void marcarCorrida(final String fecha, final boolean completa,
+			final int tiendasOk, final ArrayList<String> sinResponder, final int filas,
+			final boolean recuperado) {
+		final ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection cn = null;
+		try {
+			cn = con.obtenerConexionBDDatamartLocal();
+			final StringBuilder detalle = new StringBuilder();
+			if (sinResponder != null) {
+				for (int i = 0; i < sinResponder.size(); i++) {
+					if (detalle.length() > 0) {
+						detalle.append(", ");
+					}
+					detalle.append(sinResponder.get(i));
+				}
+			}
+			final String texto = detalle.length() > 400
+					? detalle.substring(0, 400) : detalle.toString();
+
+			final PreparedStatement ps = cn.prepareStatement(
+					"INSERT INTO promocion_dia_corrida"
+					+ " (fecha, estado, tiendas_ok, tiendas_falla, detalle_falla, filas, recuperado, grabado_en)"
+					+ " VALUES (?, ?, ?, ?, ?, ?, ?, NOW())"
+					+ " ON DUPLICATE KEY UPDATE estado = ?, tiendas_ok = ?, tiendas_falla = ?,"
+					+ " detalle_falla = ?, filas = ?, recuperado = ?, grabado_en = NOW()");
+			final String estado = completa ? "COMPLETA" : "INCOMPLETA";
+			final int fallas = (sinResponder == null) ? 0 : sinResponder.size();
+			final String marca = recuperado ? "S" : "N";
+			int i = 1;
+			ps.setString(i++, fecha);
+			ps.setString(i++, estado);
+			ps.setInt(i++, tiendasOk);
+			ps.setInt(i++, fallas);
+			ps.setString(i++, texto);
+			ps.setInt(i++, filas);
+			ps.setString(i++, marca);
+			ps.setString(i++, estado);
+			ps.setInt(i++, tiendasOk);
+			ps.setInt(i++, fallas);
+			ps.setString(i++, texto);
+			ps.setInt(i++, filas);
+			ps.setString(i++, marca);
+			ps.executeUpdate();
+			ps.close();
+		} catch (final Exception e) {
+			System.out.println("PromocionReporteDAO.marcarCorrida: " + e.toString());
+		} finally {
+			cerrar(cn);
+		}
+	}
+
+	/**
 	 * El promedio del MISMO DIA DE LA SEMANA en las cuatro semanas anteriores.
 	 *
 	 * Se compara contra el mismo dia y no contra ayer porque un domingo no se

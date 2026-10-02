@@ -54,11 +54,14 @@ public final class PlantillaCorreoPromociones {
 	 * @param nombreDia     lunes, martes...
 	 * @param resumenes     una fila por promocion, ya ordenadas
 	 * @param porTienda     el detalle por tienda de las que se movieron
-	 * @param sinResponder  tiendas que no contestaron
+	 * @param sinResponder  tiendas que no contestaron hoy
+	 * @param recuperados   dias atrasados que se migraron en esta corrida
+	 * @param noSePudieron  dias atrasados que siguen sin poderse migrar
 	 */
 	public static String cuerpo(final String fecha, final String nombreDia,
 			final ArrayList<PromocionReporteDAO.Resumen> resumenes,
-			final String porTienda, final ArrayList<String> sinResponder) {
+			final String porTienda, final ArrayList<String> sinResponder,
+			final ArrayList<String> recuperados, final ArrayList<String> noSePudieron) {
 
 		double totalUnidades = 0;
 		double totalValor = 0;
@@ -86,6 +89,30 @@ public final class PlantillaCorreoPromociones {
 			h.append("<strong>Faltan tiendas.</strong> No respondieron ").append(unirNombres(sinResponder));
 			h.append(", as&iacute; que lo de abajo est&aacute; incompleto y no se guard&oacute; su d&iacute;a. ");
 			h.append("Se puede reprocesar cuando vuelvan.</div>");
+		}
+
+		//Los dias que NO se pudieron recuperar van arriba y en rojo. La idea del
+		//recuperador automatico es que nadie tenga que estar pendiente, asi que
+		//lo unico que de verdad necesita atencion tiene que venir a buscarlo a
+		//uno, no al reves.
+		if (noSePudieron != null && !noSePudieron.isEmpty()) {
+			h.append("<div style=\"background:#FADBDB;border-left:4px solid ").append(ROJO)
+			 .append(";padding:10px 14px;margin-bottom:14px;\">");
+			h.append("<strong>Hay d&iacute;as que no se han podido migrar.</strong> ");
+			h.append(unirNombres(noSePudieron));
+			h.append(". Se vuelve a intentar solo cada noche; si sigue apareciendo, ");
+			h.append("es que esa tienda lleva varios d&iacute;as sin responder.</div>");
+		}
+
+		//Lo recuperado va en verde: es una buena noticia, no una alarma.
+		if (recuperados != null && !recuperados.isEmpty()) {
+			h.append("<div style=\"background:#DCF0E6;border-left:4px solid ").append(VERDE)
+			 .append(";padding:10px 14px;margin-bottom:14px;font-size:13px;\">");
+			h.append("Se recuperaron <strong>").append(recuperados.size())
+			 .append("</strong> d&iacute;a").append(recuperados.size() == 1 ? "" : "s")
+			 .append(" que hab&iacute;").append(recuperados.size() == 1 ? "a" : "an")
+			 .append(" quedado sin migrar: ").append(unirNombres(recuperados));
+			h.append(". Ya est&aacute;n en la historia y cuentan para las comparaciones.</div>");
 		}
 
 		h.append(tabla(resumenes));

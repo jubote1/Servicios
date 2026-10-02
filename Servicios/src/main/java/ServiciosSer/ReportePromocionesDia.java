@@ -31,31 +31,50 @@ import utilidadesSer.PlantillaCorreoPromociones;
  *   Cuenta cantidades      no divide plata entre un precio quemado
  *   Guarda la historia     datamart.promocion_dia, que es lo que permite
  *                          comparar contra el mismo dia de semanas anteriores
+ *   SE RECUPERA SOLO       revisa los dias atras que quedaron sin migrar y los
+ *                          migra, sin que nadie tenga que estar pendiente
  *   Manda UNA tabla        no trece
  *
  * SI UNA TIENDA NO RESPONDE, NO SE GUARDA EL DIA
  *
  * Un dia guardado a medias se convierte manana en la referencia contra la que
  * se compara, y nadie se acordaria de que ese dia faltaban dos tiendas. Es
- * preferible no tener el dato que tener uno que miente. El correo si sale,
- * diciendo arriba cuales faltaron, y el dia se puede reprocesar despues.
+ * preferible no tener el dato que tener uno que miente. El dia queda marcado
+ * INCOMPLETA y se vuelve a intentar solo la noche siguiente.
  */
 public class ReportePromocionesDia {
 
 	/** Destinatarios, en general.parametros_correo. */
 	private static final String PARAM_CORREOS = "REPORTEPROMOCIONESDIA";
 
-	/** Fecha de corte para el reproceso. El mismo de siempre. */
+	/** Fecha de corte para el reproceso a mano. El mismo de siempre. */
 	private static final String PARAM_FECHA_REPROCESO = "FECHAREPROCESO";
+
+	/** Cuantos dias hacia atras se revisan buscando dias sin migrar. */
+	private static final String PARAM_DIAS_ATRAS = "PROMOCIONESDIASATRAS";
+
+	/** Si el parametro no esta, se usa esto. */
+	private static final int DIAS_ATRAS_POR_DEFECTO = 30;
 
 	private static final String[] DIAS = { "", "domingo", "lunes", "martes", "miercoles",
 			"jueves", "viernes", "sabado" };
+
+	/** Lo que paso con un dia. */
+	private static class Resultado {
+		private ArrayList<PromocionReporteDAO.Venta> ventas = new ArrayList<PromocionReporteDAO.Venta>();
+		private ArrayList<String> sinResponder = new ArrayList<String>();
+		private int tiendasOk;
+
+		private boolean completa() {
+			return (this.sinResponder.isEmpty());
+		}
+	}
 
 	public static void main(final String[] args) {
 		new ReportePromocionesDia().generar(ayer());
 	}
 
-	/** Reprocesa el dia que diga FECHAREPROCESO. */
+	/** Reprocesa a mano el dia que diga FECHAREPROCESO. */
 	public void reprocesar() {
 		final String fecha = ParametrosDAO.retornarValorAlfanumerico(PARAM_FECHA_REPROCESO);
 		if (fecha == null || fecha.trim().length() < 10) {
@@ -79,6 +98,8 @@ public class ReportePromocionesDia {
 		return (new SimpleDateFormat("yyyy-MM-dd").format(c.getTime()));
 	}
 
+	// =======================================================================
+
 	public void generar(final String fecha) {
 		System.out.println("ReportePromocionesDia: reportando " + fecha);
 
@@ -88,12 +109,96 @@ public class ReportePromocionesDia {
 					+ "Revisar pizzaamericana.promocion_reporte.");
 			return;
 		}
-		System.out.println("ReportePromocionesDia: " + catalogo.size() + " promociones en el catalogo");
-
 		final ArrayList<Tienda> tiendas = capaDAOCC.TiendaDAO.obtenerTiendas();
-		final ArrayList<PromocionReporteDAO.Venta> todas = new ArrayList<PromocionReporteDAO.Venta>();
-		final ArrayList<String> sinResponder = new ArrayList<String>();
+		System.out.println("ReportePromocionesDia: " + catalogo.size() + " promociones, "
+				+ tiendas.size() + " tiendas");
 
+		//---- 1. Lo que quedo sin migrar ------------------------------------
+		final ArrayList<String> recuperados = new ArrayList<String>();
+		final ArrayList<String> noSePudieron = new ArrayList<String>();
+		this.recuperarDiasPendientes(fecha, catalogo, tiendas, recuperados, noSePudieron);
+
+		//---- 2. El dia que toca --------------------------------------------
+		final Resultado hoy = this.procesarDia(fecha, catalogo, tiendas, false);
+
+		//---- 3. El correo ---------------------------------------------------
+		final ArrayList<PromocionReporteDAO.Resumen> resumenes = resumir(catalogo, hoy.ventas);
+		PromocionReporteDAO.completarPromedios(fecha, resumenes);
+
+		double totalUnidades = 0;
+		for (int i = 0; i < resumenes.size(); i++) {
+			totalUnidades += resumenes.get(i).unidades;
+		}
+
+		final String cuerpo = PlantillaCorreoPromociones.cuerpo(fecha, nombreDelDia(fecha), resumenes,
+				detallePorTienda(catalogo, tiendas, hoy.ventas), hoy.sinResponder,
+				recuperados, noSePudieron);
+
+		enviar(PlantillaCorreoPromociones.asunto(fecha, totalUnidades), cuerpo);
+		System.out.println("ReportePromocionesDia: listo. " + totalUnidades + " promociones vendidas"
+				+ (recuperados.isEmpty() ? "" : ", " + recuperados.size() + " dia(s) recuperado(s)")
+				+ (noSePudieron.isEmpty() ? "" : ", " + noSePudieron.size() + " dia(s) sin recuperar"));
+	}
+
+	/**
+	 * Revisa la ventana hacia atras y migra lo que falte.
+	 *
+	 * Esta es la parte que evita tener que estar pendiente: si el servidor
+	 * estuvo caido tres dias, o una tienda no respondio toda una semana, la
+	 * primera noche que todo vuelva a funcionar se recupera solo.
+	 *
+	 * Un dia que ya quedo COMPLETA no se vuelve a tocar nunca, asi que esto no
+	 * rehace trabajo ni pisa datos buenos.
+	 *
+	 * Los dias recuperados NO mandan correo: el correo es del dia de ayer. Lo
+	 * que si hace es contarlos, para que el correo diga que se recuperaron.
+	 */
+	private void recuperarDiasPendientes(final String fecha,
+			final ArrayList<PromocionReporteDAO.Promocion> catalogo, final ArrayList<Tienda> tiendas,
+			final ArrayList<String> recuperados, final ArrayList<String> noSePudieron) {
+
+		int diasAtras = DIAS_ATRAS_POR_DEFECTO;
+		try {
+			final int parametro = ParametrosDAO.retornarValorNumerico(PARAM_DIAS_ATRAS);
+			if (parametro > 0) {
+				diasAtras = parametro;
+			}
+		} catch (final Exception e) {
+			System.out.println("ReportePromocionesDia: " + PARAM_DIAS_ATRAS
+					+ " no se pudo leer, se usan " + DIAS_ATRAS_POR_DEFECTO + " dias");
+		}
+
+		final ArrayList<String> pendientes = PromocionReporteDAO.diasPendientes(fecha, diasAtras);
+		if (pendientes.isEmpty()) {
+			System.out.println("ReportePromocionesDia: no hay dias atrasados en los ultimos "
+					+ diasAtras + " dias");
+			return;
+		}
+		System.out.println("ReportePromocionesDia: " + pendientes.size()
+				+ " dia(s) sin migrar en los ultimos " + diasAtras + ". Recuperando...");
+
+		for (int i = 0; i < pendientes.size(); i++) {
+			final String dia = pendientes.get(i);
+			final Resultado r = this.procesarDia(dia, catalogo, tiendas, true);
+			if (r.completa()) {
+				recuperados.add(dia);
+				System.out.println("   " + dia + " recuperado");
+			} else {
+				noSePudieron.add(dia + " (faltaron " + r.sinResponder.size() + ")");
+				System.out.println("   " + dia + " sigue incompleto: " + r.sinResponder);
+			}
+		}
+	}
+
+	/**
+	 * Consulta un dia en todas las tiendas, lo guarda si esta completo y deja
+	 * constancia de la corrida pase lo que pase.
+	 */
+	private Resultado procesarDia(final String fecha,
+			final ArrayList<PromocionReporteDAO.Promocion> catalogo, final ArrayList<Tienda> tiendas,
+			final boolean recuperado) {
+
+		final Resultado resultado = new Resultado();
 		for (int i = 0; i < tiendas.size(); i++) {
 			final Tienda tienda = tiendas.get(i);
 			if (tienda.getHosbd() == null || tienda.getHosbd().trim().length() == 0) {
@@ -102,38 +207,22 @@ public class ReportePromocionesDia {
 			final ArrayList<PromocionReporteDAO.Venta> delDia = PromocionReporteDAO.obtenerVentaDelDia(
 					tienda.getHosbd(), tienda.getIdTienda(), fecha, catalogo);
 			if (delDia == null) {
-				sinResponder.add(tienda.getNombreTienda());
+				resultado.sinResponder.add(tienda.getNombreTienda());
 				continue;
 			}
-			todas.addAll(delDia);
+			resultado.tiendasOk++;
+			resultado.ventas.addAll(delDia);
 		}
 
-		//---- La historia solo si el dia esta completo ----------------------
-		if (sinResponder.isEmpty()) {
-			final ArrayList<PromocionReporteDAO.Venta> agrupadas = agruparPorPromoTiendaCanal(todas);
-			final int guardadas = PromocionReporteDAO.guardarDia(fecha, agrupadas);
-			System.out.println("ReportePromocionesDia: " + guardadas + " filas guardadas en promocion_dia");
-		} else {
-			System.out.println("ReportePromocionesDia: NO se guarda el dia, no respondieron "
-					+ sinResponder.size() + " tienda(s): " + sinResponder);
+		int filas = 0;
+		if (resultado.completa()) {
+			filas = PromocionReporteDAO.guardarDia(fecha, agruparPorPromoTiendaCanal(resultado.ventas));
 		}
-
-		//---- El resumen que va al correo ----------------------------------
-		final ArrayList<PromocionReporteDAO.Resumen> resumenes = resumir(catalogo, todas);
-		PromocionReporteDAO.completarPromedios(fecha, resumenes);
-
-		double totalUnidades = 0;
-		for (int i = 0; i < resumenes.size(); i++) {
-			totalUnidades += resumenes.get(i).unidades;
-		}
-
-		final String porTienda = detallePorTienda(catalogo, tiendas, todas);
-		final String nombreDia = nombreDelDia(fecha);
-		final String cuerpo = PlantillaCorreoPromociones.cuerpo(fecha, nombreDia, resumenes,
-				porTienda, sinResponder);
-
-		enviar(PlantillaCorreoPromociones.asunto(fecha, totalUnidades), cuerpo);
-		System.out.println("ReportePromocionesDia: listo. " + totalUnidades + " promociones vendidas.");
+		//La constancia se escribe SIEMPRE, completo o no: es lo que decide si
+		//manana hay que volver a intentar este dia.
+		PromocionReporteDAO.marcarCorrida(fecha, resultado.completa(), resultado.tiendasOk,
+				resultado.sinResponder, filas, recuperado);
+		return (resultado);
 	}
 
 	/**
