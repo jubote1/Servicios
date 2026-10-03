@@ -92,4 +92,51 @@ public class CierreInventarioSemanalDAO {
 		}
 	
 
+
+	/**
+	 * Lo que esa tienda suele gastar en insumos por semana.
+	 *
+	 * Es el patron contra el que se juzga la semana que se esta cerrando. Mira
+	 * SOLO semanas anteriores a la que se cierra -la de hoy ya quedo escrita
+	 * unos renglones antes y se estaria comparando contra si misma- y descarta
+	 * las semanas en cero, que son las que la tienda no reporto.
+	 *
+	 * @return el promedio, o 0 cuando no hay con que comparar todavia
+	 */
+	public static double promedioSemanalTienda(int idTienda, String fechaCierre, int semanas)
+	{
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDDatamartLocal();
+		double promedio = 0;
+		try
+		{
+			Statement stm = con1.createStatement();
+			String consulta = "SELECT AVG(t.total) AS promedio FROM ("
+					+ " SELECT fecha, SUM(costo_total) total"
+					+ "   FROM cierre_inventario_semanal"
+					+ "  WHERE idtienda = " + idTienda
+					+ "    AND fecha < '" + fechaCierre + "'"
+					+ "    AND fecha >= DATE_SUB('" + fechaCierre + "', INTERVAL " + semanas + " WEEK)"
+					+ "  GROUP BY fecha HAVING total > 0) t";
+			ResultSet rs = stm.executeQuery(consulta);
+			if (rs.next())
+			{
+				promedio = rs.getDouble("promedio");
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch (Exception e)
+		{
+			System.out.println("CierreInventarioSemanalDAO.promedioSemanalTienda: " + e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+		}
+		return(promedio);
+	}
+
 }

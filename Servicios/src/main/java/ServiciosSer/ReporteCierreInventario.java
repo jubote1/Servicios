@@ -80,13 +80,47 @@ public class ReporteCierreInventario {
 	private static final double PORC_ESPERADO_MAX = 50;
 
 	/**
+	 * Cuando el costo de comida de la semana pasa de este multiplo de lo que
+	 * esa tienda suele gastar, se marca REVISAR.
+	 *
+	 * La guarda de consumo negativo solo atrapa un lado. Los siropes saltan
+	 * entre dos escalas -se cuentan en botellas (1,0) y a veces entran como
+	 * 1000- y el error sale hacia cualquiera de los dos. Al Sirope Cereza de
+	 * America le paso el 2026-09-27 en negativo y se vio; a Calasanz le paso el
+	 * 2026-04-05 en positivo y nadie lo noto, porque 37 millones de sirope no
+	 * dan error.
+	 *
+	 * POR QUE SE MIRA LA SEMANA Y NO EL INSUMO
+	 *
+	 * La primera version de esta guarda miraba si UN insumo pesaba mas del 25%
+	 * del costo de la semana. Probada contra 2026 entero: cero avisos, incluida
+	 * la semana de Calasanz. Cada sirope fue 22,6% -tres juntos, 68%- y ninguno
+	 * solo cruzaba el umbral. Una guarda que no atrapa el caso que la origino no
+	 * sirve.
+	 *
+	 * Mirar el total de la semana contra lo que esa tienda suele gastar si
+	 * funciona, y no depende de cuantos insumos se dañen a la vez. Probado sobre
+	 * las 428 semanas-tienda de 2026: a 2x salta UNA, y es Calasanz, con 11
+	 * veces su promedio. A 1,5x saltarian cuatro mas, que son la primera semana
+	 * de enero en varias tiendas -el reabastecimiento de despues de fiestas- y
+	 * esas no son noticia.
+	 */
+	private static final double FACTOR_SEMANA_ANORMAL = 2;
+
+	/** Sobre cuantas semanas anteriores se saca lo que la tienda suele gastar. */
+	private static final int SEMANAS_PARA_PROMEDIO = 8;
+
+	/** Cuantos insumos se nombran como responsables del salto. */
+	private static final int CULPABLES_A_NOMBRAR = 3;
+
+	/**
 	 * La celda de porcentaje del correo, con su aviso si hace falta.
 	 *
 	 * REVISAR es una ADVERTENCIA, no un bloqueo: acompana al numero en vez de
 	 * reemplazarlo. Solo se calla la cifra cuando de plano no puede ser cierta.
 	 */
 	private String celdaPorcentaje(double porcentaje, double venta, int cuantosNegativos,
-			String insumosNegativos)
+			String insumosNegativos, String insumosDominantes)
 	{
 		String aviso = "";
 		if (cuantosNegativos > 0)
@@ -94,6 +128,14 @@ public class ReporteCierreInventario {
 			aviso = "<br><b style='color:#C21C1F'>REVISAR</b>"
 					+ "<span style='font-size:11px'> &mdash; " + cuantosNegativos
 					+ " insumo(s) con consumo negativo: " + insumosNegativos + "</span>";
+		}
+		//La semana que se disparo. Va aparte del consumo negativo porque es el
+		//otro lado del mismo error y se mira distinto: ahi el conteo es
+		//imposible, aqui solo es desproporcionado.
+		if (insumosDominantes != null && insumosDominantes.length() > 0)
+		{
+			aviso = aviso + "<br><b style='color:#C21C1F'>REVISAR</b>"
+					+ "<span style='font-size:11px'> &mdash; " + insumosDominantes + "</span>";
 		}
 		if (venta <= 0)
 		{
@@ -536,6 +578,12 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	         */
 	        StringBuilder insumosNegativos = new StringBuilder();
 	        int cuantosNegativos = 0;
+	        /*
+	         * Cuanto costo cada insumo, para poder mirar al final si alguno se
+	         * llevo solo una tajada desproporcionada. No se puede evaluar dentro
+	         * del bucle porque el total todavia no se conoce.
+	         */
+	        ArrayList<Object[]> costosPorInsumo = new ArrayList<Object[]>();
 	        int idItem;
 	        int idInsumo;
 	        Insumo insumoTemp;
@@ -569,6 +617,8 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            cierreInv.setCostoUnitario(0);
 	            cierreInv.setCostoTotal(0);
 	            cierreInv.setCostoSinConsumir(0);
+	            costoTotal = 0;
+	            costoTotalSinUsar = 0;
 	            //Se anota, pero NO se corrige ni se pone en cero: el dato queda
 	            //como esta para que el error se vea en el Excel y en la tabla del
 	            //central. Lo que se bloquea mas abajo es el porcentaje.
@@ -605,6 +655,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            	}
 	            }
 	            //Hacemos la inserci�n en la tabla
+	            costosPorInsumo.add(new Object[] { nombreInsumo, Double.valueOf(costoTotal) });
 	            CierreInventarioSemanalDAO.insertarCierreInventarioSemanal(cierreInv);
 	            //Buscamos el valor inicial
 	            datos = dataRow.createCell(0);
@@ -679,6 +730,8 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            cierreInv.setCostoUnitario(0);
 	            cierreInv.setCostoTotal(0);
 	            cierreInv.setCostoSinConsumir(0);
+	            costoTotal = 0;
+	            costoTotalSinUsar = 0;
 	            //Se anota, pero NO se corrige ni se pone en cero: el dato queda
 	            //como esta para que el error se vea en el Excel y en la tabla del
 	            //central. Lo que se bloquea mas abajo es el porcentaje.
@@ -713,6 +766,7 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            	}
 	            }
 	            //Hacemos la inserci�n en la tabla
+	            costosPorInsumo.add(new Object[] { nombreInsumo, Double.valueOf(costoTotal) });
 	            CierreInventarioSemanalDAO.insertarCierreInventarioSemanal(cierreInv);
 	            //Buscamos el valor inicial
 	            datos = dataRow.createCell(0);
@@ -757,8 +811,11 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
             porcentajeComida = (costoTotalComida/totalVentaSemana)*100;
             //El numero SE PUBLICA aunque haya insumos raros; REVISAR lo acompana
             //en vez de reemplazarlo. Ver celdaPorcentaje().
+            String insumosDominantes = avisoSemanaAnormal(costosPorInsumo, costoTotalComida,
+            		CierreInventarioSemanalDAO.promedioSemanalTienda(tienda.getIdTienda(),
+            				fechaActual, SEMANAS_PARA_PROMEDIO));
             String celdaPorcentaje = celdaPorcentaje(porcentajeComida, totalVentaSemana,
-            		cuantosNegativos, insumosNegativos.toString());
+            		cuantosNegativos, insumosNegativos.toString(), insumosDominantes);
             //En este punto tenemos el porcentaje de comida total con GASEOSA para la tienda
             respuesta = respuesta + "<tr><td>" + tienda.getNombreTienda() + "</td><td>" + formatea.format(totalVentaSemana) +"</td><td>" + celdaPorcentaje + "</td></tr>";
             //Generamos otro correo con informaci�n m�s detallada
@@ -842,8 +899,65 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 		return (new double[] { 0, 0 });
 	}
 
+
+	/**
+	 * El aviso cuando la semana costo mucho mas de lo que esa tienda suele.
+	 *
+	 * Es la guarda del otro lado: el consumo negativo se atrapa en el bucle,
+	 * pero un consumo mil veces mayor del real sale positivo y no lo atrapaba
+	 * nadie. Aqui no se juzga el consumo de un insumo -que no se puede juzgar
+	 * sin saber cuanto se vende de eso- sino el total de la semana contra la
+	 * historia de la propia tienda, que si se puede.
+	 *
+	 * Cuando salta, nombra los insumos que mas pesaron, que es lo que convierte
+	 * el aviso en algo accionable: no "esta semana esta rara" sino "esta semana
+	 * esta rara por el Sirope Cereza".
+	 *
+	 * @param promedio lo que la tienda suele gastar; 0 cuando no hay historia
+	 */
+	private static String avisoSemanaAnormal(final java.util.ArrayList<Object[]> costos,
+			final double costoTotalComida, final double promedio)
+	{
+		//Sin historia no se puede juzgar. Una tienda nueva no genera avisos en
+		//vez de generarlos todos, que es lo que pasaria comparando contra cero.
+		if (promedio <= 0 || costoTotalComida <= promedio * FACTOR_SEMANA_ANORMAL)
+		{
+			return ("");
+		}
+		final StringBuilder sb = new StringBuilder();
+		sb.append("la semana costo ")
+				.append(Math.round(costoTotalComida * 10 / promedio) / 10.0)
+				.append(" veces lo habitual de esta tienda");
+		if (costos == null || costos.isEmpty())
+		{
+			return (sb.toString());
+		}
+		//Los que mas pesaron, de mayor a menor. Se ordena una copia para no
+		//alterar la lista que el informe sigue usando.
+		final java.util.ArrayList<Object[]> copia = new java.util.ArrayList<Object[]>(costos);
+		java.util.Collections.sort(copia, new java.util.Comparator<Object[]>()
+		{
+			public int compare(final Object[] a, final Object[] b)
+			{
+				return (Double.compare(((Double) b[1]).doubleValue(), ((Double) a[1]).doubleValue()));
+			}
+		});
+		sb.append(". Lo que mas peso: ");
+		final int cuantos = Math.min(CULPABLES_A_NOMBRAR, copia.size());
+		for (int i = 0; i < cuantos; i++)
+		{
+			final double costo = ((Double) copia.get(i)[1]).doubleValue();
+			if (costo <= 0)
+			{
+				break;
+			}
+			if (i > 0)
+			{
+				sb.append(", ");
+			}
+			sb.append(copia.get(i)[0] == null ? "" : copia.get(i)[0].toString())
+					.append(" (").append(Math.round(costo * 100 / costoTotalComida)).append("%)");
+		}
+		return (sb.toString());
+	}
 }
-
-
-
-
