@@ -175,6 +175,31 @@ public class ProcesoBonoRecompra {
 				.append("   AND p.fechapedido >= ?")
 				.append("   AND p.fechapedido < DATE_ADD(?, INTERVAL 1 DAY)");
 
+			//La franja horaria. Vacia = todo el dia.
+			//
+			//OJO: la hora NO esta en fechapedido. Esa columna es un DATE pelado
+			//-verificado en Manrique el 2026-10-03-, asi que TIME(fechapedido)
+			//siempre da 00:00:00 y una franja contra ella deja CERO pedidos. La
+			//hora real del pedido esta en fechainsercion, que es timestamp.
+			//
+			//La FECHA se sigue midiendo contra fechapedido, que es la fecha del
+			//negocio, y solo la HORA sale de fechainsercion. En mostrador las
+			//dos coinciden; se separarian en un pedido programado, y esos son
+			//domicilio, que una campana de punto de venta ya deja por fuera.
+			if (campana.horaDesde.length() >= 4 && campana.horaHasta.length() >= 4) {
+				//El limite de arriba va INCLUSIVO hasta el final de ese minuto:
+				//quien pidio a las 5:00:40 estaba en la fila antes de las cinco.
+				sql.append("   AND TIME(p.fechainsercion) >= ?")
+					.append("   AND TIME(p.fechainsercion) < ADDTIME(?, '00:01:00')");
+			}
+
+			//Los tipos de pedido. Vacio = todos los canales.
+			//En la base de tienda: 1 domicilio, 2 mostrador, 3 para llevar.
+			final String tipos = soloNumeros(campana.tiposPedido);
+			if (tipos.length() > 0) {
+				sql.append("   AND p.idtipopedido IN (").append(tipos).append(")");
+			}
+
 			//Los productos que cuentan. Vacio = todo lo que se vendio.
 			final String productos = soloNumeros(campana.productos);
 			if (productos.length() > 0) {
@@ -198,6 +223,10 @@ public class ProcesoBonoRecompra {
 			final PreparedStatement psLee = cnTienda.prepareStatement(sql.toString());
 			psLee.setString(1, campana.compraDesde);
 			psLee.setString(2, campana.compraHasta);
+			if (campana.horaDesde.length() >= 4 && campana.horaHasta.length() >= 4) {
+				psLee.setString(3, campana.horaDesde);
+				psLee.setString(4, campana.horaHasta);
+			}
 			final ResultSet rs = psLee.executeQuery();
 
 			final ArrayList<long[]> claves = new ArrayList<long[]>();
