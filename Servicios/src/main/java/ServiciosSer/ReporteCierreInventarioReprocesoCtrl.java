@@ -522,6 +522,14 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            			.append(formatea.format(inventarioFinal)).append(")");
 	            }
 	            cierreInv.setConsumo(consumo);
+	            //cierreInv es UN objeto que se reutiliza en cada vuelta. Si el
+	            //insumo no aparece en el maestro, el bucle de abajo no entra
+	            //nunca al if y el objeto conserva el costo del renglon ANTERIOR,
+	            //que se inserta tal cual. Se limpia antes de buscar: un insumo
+	            //que no se encuentra tiene que costar cero y verse, no heredar.
+	            cierreInv.setCostoUnitario(0);
+	            cierreInv.setCostoTotal(0);
+	            cierreInv.setCostoSinConsumir(0);
 	            //Buscamos el insumo para saber su costounidad
 	            for(int y = 0; y < insumos.size(); y++ )
 	            {
@@ -532,15 +540,9 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            		costoUnidad = insumoTemp.getCostoUnidad();
 	            		embalajeCosto = insumoTemp.getEmbalajeCosto();
 	            		cierreInv.setCostoUnitario(costoUnidad);
-	            		if(insumoTemp.getUnidadMedida().equals(new String("unidad")))
-	            		{
-	            			costoTotal = costoUnidad * consumo;
-	            			costoTotalSinUsar = costoUnidad * inventarioFinal;
-	            		}else if(insumoTemp.getUnidadMedida().equals(new String("gramos")))
-	            		{
-	            			costoTotal = (consumo/embalajeCosto)* costoUnidad;
-	            			costoTotalSinUsar = (inventarioFinal/embalajeCosto) * costoUnidad;
-	            		}
+	            		final double[] costosInsumo = costear(insumoTemp, consumo, inventarioFinal);
+	            		costoTotal = costosInsumo[0];
+	            		costoTotalSinUsar = costosInsumo[1];
 	            		costoTotalComida = costoTotalComida + costoTotal;
 	            		costoTotalComidaSinUsar = costoTotalComidaSinUsar + costoTotalSinUsar;
 	            		cierreInv.setCostoUnitario(costoUnidad);
@@ -629,6 +631,14 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            			.append(formatea.format(inventarioFinal)).append(")");
 	            }
 	            cierreInv.setConsumo(consumo);
+	            //cierreInv es UN objeto que se reutiliza en cada vuelta. Si el
+	            //insumo no aparece en el maestro, el bucle de abajo no entra
+	            //nunca al if y el objeto conserva el costo del renglon ANTERIOR,
+	            //que se inserta tal cual. Se limpia antes de buscar: un insumo
+	            //que no se encuentra tiene que costar cero y verse, no heredar.
+	            cierreInv.setCostoUnitario(0);
+	            cierreInv.setCostoTotal(0);
+	            cierreInv.setCostoSinConsumir(0);
 	            //Buscamos el insumo para saber su costounidad
 	            for(int z = 0; z < insumos.size(); z++ )
 	            {
@@ -637,15 +647,9 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	            	if(idItem == idInsumo)
 	            	{
 	            		costoUnidad = insumoTemp.getCostoUnidad();
-	            		if(insumoTemp.getUnidadMedida().equals(new String("unidad")))
-	            		{
-	            			costoTotal = costoUnidad * consumo;
-	            			costoTotalSinUsar = costoUnidad * inventarioFinal;
-	            		}else if(insumoTemp.getUnidadMedida().equals(new String("gramos")))
-	            		{
-	            			costoTotal = (consumo/1000)* costoUnidad;
-	            			costoTotalSinUsar = (inventarioFinal/1000) * costoUnidad;
-	            		}
+	            		final double[] costosInsumo = costear(insumoTemp, consumo, inventarioFinal);
+	            		costoTotal = costosInsumo[0];
+	            		costoTotalSinUsar = costosInsumo[1];
 	            		costoTotalComida = costoTotalComida + costoTotal;
 	            		costoTotalComidaSinUsar = costoTotalComidaSinUsar + costoTotalSinUsar;
 	            		cierreInv.setCostoUnitario(costoUnidad);
@@ -725,6 +729,63 @@ public String CalcularCierreSemanalTiendaFormatoExcel(Tienda tienda, String fech
 	return(rutaArchivoGenerado);
     
 }
+
+
+	/**
+	 * El costo de un insumo en una semana. UN solo sitio, a proposito.
+	 *
+	 * Este calculo estaba copiado en cuatro bloques -comida y gaseosa, en el
+	 * proceso y en el reproceso- y las copias se habian desviado: la de gaseosa
+	 * dividia por 1000 fijo en vez de usar el embalaje, y NINGUNA de las dos de
+	 * gaseosa tenia la rama de "paquete".
+	 *
+	 * EL BUG QUE ESO CAUSABA
+	 *
+	 * Sin rama para su unidad, el insumo no entraba a ninguna asignacion y
+	 * costoTotal conservaba el valor del renglon ANTERIOR, que se insertaba tal
+	 * cual porque cierreInv es un objeto que se reutiliza entre vueltas. Asi, el
+	 * 2026-04-05 en Calasanz el "Azucar Fresa Cherry" -consumo cero- quedo
+	 * costando 37.504.313, que era exactamente el costo del Sirope Mango Biche,
+	 * el renglon de antes. Son 9 filas en 2026 por 37,5 millones.
+	 *
+	 * Ahora una unidad desconocida devuelve CERO y queda anotada, en vez de
+	 * heredar en silencio lo del vecino.
+	 *
+	 * @return {costo de lo consumido, costo de lo que quedo en tienda}
+	 */
+	private static double[] costear(final Insumo insumo, final double consumo,
+			final double inventarioFinal)
+	{
+		if (insumo == null)
+		{
+			return (new double[] { 0, 0 });
+		}
+		final double costoUnidad = insumo.getCostoUnidad();
+		final String unidad = insumo.getUnidadMedida() == null ? "" : insumo.getUnidadMedida().trim();
+
+		if (unidad.equals("unidad"))
+		{
+			return (new double[] { costoUnidad * consumo, costoUnidad * inventarioFinal });
+		}
+		//Gramos y paquete se cobran por embalaje: el costo esta dado por bulto y
+		//el consumo viene en la unidad suelta. Antes la seccion de gaseosa
+		//dividia por 1000 fijo, y hay insumos con embalaje de 500 y de 1100.
+		if (unidad.equals("gramos") || unidad.equals("paquete"))
+		{
+			final double embalaje = insumo.getEmbalajeCosto();
+			if (embalaje > 0)
+			{
+				return (new double[] { consumo / embalaje * costoUnidad,
+						inventarioFinal / embalaje * costoUnidad });
+			}
+			//Sin embalaje no se puede repartir el costo del bulto. Cero, y que se
+			//vea: inventarle un costo es peor que no darlo.
+			return (new double[] { 0, 0 });
+		}
+		System.out.println("Cierre de inventario: unidad de medida desconocida '" + unidad
+				+ "' en el insumo " + insumo.getIdinsumo() + ". Se costea en cero.");
+		return (new double[] { 0, 0 });
+	}
 
 }
 
