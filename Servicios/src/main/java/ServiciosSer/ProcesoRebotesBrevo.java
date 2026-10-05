@@ -103,6 +103,18 @@ public class ProcesoRebotesBrevo {
 			} catch (final Exception e) {
 			}
 		}
+
+		//SALIDA EXPLICITA. Sin esto el proceso termina su trabajo pero no
+		//devuelve el prompt: el cliente HTTP compartido -ClientesHttp.ok()-
+		//deja vivos los hilos de su pool de conexiones y su dispatcher, y
+		//mientras no sean demonios la JVM no se cierra. Se quedaba colgado
+		//varios minutos despues de imprimir la duracion.
+		//
+		//No se le puede llamar close() al cliente: esta compartido y cerrarlo
+		//lo dejaria inservible para quien lo use despues en el mismo proceso.
+		//En un servicio por lote, que termina cuando termina, salir es lo
+		//correcto; en el war no aplica porque la aplicacion sigue corriendo.
+		System.exit(0);
 	}
 
 	/**
