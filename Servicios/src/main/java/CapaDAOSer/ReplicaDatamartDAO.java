@@ -218,23 +218,25 @@ public class ReplicaDatamartDAO {
 			Map<String, String> destino = columnasDe(dm, def.tabla);
 			List<Integer> posiciones = new ArrayList<Integer>();
 			List<String> nombresDestino = new ArrayList<String>();
-			boolean tieneIdTiendaOrigen = false;
 			for (int i = 0; i < columnasTienda.size(); i++) {
 				String col = columnasTienda.get(i);
+				//El idtienda NO se copia de la tienda: se pone el de la tienda que se esta replicando. La base de
+				//cada tienda es de UNA sola tienda, asi que ese es el valor correcto por construccion; y el que
+				//trae la fila no es de fiar: hay despachos viejos con idtienda 0 en varias tiendas, y al copiarlos
+				//tal cual chocaban entre si en la llave (id, idtienda) del datamart: "Duplicate entry '2737-0'".
+				if (col.equalsIgnoreCase("idtienda")) {
+					continue;
+				}
 				String real = destino.get(col.toLowerCase());
 				if (real == null) {
 					res.columnasSinDestino.add(col);
 					continue;
 				}
-				if (col.equalsIgnoreCase("idtienda")) {
-					tieneIdTiendaOrigen = true;
-				}
 				posiciones.add(Integer.valueOf(i));
 				nombresDestino.add(real);
 			}
-			//Si el destino lleva idtienda y la tienda no lo trae, se pone aqui.
 			String idTiendaDestino = destino.get("idtienda");
-			boolean agregarIdTienda = !tieneIdTiendaOrigen && idTiendaDestino != null;
+			boolean agregarIdTienda = idTiendaDestino != null;
 			if (agregarIdTienda) {
 				nombresDestino.add(idTiendaDestino);
 			}

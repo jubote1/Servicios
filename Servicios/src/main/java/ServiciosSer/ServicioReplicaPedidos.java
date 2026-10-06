@@ -198,7 +198,9 @@ public class ServicioReplicaPedidos {
 					}
 					celda.setFilas(celda.getFilas() + r.filasEscritas);
 				}
-			} else if (esAyer && !celda.esError()) {
+			} else if (esAyer && !celda.esError() && celda.getDiasRecuperados() == 0) {
+				//Si en esta corrida se recuperaron dias atrasados, que ayer no tenga filas no los borra del correo:
+				//antes la celda quedaba en "n/a" y parecia que no se habia replicado nada.
 				//Cero filas: normal para unas tablas, para revisar en otras.
 				boolean normal = d.ceroEsNormal || esBodega(tien);
 				celda.setEstado(normal ? ReplicaCelda.NO_APLICA : ReplicaCelda.CERO);
