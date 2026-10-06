@@ -143,6 +143,20 @@ public class ReplicaDatamartDAO {
 						+ "ON s.id = l.pedido_sugerencia_id AND s.idtienda = l.idtienda "
 						+ "WHERE s.idtienda = ? AND s.fecha_jornada = ? LIMIT 1",
 				true, true));
+		//La facturacion electronica, para el reporte mensual de facturado y notas credito del central. Van por
+		//la fecha de EMISION (columna fecha, texto yyyy-MM-dd): una nota credito de hoy sobre una factura de
+		//hace un mes se cuenta hoy, que es como lo hace la contabilidad. Se piden las columnas una por una
+		//-sin qr_url ni qr_data, que pesan y no se usan- y por eso una tienda que no haya corrido la
+		//migracion 2026_10_06_01 falla con "falta la migracion" en vez de copiar a medias.
+		d.add(new Definicion("factura_electronica_generada",
+				"SELECT idsolicitud, idpedidotienda, prefijo, numerodocumento, cufe, validacion_dian, fecha, hora, "
+						+ "valor_sin_impuestos, valor_impuesto, valor_total "
+						+ "FROM factura_electronica_generada WHERE fecha = ?",
+				"SELECT 1 FROM factura_electronica_generada WHERE idtienda = ? AND fecha = ? LIMIT 1", true, true));
+		d.add(new Definicion("nota_credito_electronica_generada",
+				"SELECT * FROM nota_credito_electronica_generada WHERE fecha = ?",
+				"SELECT 1 FROM nota_credito_electronica_generada WHERE idtienda = ? AND fecha = ? LIMIT 1", true,
+				true));
 		return d;
 	}
 
