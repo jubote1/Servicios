@@ -47,6 +47,7 @@ public class ServicioReplicaPedidos {
 
 	private static final int DIAS_POR_DEFECTO = 3;
 	private static final int DIAS_MAXIMO = 120;
+	private static final int ID_BODEGA = 12;
 
 	public static void main(String[] args) {
 		int dias = DIAS_POR_DEFECTO;
@@ -72,6 +73,17 @@ public class ServicioReplicaPedidos {
 	}
 
 	public void generarReplicaPedidos(int diasAtras) {
+		ejecutar(diasAtras, false, "");
+	}
+
+	/**
+	 * La replica de verdad. La usan el proceso diario y los historicos (ServicioReplicaPedidosHistorico y su Temp),
+	 * que antes tenian cada uno su copia del codigo viejo y ahora son esto mismo con otros parametros.
+	 *
+	 *  omitirBodega la Bodega (idtienda 12) no se replica: asi lo hacian los historicos.
+	 *  etiqueta     se agrega al asunto del correo, para distinguir una corrida historica de la diaria.
+	 */
+	public void ejecutar(int diasAtras, boolean omitirBodega, String etiqueta) {
 		System.out.println("EMPEZAMOS LA EJECUCION REPLICA PEDIDOS (dias atras: " + diasAtras + ")");
 		long inicio = System.currentTimeMillis();
 		SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
@@ -86,6 +98,9 @@ public class ServicioReplicaPedidos {
 		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 
 		for (Tienda tien : tiendas) {
+			if (omitirBodega && tien.getIdTienda() == ID_BODEGA) {
+				continue;
+			}
 			ReplicaTienda rt = new ReplicaTienda(tien.getIdTienda(), tien.getNombreTienda(), tien.getHostBD());
 			resultados.add(rt);
 			for (Definicion d : definiciones) {
@@ -94,7 +109,7 @@ public class ServicioReplicaPedidos {
 			replicarTienda(tien, rt, definiciones, diasAtras, formato);
 		}
 
-		enviarCorreo(resultados, definiciones, fechaAyer, diasAtras, System.currentTimeMillis() - inicio);
+		enviarCorreo(resultados, definiciones, fechaAyer, diasAtras, System.currentTimeMillis() - inicio, etiqueta);
 		System.out.println("TERMINAMOS LA EJECUCION REPLICA PEDIDOS");
 	}
 
@@ -250,7 +265,7 @@ public class ServicioReplicaPedidos {
 	// ------------------------------------------------------------------
 
 	private void enviarCorreo(List<ReplicaTienda> resultados, List<Definicion> definiciones, String fechaAyer,
-			int diasAtras, long milisegundos) {
+			int diasAtras, long milisegundos, String etiqueta) {
 		int conProblemas = 0;
 		for (ReplicaTienda rt : resultados) {
 			if (rt.tieneProblemas()) {
@@ -261,7 +276,7 @@ public class ServicioReplicaPedidos {
 
 		Correo correo = new Correo();
 		//El asunto va solo en ASCII: los acentos del asunto se danan en algunos clientes de correo.
-		correo.setAsunto("REPLICA DATAMART " + estado + " - datos del " + fechaAyer);
+		correo.setAsunto("REPLICA DATAMART " + (etiqueta == null || etiqueta.length() == 0 ? "" : etiqueta + " ") + estado + " - datos del " + fechaAyer);
 		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES",
 				"CLAVECORREOREPORTE");
 		correo.setContrasena(infoCorreo.getClaveCorreo());
