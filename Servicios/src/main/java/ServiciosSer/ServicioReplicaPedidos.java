@@ -1,210 +1,273 @@
 package ServiciosSer;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.text.DateFormat;
+import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
+import java.util.List;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.hssf.util.HSSFRegionUtil;
-import org.apache.poi.ss.usermodel.BorderStyle;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.ClientAnchor;
-import org.apache.poi.ss.usermodel.CreationHelper;
-import org.apache.poi.ss.usermodel.Drawing;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Picture;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.util.IOUtils;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFRichTextString;
-
-import CapaDAOSer.ConsumoInventarioDAO;
-import CapaDAOSer.ConsumoPorcionesDAO;
-import CapaDAOSer.DespachoRealDAO;
-import CapaDAOSer.DespachoRealDetDAO;
-import CapaDAOSer.DetallePedidoAllDAO;
 import CapaDAOSer.GeneralDAO;
-import CapaDAOSer.ItemInventarioDAO;
-import CapaDAOSer.ParametrosDAO;
-import CapaDAOSer.PedidoAnuladoDAO;
-import CapaDAOSer.PedidoDAO;
+import CapaDAOSer.ReplicaDatamartDAO;
+import CapaDAOSer.ReplicaDatamartDAO.Definicion;
+import CapaDAOSer.ReplicaDatamartDAO.ReplicaException;
+import CapaDAOSer.ReplicaDatamartDAO.Resultado;
 import CapaDAOSer.TiendaDAO;
-import CapaDAOSer.UsuarioDAO;
-import ModeloSer.ConsumoInventario;
+import ConexionSer.ConexionBaseDatos;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
-import ModeloSer.DespachoReal;
-import ModeloSer.DespachoRealDet;
-import ModeloSer.DetallePedidoAll;
-import ModeloSer.EmpleadoBiometria;
-import ModeloSer.Insumo;
-import ModeloSer.PedidoAll;
-import ModeloSer.PedidoAnulado;
+import ModeloSer.ReplicaCelda;
+import ModeloSer.ReplicaTienda;
 import ModeloSer.Tienda;
-import ModeloSer.Usuario;
 import utilidadesSer.ControladorEnvioCorreo;
 
+/**
+ * La replica diaria de las tablas de cada tienda hacia el datamart, y el correo que cuenta que paso.
+ *
+ * Que replica (ver ReplicaDatamartDAO): pedido, detalle_pedido, despacho_real, despacho_real_det y
+ * las tres tablas del enrutamiento. Estas ultimas junto con los despachos son lo que necesita el
+ * desempeno de domiciliarios del central para consultar el datamart cuando una tienda esta apagada.
+ *
+ * Que cambio frente a la version anterior:
+ *
+ * 1. El correo ya no dice "EXITOSO" porque se LEYERON filas de la tienda. Dice lo que se ESCRIBIO en el
+ *    datamart, tabla por tabla y tienda por tienda, en una matriz con colores. Antes una escritura
+ *    fallida (llave duplicada, columna que falta) se tragaba el error y el correo igual decia exitoso.
+ * 2. Se conecta UNA vez a cada tienda. Si no contesta, se dice una sola vez y se pasa a la siguiente;
+ *    antes se esperaban los 10 segundos de espera cuatro veces por tienda apagada.
+ * 3. Es idempotente: si el datamart ya tiene ese dia de esa tienda no lo toca. Por eso se puede correr
+ *    de nuevo sin duplicar, y por eso recupera solo los dias atrasados: una tienda que estuvo apagada
+ *    el martes se pone al dia el miercoles, sin que nadie haga nada.
+ *
+ * Uso:   ServicioReplicaPedidos [diasAtras]
+ *        diasAtras = cuantos dias hacia atras revisa (por defecto 3: ayer y los dos anteriores).
+ *        Para cargar historia nueva (por ejemplo las tablas del enrutamiento) se corre una vez con 45.
+ */
 public class ServicioReplicaPedidos {
-	
-	
-	
-	
-public static void main(String[] args)
-{
-	ServicioReplicaPedidos reporteConsumosUsuarios = new ServicioReplicaPedidos();
-	reporteConsumosUsuarios.generarReplicaPedidos();
-	
-}
 
-public void generarReplicaPedidos()
-{
-	//Obtengo las tiendas parametrizadas en el sistema de inventarios
-	System.out.println("EMPEZAMOS LA EJECUCI�N REPLICA PEDIDOS");
-	//Generamos la fecha en la que corre el proceso
-	Date fechaActual = new Date();
-	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-	//Formateamos la fecha Actual para consulta
-	String strFechaActual = dateFormat.format(fechaActual);
-	//String strFechaActual = "2020-08-20";
-	
-	//Restarle el d�a para que como se har� d�a atrasado
-	Calendar calendarioActual = Calendar.getInstance();
-	try
-	{
-		//Al objeto calendario le fijamos la fecha actual del sitema
-		calendarioActual.setTime(fechaActual);
-		calendarioActual.add(Calendar.DAY_OF_YEAR, -1);
-	}catch(Exception e)
-	{
-		System.out.println(e.toString());
+	private static final int DIAS_POR_DEFECTO = 3;
+	private static final int DIAS_MAXIMO = 120;
+
+	public static void main(String[] args) {
+		int dias = DIAS_POR_DEFECTO;
+		if (args != null && args.length > 0) {
+			try {
+				dias = Integer.parseInt(args[0].trim());
+			} catch (NumberFormatException e) {
+				System.out.println("Argumento de dias no valido (" + args[0] + "), se usa " + DIAS_POR_DEFECTO);
+			}
+		}
+		if (dias < 1) {
+			dias = 1;
+		}
+		if (dias > DIAS_MAXIMO) {
+			dias = DIAS_MAXIMO;
+		}
+		new ServicioReplicaPedidos().generarReplicaPedidos(dias);
 	}
-	
-	//Llevamos a un string la fecha anterior para el c�lculo de la venta
-	fechaActual = calendarioActual.getTime();
-	strFechaActual = dateFormat.format(fechaActual);
-	
-	
-	//Generamos String de tiendas exitosas y tiendas no exitosas para mandar correo.
-	String respuesta = "";
-	String respuestaDetalle = "";
-	String respuestaDespReal = "";
-	String respuestaDespRealDet = "";
-	ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
-	//Comenzamos a recorrer una a una las tiendas
-	ArrayList<PedidoAll> pedidos = new ArrayList();
-	ArrayList<DetallePedidoAll> detallePedidos = new ArrayList();
-	ArrayList<DespachoReal> despachosReales = new ArrayList();
-	ArrayList<DespachoRealDet> despachosRealesDet = new ArrayList();
-	for(Tienda tien : tiendas)
-	{
-		
-		if(!tien.getHostBD().equals(new String("")))
-		{
-			try
-			{
-				//Una vez obtenidos los pedidos del d�a en cuesti�n realizaremos la inserci�n en el sistema de Bodega
-				pedidos = PedidoDAO.recuperarPedidosPorFecha(strFechaActual, tien.getHostBD());
-				PedidoDAO.insertarLotePedidos(pedidos);
-				if(pedidos.size() > 0)
-				{
-					respuesta = respuesta + " <p>" + tien.getNombreTienda() + " EXITOSO - PEDIDOS " +  " </p>";
-				}else
-				{
-					respuesta = respuesta + " <p>" + tien.getNombreTienda() + " CUIDADO SE REPLICO CERO EN PEDIDOS  - PEDIDOS" +  " </p>";
-				}
-				
-			}catch(Exception e)
-			{
-				respuesta = respuesta + " <p>" + tien.getNombreTienda() + " ERROR - PEDIDOS " +  " </p>";
+
+	/** Se conserva con este nombre y sin argumentos: asi la llamaba la tarea programada. */
+	public void generarReplicaPedidos() {
+		generarReplicaPedidos(DIAS_POR_DEFECTO);
+	}
+
+	public void generarReplicaPedidos(int diasAtras) {
+		System.out.println("EMPEZAMOS LA EJECUCION REPLICA PEDIDOS (dias atras: " + diasAtras + ")");
+		long inicio = System.currentTimeMillis();
+		SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
+
+		//La fecha de los datos principales es la de AYER: la replica corre de madrugada.
+		Calendar ayer = Calendar.getInstance();
+		ayer.add(Calendar.DAY_OF_YEAR, -1);
+		String fechaAyer = formato.format(ayer.getTime());
+
+		List<Definicion> definiciones = ReplicaDatamartDAO.definiciones();
+		List<ReplicaTienda> resultados = new ArrayList<ReplicaTienda>();
+		ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
+
+		for (Tienda tien : tiendas) {
+			ReplicaTienda rt = new ReplicaTienda(tien.getIdTienda(), tien.getNombreTienda(), tien.getHostBD());
+			resultados.add(rt);
+			for (Definicion d : definiciones) {
+				rt.getCeldas().put(d.tabla, new ReplicaCelda(d.tabla));
 			}
-			
-			try
-			{
-				//Una vez obtenidos los detalles pedidos del d�a en cuesti�n realizaremos la inserci�n en el sistema de Bodega
-				detallePedidos = DetallePedidoAllDAO.recuperarDetallePorPedido(strFechaActual, tien.getHostBD());
-				DetallePedidoAllDAO.insertarLoteDetallePedido(detallePedidos);
-				if(detallePedidos.size() > 0)
-				{
-					respuestaDetalle = respuestaDetalle + " <p>" + tien.getNombreTienda() + " EXITOSO - DETALLE PEDIDOS " +  " </p>";
-				}else
-				{
-					respuestaDetalle = respuestaDetalle + " <p>" + tien.getNombreTienda() + " CUIDADO SE REPLICO CERO EN PEDIDOS  - DETALLE PEDIDOS" +  " </p>";
-				}
-				
-			}catch(Exception e)
-			{
-				respuestaDetalle = respuestaDetalle + " <p>" + tien.getNombreTienda() + " ERROR - DETALLE PEDIDOS " +  " </p>";
+			replicarTienda(tien, rt, definiciones, diasAtras, formato);
+		}
+
+		enviarCorreo(resultados, definiciones, fechaAyer, diasAtras, System.currentTimeMillis() - inicio);
+		System.out.println("TERMINAMOS LA EJECUCION REPLICA PEDIDOS");
+	}
+
+	// ------------------------------------------------------------------
+	// Una tienda
+	// ------------------------------------------------------------------
+
+	private void replicarTienda(Tienda tien, ReplicaTienda rt, List<Definicion> definiciones, int diasAtras,
+			SimpleDateFormat formato) {
+		if (tien.getHostBD() == null || tien.getHostBD().trim().length() == 0) {
+			rt.setConecto(false);
+			rt.setErrorConexion("La tienda no tiene host configurado (tienda.hosbd).");
+			marcarTodo(rt, ReplicaCelda.NO_APLICA, "Sin host configurado");
+			return;
+		}
+
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection datamart = null;
+		Connection tienda = null;
+		try {
+			tienda = con.obtenerConexionBDTiendaRemota(tien.getHostBD());
+			if (tienda == null) {
+				rt.setConecto(false);
+				rt.setErrorConexion("No contesto el computador de la tienda (" + tien.getHostBD() + ").");
+				marcarTodo(rt, ReplicaCelda.ERROR, "Sin conexion con la tienda");
+				pegarUltimoOk(rt);
+				registrar(rt, formato.format(ayerFecha()));
+				return;
 			}
-			
-			try
-			{
-				despachosReales = DespachoRealDAO.obtenerDespachoRealFecha(strFechaActual, tien.getHostBD());
-				DespachoRealDAO.insertarDespachoRealLote(despachosReales);
-				if(despachosReales.size() > 0)
-				{
-					respuestaDespReal = respuestaDespReal + " <p>" + tien.getNombreTienda() + " EXITOSO - DESPACHO-REAL " +  " </p>";
-				}else
-				{
-					respuestaDespReal = respuestaDespReal + " <p>" + tien.getNombreTienda() + " CUIDADO SE REPLICO CERO EN DESPACHO-REAL" +  " </p>";
-				}
-				
-			}catch(Exception e)
-			{
-				respuestaDespReal = respuestaDespReal + " <p>" + tien.getNombreTienda() + " ERROR - DESPACHO-REAL " +  " </p>";
+			rt.setConecto(true);
+			datamart = con.obtenerConexionBDDatamartLocal();
+			if (datamart == null) {
+				marcarTodo(rt, ReplicaCelda.ERROR, "Sin conexion con el datamart");
+				return;
 			}
-			
-			try
-			{
-				despachosRealesDet = DespachoRealDetDAO.obtenerDespachoRealDetFecha(strFechaActual, tien.getHostBD());
-				DespachoRealDetDAO.insertarDespachoRealDetLote(despachosRealesDet, tien.getIdTienda());
-				if(despachosRealesDet.size() > 0)
-				{
-					respuestaDespRealDet = respuestaDespRealDet + " <p>" + tien.getNombreTienda() + " EXITOSO - DESPACHO-REAL-DET " +  " </p>";
-				}else
-				{
-					respuestaDespRealDet = respuestaDespRealDet + " <p>" + tien.getNombreTienda() + " CUIDADO SE REPLICO CERO EN DESPACHO-REAL-DET" +  " </p>";
+
+			//Del dia mas viejo al mas reciente: asi un dia atrasado se recupera antes que el de ayer.
+			for (int atras = diasAtras; atras >= 1; atras--) {
+				Calendar cal = Calendar.getInstance();
+				cal.add(Calendar.DAY_OF_YEAR, -atras);
+				String fecha = formato.format(cal.getTime());
+				boolean esAyer = (atras == 1);
+				for (Definicion d : definiciones) {
+					replicarTabla(tien, rt, tienda, datamart, d, fecha, esAyer);
 				}
-				
-			}catch(Exception e)
-			{
-				respuestaDespRealDet = respuestaDespRealDet + " <p>" + tien.getNombreTienda() + " ERROR - DESPACHO-REAL-DET " +  " </p>";
 			}
-			
+		} finally {
+			cerrar(tienda);
+			cerrar(datamart);
+		}
+		for (ReplicaCelda c : rt.getCeldas().values()) {
+			if (c.esError()) {
+				c.setUltimoOk(ReplicaDatamartDAO.ultimaFechaBuena(rt.getIdTienda(), c.getTabla()));
+			}
+		}
+		registrar(rt, formato.format(ayerFecha()));
+	}
+
+	private void replicarTabla(Tienda tien, ReplicaTienda rt, Connection tienda, Connection datamart, Definicion d,
+			String fecha, boolean esAyer) {
+		ReplicaCelda celda = rt.getCeldas().get(d.tabla);
+		try {
+			if (ReplicaDatamartDAO.yaEstaEnDatamart(datamart, d, tien.getIdTienda(), fecha)) {
+				if (esAyer && !celda.esError() && celda.getDiasRecuperados() == 0) {
+					//Si en esta corrida se recupero un dia atrasado, eso es lo que se cuenta: el verde se queda.
+					celda.setEstado(ReplicaCelda.YA_ESTABA);
+					celda.setDetalle("El datamart ya tenia este dia.");
+				}
+				return;
+			}
+			Resultado r = ReplicaDatamartDAO.replicar(tienda, d, tien.getIdTienda(), fecha);
+			if (r.filasEscritas > 0) {
+				if (esAyer) {
+					//Si un dia ATRASADO dejo un hueco (rojo), no se tapa con el verde de ayer.
+					if (!celda.esError()) {
+						celda.setEstado(ReplicaCelda.OK);
+					}
+					celda.setFilas(celda.getFilas() + r.filasEscritas);
+					celda.setDetalle(r.columnasSinDestino.isEmpty() ? ""
+							: "El datamart no tiene las columnas: " + r.columnasSinDestino);
+				} else {
+					//Un dia ATRASADO que se recupero.
+					celda.setDiasRecuperados(celda.getDiasRecuperados() + 1);
+					if (celda.getEstado().equals(ReplicaCelda.NO_APLICA) || celda.getEstado().equals(ReplicaCelda.CERO)) {
+						celda.setEstado(ReplicaCelda.OK);
+					}
+					celda.setFilas(celda.getFilas() + r.filasEscritas);
+				}
+			} else if (esAyer && !celda.esError()) {
+				//Cero filas: normal para unas tablas, para revisar en otras.
+				boolean normal = d.ceroEsNormal || esBodega(tien);
+				celda.setEstado(normal ? ReplicaCelda.NO_APLICA : ReplicaCelda.CERO);
+				celda.setDetalle(normal ? "Sin registros ese dia." : "La tienda no tenia filas ese dia.");
+			}
+		} catch (ReplicaException e) {
+			if (e.esNoAplica()) {
+				if (esAyer && !celda.esError()) {
+					celda.setEstado(ReplicaCelda.NO_APLICA);
+					celda.setDetalle(e.getMessage());
+				}
+			} else {
+				//Un error en CUALQUIER dia es un hueco en los datos: se pinta en rojo.
+				celda.setEstado(ReplicaCelda.ERROR);
+				celda.setDetalle((esAyer ? "" : "Dia " + fecha + ": ") + e.getMessage());
+				System.out.println("ERROR replica " + tien.getNombreTienda() + " " + d.tabla + " " + fecha + ": "
+						+ e.getMessage());
+			}
 		}
 	}
-	
-	//Realizamos el env�o del correo electr�nico con los archivos
-	Correo correo = new Correo();
-	correo.setAsunto("REPLICA DE PEDIDOS EN SISTEMA CENTRALIZADO " + fechaActual.toString());
-	CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-	correo.setContrasena(infoCorreo.getClaveCorreo());
-	//Tendremos que definir los destinatarios de este correo
-	ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
-	correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-	String mensaje = "A continuacion se informaci�n del proceso de replica de PEDIDOS CENTRALIZADOS " + respuesta + respuestaDetalle + respuestaDespReal + respuestaDespRealDet;
-	correo.setMensaje(mensaje);
-	ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-	contro.enviarCorreoHTML();
+
+	private void marcarTodo(ReplicaTienda rt, String estado, String detalle) {
+		for (ReplicaCelda c : rt.getCeldas().values()) {
+			c.setEstado(estado);
+			c.setDetalle(detalle);
+		}
+	}
+
+	private void pegarUltimoOk(ReplicaTienda rt) {
+		for (ReplicaCelda c : rt.getCeldas().values()) {
+			c.setUltimoOk(ReplicaDatamartDAO.ultimaFechaBuena(rt.getIdTienda(), c.getTabla()));
+		}
+	}
+
+	private void registrar(ReplicaTienda rt, String fechaAyer) {
+		for (ReplicaCelda c : rt.getCeldas().values()) {
+			ReplicaDatamartDAO.registrar(rt.getIdTienda(), c.getTabla(), fechaAyer, c.getEstado(), c.getFilas(),
+					c.getDetalle());
+		}
+	}
+
+	private Date ayerFecha() {
+		Calendar ayer = Calendar.getInstance();
+		ayer.add(Calendar.DAY_OF_YEAR, -1);
+		return ayer.getTime();
+	}
+
+	private boolean esBodega(Tienda tien) {
+		return tien.getNombreTienda() != null && tien.getNombreTienda().trim().equalsIgnoreCase("BODEGA");
+	}
+
+	private void cerrar(Connection c) {
+		try {
+			if (c != null) {
+				c.close();
+			}
+		} catch (Exception e) {
+			//Nada que hacer.
+		}
+	}
+
+	// ------------------------------------------------------------------
+	// El correo
+	// ------------------------------------------------------------------
+
+	private void enviarCorreo(List<ReplicaTienda> resultados, List<Definicion> definiciones, String fechaAyer,
+			int diasAtras, long milisegundos) {
+		int conProblemas = 0;
+		for (ReplicaTienda rt : resultados) {
+			if (rt.tieneProblemas()) {
+				conProblemas++;
+			}
+		}
+		String estado = conProblemas == 0 ? "OK" : "REVISAR " + conProblemas + " TIENDA(S)";
+
+		Correo correo = new Correo();
+		//El asunto va solo en ASCII: los acentos del asunto se danan en algunos clientes de correo.
+		correo.setAsunto("REPLICA DATAMART " + estado + " - datos del " + fechaAyer);
+		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES",
+				"CLAVECORREOREPORTE");
+		correo.setContrasena(infoCorreo.getClaveCorreo());
+		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+		ArrayList correos = GeneralDAO.obtenerCorreosParametro("REPLICAUSUARIOS");
+		correo.setMensaje(ReplicaCorreoHtml.construir(resultados, definiciones, fechaAyer, diasAtras, milisegundos));
+		new ControladorEnvioCorreo(correo, correos).enviarCorreoHTML();
+	}
 }
-
-
-}
-
-
-
-
