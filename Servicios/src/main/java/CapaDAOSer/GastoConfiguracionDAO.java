@@ -13,22 +13,24 @@ public class GastoConfiguracionDAO {
 	/**
 	 * Los gastos que ReporteConsolidacionRentabilidad tiene que calcular.
 	 *
-	 * AHORA FILTRA POR activo, QUE ANTES NO HACIA NADA
+	 * NO FILTRA POR activo, Y ESO ES A PROPOSITO
 	 *
-	 * Esto era un SELECT * sin WHERE: la columna activo estaba ahi pero nadie la
-	 * miraba, y lo unico que decidia si un concepto corria era que su consulta
-	 * no dijera 'NA'. El resultado es que la tabla decia lo contrario de lo que
-	 * pasaba -los quince conceptos que se ejecutaban estaban marcados activo = 0,
-	 * y los veinte marcados activo = 1 no tenian consulta-, y nadie podia
-	 * apagar un calculo sin borrarle el texto SQL.
+	 * El 2026-09-29 le puse aqui un WHERE activo = 1 y le volteé la bandera a
+	 * la tabla, porque la columna parecia no servir para nada: los quince
+	 * conceptos que de verdad corrian estaban en activo = 0 y los veinte
+	 * marcados en 1 no tenian consulta. Parecia un error que nadie habia
+	 * notado.
 	 *
-	 * Con el filtro, apagar un concepto es poner activo = 0 y la consulta queda
-	 * guardada para saber que se hacia antes.
+	 * No lo era: era la convencion que esperaban otros lectores, y uno de
+	 * ellos -un reporte- dejo de traer conceptos. Lo revertí el 2026-10-08.
 	 *
-	 * OJO CON EL ORDEN DE DESPLIEGUE: primero hay que correr
-	 * 2026_09_29_03_gasto_configuracion_una_sola_fuente.sql, que deja las
-	 * banderas como deben quedar. Si este jar sube antes, el proceso no
-	 * calcularia nada, porque hoy los quince conceptos reales estan en cero.
+	 * Lo que decide si un concepto se calcula sigue siendo lo de siempre: que
+	 * su consulta_sql no diga 'NA'. Quien quiera apagar uno, le pone 'NA'.
+	 *
+	 * SI HACE FALTA MARCAR CONCEPTOS PARA ALGO NUEVO, COLUMNA NUEVA.
+	 * El tablero de rentabilidad del inventario usa `rentabilidad_calcula`,
+	 * que es suya y de nadie mas. Reusar una columna que ya tiene duenio es
+	 * exactamente lo que rompio el reporte.
 	 */
 	public static ArrayList<GastoConfiguracion> obtenerGastorConfiguracionTienda()
 	{
@@ -39,7 +41,7 @@ public class GastoConfiguracionDAO {
 		try
 		{
 			Statement stm = con1.createStatement();
-			String select = "SELECT * FROM gasto_configuracion WHERE activo = 1 ORDER BY idgasto_conf" ;
+			String select = "SELECT * FROM gasto_configuracion ORDER BY idgasto_conf" ;
 			int idGastoConf;
 			String nombreGasto;
 			String consultaSQL;
