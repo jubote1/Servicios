@@ -116,8 +116,8 @@ public class ReporteResumenOperacion {
 				hayPendientes = true;
 			}
 			if (fila.getPedidosDescuadrados() > 0) {
-				ReporteResumenOperacion.avisarDescuadre(tien.getNombreTienda(), resumen.descuadres,
-						fechaActual);
+				ReporteResumenOperacion.avisarDescuadre(tien.getIdTienda(), tien.getNombreTienda(),
+						resumen.descuadres, fechaActual);
 			}
 			filas.add(fila);
 		}
@@ -184,11 +184,22 @@ public class ReporteResumenOperacion {
 	 * Antes recibia solo cuantos eran y el correo decia "tiene descuadre en 1
 	 * descuadrados". En la tienda no habia como saber cual pedido mirar, asi que
 	 * el aviso no se podia atender. Ahora recibe cuales son y los lista.
+	 *
+	 * Este proceso corre cada 30 minutos, asi que un descuadre sin corregir se
+	 * encontraba otra vez en cada corrida y el correo salia de nuevo. Ahora solo
+	 * se avisa lo que no se habia avisado: ver DescuadreAvisadoDAO.
 	 */
-	private static void avisarDescuadre(final String nombreTienda,
+	private static void avisarDescuadre(final int idTienda, final String nombreTienda,
 			final ArrayList<capaDAOPOS.PedidoDAO.Descuadre> descuadres, final String fechaActual) {
 		try {
 			if (descuadres == null || descuadres.isEmpty()) {
+				return;
+			}
+			final CapaDAOSer.DescuadreAvisadoDAO.Novedad novedad =
+					CapaDAOSer.DescuadreAvisadoDAO.soloNuevos(idTienda, fechaActual, descuadres);
+			if (novedad.nuevos.isEmpty()) {
+				System.out.println("Descuadres de " + nombreTienda + ": " + novedad.repetidos
+						+ " ya avisados y ninguno nuevo. No se manda correo.");
 				return;
 			}
 			final ArrayList correos = GeneralDAO.obtenerCorreosParametro("ERRORREPLICAINV");
@@ -204,7 +215,8 @@ public class ReporteResumenOperacion {
 			correo.setAsunto(utilidadesSer.CorreoDescuadre.asunto(nombreTienda, fechaActual));
 			correo.setContrasena(infoCorreo.getClaveCorreo());
 			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-			correo.setMensaje(utilidadesSer.CorreoDescuadre.cuerpo(nombreTienda, fechaActual, descuadres));
+			correo.setMensaje(utilidadesSer.CorreoDescuadre.cuerpo(nombreTienda, fechaActual,
+					novedad.nuevos, novedad.repetidos));
 			final ControladorEnvioCorreo envio = new ControladorEnvioCorreo(correo, correos);
 			envio.enviarCorreoHTML();
 		} catch (final Exception e) {

@@ -41,6 +41,17 @@ public final class CorreoDescuadre {
 
 	public static String cuerpo(final String nombreTienda, final String fecha,
 			final ArrayList<Descuadre> descuadres) {
+		return (cuerpo(nombreTienda, fecha, descuadres, 0));
+	}
+
+	/**
+	 * @param repetidos cuantos descuadres de esta tienda ya se habian avisado y
+	 *                  siguen sin corregir. No se vuelven a listar -por eso se
+	 *                  dejo de mandar el correo cada 30 minutos- pero si se
+	 *                  mencionan, para que no parezca que se resolvieron solos.
+	 */
+	public static String cuerpo(final String nombreTienda, final String fecha,
+			final ArrayList<Descuadre> descuadres, final int repetidos) {
 		final StringBuilder m = new StringBuilder();
 		m.append("<div style=\"margin:0;padding:18px 0;background-color:#F4F6F8;font-family:")
 				.append(FUENTE).append(";\">");
@@ -122,6 +133,16 @@ public final class CorreoDescuadre {
 						.append("</b> registrados de mas.");
 			}
 			m.append("</td></tr>");
+		}
+
+		if (repetidos > 0) {
+			m.append("<tr><td style=\"padding:0 22px 18px;font-size:12.5px;color:").append(TINTA_2)
+					.append(";line-height:1.55;\">")
+					.append(repetidos == 1
+							? "Ademas sigue sin corregir <b>1 pedido</b> que ya se habia avisado."
+							: "Ademas siguen sin corregir <b>" + repetidos + " pedidos</b> que ya se habian avisado.")
+					.append(" No se vuelven a listar aqui para no repetir el mismo correo.")
+					.append("</td></tr>");
 		}
 
 		m.append("<tr><td style=\"padding:14px 22px 20px;border-top:1px solid ").append(LINEA)
