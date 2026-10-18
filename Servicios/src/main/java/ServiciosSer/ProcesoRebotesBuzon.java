@@ -139,6 +139,7 @@ public class ProcesoRebotesBuzon {
 			int rebotes = 0;
 			int duros = 0;
 			int blandos = 0;
+			int noAnotados = 0;
 			for (int i = 0; i < mensajes.length && revisados < MAXIMO_MENSAJES; i++) {
 				revisados++;
 				final String bloque = buscarDeliveryStatus(mensajes[i]);
@@ -150,6 +151,14 @@ public class ProcesoRebotesBuzon {
 				boolean alguno = false;
 				for (final Rebote r : delMensaje) {
 					if (!CorreoRebotadoDAO.anotar(con, r.correo, r.tipo, r.motivo, "BUZON")) {
+						//CUENTA LOS QUE NO SE PUDIERON ANOTAR, y los imprime abajo.
+						//anotar() reporta su error por log4j, y los jars de
+						//Servicios corren sin appenders configurados: ese error no
+						//queda en ninguna parte. Sin este contador, una corrida con
+						//la base caida se veria igual que una corrida sin rebotes
+						//-"rebotes: 0"- y en un proceso desatendido eso se puede
+						//quedar asi semanas.
+						noAnotados++;
 						continue;
 					}
 					alguno = true;
@@ -170,6 +179,10 @@ public class ProcesoRebotesBuzon {
 
 			System.out.println("revisados: " + revisados + ", rebotes: " + rebotes
 					+ " (duros: " + duros + ", blandos: " + blandos + ")");
+			if (noAnotados > 0) {
+				System.out.println("ATENCION: " + noAnotados + " rebotes NO se pudieron anotar."
+						+ " Revisar la conexion al central.");
+			}
 			final CorreoRebotadoDAO.Resumen r = CorreoRebotadoDAO.resumen();
 			System.out.println("acumulado: " + r.duros + " duros, " + r.blandos + " blandos");
 			System.out.println("duracion: " + ((System.currentTimeMillis() - arranque) / 1000) + " s");
