@@ -103,6 +103,17 @@ public void generarReplicaProgramaFidelidad()
 	}
 	Double valorPuntos = ParametrosDAO.retornarValorNumericoLocalDouble("VALORPUNTO");
 	int diasVigencia = ParametrosDAO.retornarValorNumerico("DIASVIGENCIAPUNTOS");
+	//Ventana del aviso de vencimiento: la MISMA que usan los correos de puntos
+	//por vencer (DIASAVISOVENCIMIENTO1, hoy 60), para que el numero de la
+	//plantilla y el del aviso no se contradigan.
+	//
+	//Si el parametro falta o viene en cero se usan 60: con cero la consulta no
+	//contaria nada y la plantilla diria siempre 0, que es peor que no mostrarlo.
+	int diasAvisoVencer = ParametrosDAO.retornarValorNumerico("DIASAVISOVENCIMIENTO1");
+	if(diasAvisoVencer <= 0)
+	{
+		diasAvisoVencer = 60;
+	}
 	if(diasVigencia == 0)
 	{
 		diasVigencia = 180;
@@ -197,7 +208,15 @@ public void generarReplicaProgramaFidelidad()
 					        if(utilidadesCC.ControladorEnvioCorreo.esDireccionValida(pedidoTemp.getCorreo()))
 					        {
 					        	// Lista de destinatarios con nombres y puntos
-					        	destinatarios.add(new JSONObject().put("email", pedidoTemp.getCorreo()).put("nombre", pedidoTemp.getNombreCliente()).put("puntos", puntosSumar).put("puntostotal", puntosAcumulados));
+					        	//Cuantos de sus puntos se le vencen dentro de la ventana. Se consulta
+					        	//aqui, una vez por destinatario, y no en los siete bloques de plantilla
+					        	//de abajo, que son el mismo dato repetido.
+					        	//
+					        	//El vencimiento de esta noche ya corrio mas arriba, asi que lo que quedo
+					        	//marcado como vencido no se cuenta aqui.
+					        	double puntosPorVencer = FidelizacionTransaccionDAO
+					        			.obtenerResumenPuntos(pedidoTemp.getCorreo(), diasAvisoVencer).puntosPorVencer;
+					        	destinatarios.add(new JSONObject().put("email", pedidoTemp.getCorreo()).put("nombre", pedidoTemp.getNombreCliente()).put("puntos", puntosSumar).put("puntostotal", puntosAcumulados).put("puntosavencer", puntosPorVencer));
 					        }
 					        else
 					        {
@@ -228,6 +247,7 @@ public void generarReplicaProgramaFidelidad()
 	        paramsDefault.put("nombre", "maria isabel");
 	        paramsDefault.put("puntos", 0);
 	        paramsDefault.put("puntostotal", 0);
+	        paramsDefault.put("puntosavencer", 0);
 	        JSONObject jsonRequest = new JSONObject();
 	        jsonRequest.put("subject", subjectDefault);
 	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
@@ -243,6 +263,7 @@ public void generarReplicaProgramaFidelidad()
 		            params.put("nombre", destinatario.getString("nombre"));
 		            params.put("puntos", destinatario.getInt("puntos"));
 		            params.put("puntostotal", destinatario.getInt("puntostotal"));
+		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
 		            JSONObject messageVersion = new JSONObject();
 		            messageVersion.put("to", new JSONArray().put(
 		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
@@ -279,6 +300,7 @@ public void generarReplicaProgramaFidelidad()
 	        paramsDefault.put("nombre", "maria isabel");
 	        paramsDefault.put("puntos", 0);
 	        paramsDefault.put("puntostotal", 0);
+	        paramsDefault.put("puntosavencer", 0);
 	        jsonRequest = new JSONObject();
 	        jsonRequest.put("subject", subjectDefault);
 	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
@@ -293,6 +315,7 @@ public void generarReplicaProgramaFidelidad()
 		            params.put("nombre", destinatario.getString("nombre"));
 		            params.put("puntos", destinatario.getInt("puntos"));
 		            params.put("puntostotal", destinatario.getInt("puntostotal"));
+		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
 		            JSONObject messageVersion = new JSONObject();
 		            messageVersion.put("to", new JSONArray().put(
 		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
@@ -328,6 +351,7 @@ public void generarReplicaProgramaFidelidad()
 	        paramsDefault.put("nombre", "maria isabel");
 	        paramsDefault.put("puntos", 0);
 	        paramsDefault.put("puntostotal", 0);
+	        paramsDefault.put("puntosavencer", 0);
 	        jsonRequest = new JSONObject();
 	        jsonRequest.put("subject", subjectDefault);
 	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
@@ -342,6 +366,7 @@ public void generarReplicaProgramaFidelidad()
 		            params.put("nombre", destinatario.getString("nombre"));
 		            params.put("puntos", destinatario.getInt("puntos"));
 		            params.put("puntostotal", destinatario.getInt("puntostotal"));
+		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
 		            JSONObject messageVersion = new JSONObject();
 		            messageVersion.put("to", new JSONArray().put(
 		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
@@ -377,6 +402,7 @@ public void generarReplicaProgramaFidelidad()
 	        paramsDefault.put("nombre", "maria isabel");
 	        paramsDefault.put("puntos", 0);
 	        paramsDefault.put("puntostotal", 0);
+	        paramsDefault.put("puntosavencer", 0);
 	        jsonRequest = new JSONObject();
 	        jsonRequest.put("subject", subjectDefault);
 	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
@@ -391,6 +417,7 @@ public void generarReplicaProgramaFidelidad()
 		            params.put("nombre", destinatario.getString("nombre"));
 		            params.put("puntos", destinatario.getInt("puntos"));
 		            params.put("puntostotal", destinatario.getInt("puntostotal"));
+		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
 		            JSONObject messageVersion = new JSONObject();
 		            messageVersion.put("to", new JSONArray().put(
 		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
@@ -426,6 +453,7 @@ public void generarReplicaProgramaFidelidad()
 	        paramsDefault.put("nombre", "maria isabel");
 	        paramsDefault.put("puntos", 0);
 	        paramsDefault.put("puntostotal", 0);
+	        paramsDefault.put("puntosavencer", 0);
 	        jsonRequest = new JSONObject();
 	        jsonRequest.put("subject", subjectDefault);
 	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
@@ -440,6 +468,7 @@ public void generarReplicaProgramaFidelidad()
 		            params.put("nombre", destinatario.getString("nombre"));
 		            params.put("puntos", destinatario.getInt("puntos"));
 		            params.put("puntostotal", destinatario.getInt("puntostotal"));
+		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
 		            JSONObject messageVersion = new JSONObject();
 		            messageVersion.put("to", new JSONArray().put(
 		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
@@ -475,6 +504,7 @@ public void generarReplicaProgramaFidelidad()
 	        paramsDefault.put("nombre", "maria isabel");
 	        paramsDefault.put("puntos", 0);
 	        paramsDefault.put("puntostotal", 0);
+	        paramsDefault.put("puntosavencer", 0);
 	        jsonRequest = new JSONObject();
 	        jsonRequest.put("subject", subjectDefault);
 	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
@@ -489,6 +519,7 @@ public void generarReplicaProgramaFidelidad()
 		            params.put("nombre", destinatario.getString("nombre"));
 		            params.put("puntos", destinatario.getInt("puntos"));
 		            params.put("puntostotal", destinatario.getInt("puntostotal"));
+		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
 		            JSONObject messageVersion = new JSONObject();
 		            messageVersion.put("to", new JSONArray().put(
 		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
@@ -524,6 +555,7 @@ public void generarReplicaProgramaFidelidad()
 	        paramsDefault.put("nombre", "maria isabel");
 	        paramsDefault.put("puntos", 0);
 	        paramsDefault.put("puntostotal", 0);
+	        paramsDefault.put("puntosavencer", 0);
 	        jsonRequest = new JSONObject();
 	        jsonRequest.put("subject", subjectDefault);
 	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
@@ -538,6 +570,7 @@ public void generarReplicaProgramaFidelidad()
 		            params.put("nombre", destinatario.getString("nombre"));
 		            params.put("puntos", destinatario.getInt("puntos"));
 		            params.put("puntostotal", destinatario.getInt("puntostotal"));
+		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
 		            JSONObject messageVersion = new JSONObject();
 		            messageVersion.put("to", new JSONArray().put(
 		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
