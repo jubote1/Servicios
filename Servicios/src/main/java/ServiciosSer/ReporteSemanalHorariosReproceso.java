@@ -21,8 +21,8 @@ public class ReporteSemanalHorariosReproceso {
 		cfg.fechaDesdeReproceso = true;
 		cfg.poblacion = ReporteSemanalHorariosBase.INTERNOS;
 		
-		cfg.topeFestivoAlto = 37;
-		cfg.topeFestivoBajo = 18.5;
+		cfg.topeFestivoAlto = 35;	//jornada de 42 h: semana con festivo = 42 - 7 (antes 37, de la jornada de 44 h)
+		cfg.topeFestivoBajo = 17.5;	//la mitad de 35
 		ReporteSemanalHorariosBase.generar(cfg);
 	}
 }
