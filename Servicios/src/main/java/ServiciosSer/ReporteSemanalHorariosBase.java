@@ -107,9 +107,9 @@ public class ReporteSemanalHorariosBase {
 		 * todos los demas. Solo se notaba en semanas con festivo y en una sola
 		 * persona, por eso duro tanto sin verse.
 		 */
-		public double topeFestivoAlto = 37;
+		public double topeFestivoAlto = 35;
 		/** Lo mismo para salarios por debajo del millon: siempre la mitad. */
-		public double topeFestivoBajo = 18.5;
+		public double topeFestivoBajo = 17.5;
 	}
 
 	public static final String INTERNOS = "INTERNOS";
