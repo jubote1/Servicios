@@ -493,9 +493,13 @@ public class ReporteSemanalHorariosTienda {
 					try
 					{
 						
-						horas = Double.parseDouble(fila[5]);
-						DecimalFormat df = new DecimalFormat("#.00");
-						strHoras = df.format(horas);
+						//Mismo redondeo que ReporteSemanalHorariosBase: el dia se
+						//redondea a entero y el total sale de sumar los dias ya
+						//redondeados. Si este reporte y el otro no redondearan igual,
+						//el mismo empleado tendria dos totales distintos segun quien
+						//abra el correo.
+						horas = Math.round(Double.parseDouble(fila[5]));
+						strHoras = String.valueOf((long) horas);
 					}catch(Exception e)
 					{
 						horas = 0;

@@ -792,9 +792,22 @@ public class ReporteSemanalHorariosBase {
 				try
 				{
 					
-					horas = Double.parseDouble(fila[5]);
-					DecimalFormat df = new DecimalFormat("#.00");
-					strHoras = df.format(horas);
+					//Las horas del dia se REDONDEAN a entero: 5,1 queda en 5 y 5,7 en 6.
+					//Decision de Juan David el 2026-10-21.
+					//
+					//Se redondea cada DIA y el total sale de sumar los dias ya
+					//redondeados, no de redondear la suma. No es lo mismo: con
+					//9,67 + 6,85 + 4,89 + 9,48 + 6,86 + 9,01 la suma da 46,77 -que
+					//redondeada seria 47- pero dia a dia da 10+7+5+9+7+9 = 47. Puede
+					//separarse hasta en varias horas en una semana larga, y el numero
+					//que el empleado vio en la tienda es el del dia.
+					//
+					//Va aqui, apenas se lee el dato, para que TODO lo que sigue use el
+					//entero: el acumulado, los domingos, los festivos y las extras que
+					//salen del acumulado. Redondear solo al pintar dejaria una tabla
+					//cuyos renglones no suman su propio total.
+					horas = Math.round(Double.parseDouble(fila[5]));
+					strHoras = String.valueOf((long) horas);
 				}catch(Exception e)
 				{
 					horas = 0;
