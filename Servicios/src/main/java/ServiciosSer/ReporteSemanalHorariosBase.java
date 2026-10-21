@@ -471,69 +471,30 @@ public class ReporteSemanalHorariosBase {
 						//Sino se tuvo error en la conversi�n de las fehcas.
 				        if(!errorInicial && !errorFinal)
 				        {
-				        	  //Antes de hacer un c�lculo de las horas, revisaremos y homologaremos el valor de la hora final
-				        	  //Con el fin de tomar acci�n sobre las personas que se dan salida muy tarde
+				        	  //Las horas se cuentan COMO QUEDARON MARCADAS: si entro a las 3:50 se
+				        	  //cuenta desde las 3:50, y si salio a las 12:05 se cuenta hasta las
+				        	  //12:05. Decision de Juan David el 2026-10-21.
+				        	  //
+				        	  //Antes habia un recorte por dia de la semana que se quito entero:
+				        	  //
+				        	  //  salida  lunes a jueves y domingo -> se forzaba a las 23:00
+				        	  //          viernes y sabado        -> se forzaba a las 00:00
+				        	  //  entrada solo en tiendas, empujaba al siguiente en punto:
+				        	  //          lun-jue las 15:xx -> 16:00
+				        	  //          sab-dom las 11:xx -> 12:00
+				        	  //          viernes las 14:xx -> 15:00
+				        	  //
+				        	  //La salida pasada de medianoche NO necesita arreglo aparte:
+				        	  //general.empleado_evento guarda la JORNADA en `fecha` y el momento real
+				        	  //en `fecha_hora_log` (verificado: hay salidas con fecha 2026-10-17 y
+				        	  //fecha_hora_log 2026-10-18 00:20:48), asi que la resta sale bien sola.
+				        	  //Lo que hacia el codigo viejo era restarle un dia a la fecha final y
+				        	  //ademas fijarla en 23:00, y eso era justo lo que recortaba la jornada.
+				        	  //
+				        	  //horaInicial y horaFinal se conservan porque el recargo nocturno de mas
+				        	  //abajo los usa; ahora son la hora real y no la recortada.
 				        	  int horaFinal = fechaFinal.getHours();
-				        	  //Validamos si es lunes, martes, miercoles, jueves o domingo y si la hora Final es mayor a 23 en cuyo caso se fija en ese valor
-				        	  if((filaTemp[2].equals(new String("Lunes")))||(filaTemp[2].equals(new String("Martes")))||(filaTemp[2].equals(new String("Miercoles")))||(filaTemp[2].equals(new String("Jueves")))||(filaTemp[2].equals(new String("Domingo"))))
-				        	  {
-				        		  //Si la hora final es mayor o igual a 23 o ya se fue para el otro d�a
-				        		  if(horaFinal >= 23)
-				        		  {
-				        			  horaFinal = 23;
-				        			  fechaFinal.setHours(23);
-				        			  fechaFinal.setMinutes(0);
-				        		  }else if(horaFinal >= 0 && horaFinal <= 4)
-				        		  {
-				        			  //Seguramente se pas� al d�a siguiente, por lo tanto con el objeto calendar
-				        			  //restamos un d�a y fijamos la hora  a las 23:00 para los c�lculos
-				        			  horaFinal = 23;
-				        			  calendarioComodin.setTime(fechaFinal);
-				        			  calendarioComodin.add(Calendar.DAY_OF_YEAR, -1);
-				        			  fechaFinal = calendarioComodin.getTime();
-				        			  fechaFinal.setHours(23);
-				        			  fechaFinal.setMinutes(0);
-				        		  }
-				        	  }else if((filaTemp[2].equals(new String("Viernes")))||(filaTemp[2].equals(new String("Sabado"))))
-				        	  {
-				        		//Si la hora final es mayor o igual a 23 o ya se fue para el otro d�a
-				        		  if((horaFinal >= 0 && horaFinal <= 4))
-				        		  {
-				        			  horaFinal = 0;
-				        			  fechaFinal.setHours(0);
-				        			  fechaFinal.setMinutes(0);
-				        		  }
-				        	  }
-				        	  //Realizamos validaciones de la hora inicial y solo es para tiendas
 				        	  int horaInicial = fechaInicial.getHours();
-				        	  if(eventoTemp.getIdTienda() != 12)
-				        	  {
-				        		  if((filaTemp[2].equals(new String("Lunes")))||(filaTemp[2].equals(new String("Martes")))||(filaTemp[2].equals(new String("Miercoles")))||(filaTemp[2].equals(new String("Jueves"))))
-					        	  {
-					        		  if(horaInicial == 15)
-					        		  {
-					        			  horaInicial = 16;
-					        			  fechaInicial.setHours(16);
-					        			  fechaInicial.setMinutes(0);
-					        		  }
-					        	  }else if((filaTemp[2].equals(new String("Sabado")))||(filaTemp[2].equals(new String("Domingo"))))
-					        	  {
-					        		  if(horaInicial == 11)
-					        		  {
-					        			  horaInicial = 12;
-					        			  fechaInicial.setHours(12);
-					        			  fechaInicial.setMinutes(0);
-					        		  }
-					        	  }else if((filaTemp[2].equals(new String("Viernes"))))
-					        	  {
-					        		  if(horaInicial == 14)
-					        		  {
-					        			  horaInicial = 15;
-					        			  fechaInicial.setHours(15);
-					        			  fechaInicial.setMinutes(0);
-					        		  }
-					        	  }
-				        	  }
 				        	  horas = ((fechaFinal.getTime()-fechaInicial.getTime())/1000);
 				        	  horas =(horas)/3600;
 				        	  //Realizamos modificaciones para llenar el valor de recargo nocturno
