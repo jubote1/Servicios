@@ -225,11 +225,38 @@ public void generarReporteSemanalCierreInventarioTiendas()
 		{
 			if(!tien.getHostBD().equals(new String("")))
 			{
-				//Realizamos la acumulación despues de cada iteración
-				ventaTienda = PedidoDAO.obtenerTotalesPedidosSemana(fechaAnterior, fechaActual, tien.getHostBD());
-				ventaTotalTiendas  = ventaTotalTiendas + ventaTienda;
-				VentaSemanalTienda ventSemanal = new VentaSemanalTienda(tien.getIdTienda(),fechaActual,ventaTienda, tien.getMeta());
-				VentaSemanalTiendaDAO.insertarVentaSemanalTienda(ventSemanal);
+				//LA VENTA SOLO SE GUARDA SI LA TIENDA LA RESPONDIO
+				//
+				//Aqui entraba el retorno de obtenerTotalesPedidosSemana, que devuelve 0
+				//cuando la consulta falla. Ese 0 se guardaba como venta y, con el insert
+				//pelado que habia en el DAO, quedaba ahi para siempre.
+				//
+				//Una fila que FALTA se ve como un hueco y alguien pregunta. Una fila en
+				//CERO se ve como una semana mala y nadie pregunta, porque el numero
+				//esta. Por eso ahora se prefiere no escribir.
+				double[] venta = PedidoDAO.obtenerVentaSemanaTienda(fechaAnterior, fechaActual, tien.getHostBD());
+				if(venta == null)
+				{
+					System.out.println("venta_semanal_tienda: la tienda " + tien.getIdTienda()
+							+ " no respondio la venta de " + fechaAnterior + " a " + fechaActual
+							+ ". No se escribe la fila.");
+				}
+				else if(venta[1] > 0 && venta[0] <= 0)
+				{
+					//Cero con pedidos adentro no es una semana sin venta: es la consulta
+					//que salio mal. Una tienda cerrada toda la semana da cero pedidos y
+					//esa si se guarda.
+					System.out.println("venta_semanal_tienda: la tienda " + tien.getIdTienda()
+							+ " devolvio venta en cero con " + (long) venta[1] + " pedidos entre "
+							+ fechaAnterior + " y " + fechaActual + ". No se escribe la fila.");
+				}
+				else
+				{
+					ventaTienda = venta[0];
+					ventaTotalTiendas  = ventaTotalTiendas + ventaTienda;
+					VentaSemanalTienda ventSemanal = new VentaSemanalTienda(tien.getIdTienda(),fechaActual,ventaTienda, tien.getMeta());
+					VentaSemanalTiendaDAO.insertarVentaSemanalTienda(ventSemanal);
+				}
 			}
 		}
 		

@@ -1436,6 +1436,66 @@ public class PedidoDAO {
 			return(totalVenta);
 		}
 		
+		/**
+		 * La venta de la semana de una tienda, con el conteo de pedidos al lado.
+		 *
+		 * Es la MISMA consulta de obtenerTotalesPedidosSemana -misma formula,
+		 * mismo filtro, mismo rango- con el numero de pedidos agregado.
+		 *
+		 * POR QUE EXISTE APARTE
+		 *
+		 * Quien ESCRIBE venta_semanal_tienda necesita distinguir tres cosas que
+		 * el metodo viejo devuelve iguales:
+		 *
+		 *   la tienda no contesto     -> no se puede saber
+		 *   la tienda no tuvo pedidos -> cero de verdad
+		 *   la tienda vendio          -> el valor
+		 *
+		 * El metodo viejo devuelve 0 en los tres casos, porque su catch hace
+		 * return(0). Ese cero se guardaba como si fuera venta. Asi es como
+		 * Manrique quedo con la semana del 19 de julio de 2026 en cero teniendo
+		 * 879 pedidos y 38.296.162 pesos, y con el costo de insumos de esa misma
+		 * semana si cargado: la tienda aparecio con 43% de comida en vez de 35%.
+		 *
+		 * No se cambio el metodo viejo porque lo llaman otros once procesos
+		 * -ventas diarias, resumen mensual, factura electronica- y cambiarle el
+		 * valor de retorno a ciegas es mover reportes que hoy funcionan. Esos
+		 * tienen la misma trampa y se revisan aparte.
+		 *
+		 * @return arreglo [venta, pedidos], o null si no se pudo preguntar
+		 */
+		public static double[] obtenerVentaSemanaTienda(String fechaAnterior, String fechaPosterior , String url)
+		{
+			ConexionBaseDatos con = new ConexionBaseDatos();
+			Connection con1 = con.obtenerConexionBDTiendaRemota(url);
+			try
+			{
+				Statement stm = con1.createStatement();
+				String consulta = "select SUM(d.total_neto) - (select IFNULL(SUM(b.valortotal),0) AS  total_neto FROM pedido a, detalle_pedido b, producto c WHERE a.idpedidotienda = b.idpedidotienda AND b.idproducto = c.idproducto AND a.fechapedido >= '"+ fechaAnterior +"' AND a.fechapedido <=  '" + fechaPosterior + "'  AND a.idmotivoanulacion IS NULL AND c.no_venta = 1) AS total_neto, COUNT(*) AS pedidos FROM pedido d WHERE d.fechapedido >= '" + fechaAnterior + "' AND d.fechapedido <=  '" + fechaPosterior +"'  AND d.idmotivoanulacion IS NULL";
+				ResultSet rs = stm.executeQuery(consulta);
+				double[] resultado = null;
+				while(rs.next()){
+					resultado = new double[]{ rs.getDouble(1), rs.getDouble(2) };
+					break;
+				}
+				rs.close();
+				stm.close();
+				con1.close();
+				return(resultado);
+			}
+			catch (Exception e){
+				System.out.println("PedidoDAO.obtenerVentaSemanaTienda " + url + ": " + e.toString());
+				try
+				{
+					con1.close();
+				}catch(Exception e1)
+				{
+				}
+				//null y no cero: un fallo no es una venta de cero pesos.
+				return(null);
+			}
+		}
+		
 		public static double obtenerTotalesPedidosSemanaFE(String fechaAnterior, String fechaPosterior , String url)
 		{
 			ConexionBaseDatos con = new ConexionBaseDatos();
