@@ -24,7 +24,8 @@ import utilidadesSer.ControladorEnvioCorreo;
 /**
  * La replica diaria de las tablas de cada tienda hacia el datamart, y el correo que cuenta que paso.
  *
- * Que replica (ver ReplicaDatamartDAO): pedido, detalle_pedido, despacho_real, despacho_real_det y
+ * Que replica (ver ReplicaDatamartDAO): pedido, detalle_pedido, pedido_forma_pago, despacho_real,
+ * despacho_real_det y
  * las tres tablas del enrutamiento. Estas ultimas junto con los despachos son lo que necesita el
  * desempeno de domiciliarios del central para consultar el datamart cuando una tienda esta apagada.
  *

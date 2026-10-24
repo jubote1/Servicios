@@ -115,6 +115,21 @@ public class ReplicaDatamartDAO {
 				"SELECT 1 FROM detalle_pedido d INNER JOIN pedido p ON d.idpedidotienda = p.idpedidotienda "
 						+ "AND d.idtienda = p.idtienda WHERE p.idtienda = ? AND p.fechapedido = ? LIMIT 1",
 				false, false));
+		//Como paga la gente. El central no lo tenia: datamart.pedido_forma_pago existia desde hace
+		//rato y estaba en CERO filas, asi que para saber cuanto se pago con tarjeta, con QR o por
+		//link habia que entrar a las once tiendas una por una.
+		//
+		//La tabla de la tienda NO trae idtienda y la del datamart SI, por eso poneIdTienda en true.
+		//
+		//Ojo con el id de la forma de pago: el catalogo de la TIENDA no es el del central. En la
+		//tienda el 7 es SONO QR -que es Bold- y en el central el 7 es Rappitendero, inactivo. Lo que
+		//se replica son los ids de la tienda, que es lo que hay que leer despues.
+		d.add(new Definicion("pedido_forma_pago",
+				"SELECT f.* FROM pedido_forma_pago f INNER JOIN pedido p ON f.idpedidotienda = p.idpedidotienda "
+						+ "WHERE p.fechapedido = ?",
+				"SELECT 1 FROM pedido_forma_pago f INNER JOIN pedido p ON f.idpedidotienda = p.idpedidotienda "
+						+ "AND f.idtienda = p.idtienda WHERE p.idtienda = ? AND p.fechapedido = ? LIMIT 1",
+				true, false));
 		d.add(new Definicion("despacho_real",
 				"SELECT * FROM despacho_real WHERE fecha = ?",
 				"SELECT 1 FROM despacho_real WHERE idtienda = ? AND fecha = ? LIMIT 1", false, true));
