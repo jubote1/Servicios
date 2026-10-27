@@ -53,6 +53,13 @@ public final class CorreoIdentificacion {
 		public int seNegaron = 0;
 
 		/**
+		 * Pedidos que son solo porciones y por eso NO estan en "pedidos" ni en
+		 * "identificados". Se informan aparte para que se vea cuantos se dejaron
+		 * por fuera.
+		 */
+		public int porcionesSolas = 0;
+
+		/**
 		 * Cuantas veces salio la pantalla de autorizacion de datos en esta
 		 * tienda, y cuantas el cliente dijo que SI.
 		 *
@@ -105,9 +112,11 @@ public final class CorreoIdentificacion {
 	public static String cuerpo(final ArrayList<FilaTienda> filas, final String desde, final String hasta) {
 		int totalPedidos = 0;
 		int totalIdent = 0;
+		int totalPorciones = 0;
 		for (int i = 0; i < filas.size(); i++) {
 			totalPedidos = totalPedidos + filas.get(i).pedidos;
 			totalIdent = totalIdent + filas.get(i).identificados;
+			totalPorciones = totalPorciones + filas.get(i).porcionesSolas;
 		}
 		final int totalPct = (totalPedidos == 0 ? 0 : (totalIdent * 100) / totalPedidos);
 
@@ -169,6 +178,16 @@ public final class CorreoIdentificacion {
 			}
 		}
 		m.append("</table></td></tr>");
+
+		m.append("<tr><td style=\"padding:0 22px 18px;font-size:13px;color:").append(TINTA)
+				.append(";line-height:1.55;\">")
+				.append("<b>No cuentan los pedidos que son solo porciones</b>")
+				.append(totalPorciones > 0
+						? " (en este periodo fueron " + totalPorciones + ")"
+						: "")
+				.append(": quien compra una porci&oacute;n casi nunca da sus datos y no mide el trabajo de la caja. ")
+				.append("Si el pedido lleva una pizza, cuenta completo aunque tambi&eacute;n lleve porciones.")
+				.append("</td></tr>");
 
 		m.append("<tr><td style=\"padding:0 22px 18px;font-size:13px;color:").append(TINTA)
 				.append(";line-height:1.55;\">")

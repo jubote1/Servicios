@@ -104,6 +104,7 @@ public class ReporteIdentificacionMostrador {
 				fila.pedidos = fila.pedidos + c.pedidos;
 				fila.identificados = fila.identificados + c.identificados;
 				fila.seNegaron = fila.seNegaron + c.preguntadosSinDar;
+				fila.porcionesSolas = fila.porcionesSolas + c.porcionesSolas;
 				//La autorizacion de datos: el otro lado del mismo momento en la
 				//caja. Se suma siempre, tenga o no pedidos de mostrador este
 				//cajero, porque pudo haber preguntado en un pedido de otro tipo.
