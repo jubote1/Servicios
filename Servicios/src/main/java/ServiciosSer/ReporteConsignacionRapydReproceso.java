@@ -6,12 +6,12 @@ import CapaDAOSer.ParametrosDAO;
  * Reproceso de la consignacion semanal de RAPYD. Dos formas de usarlo:
  *
  * 1. Con fechas exactas (ambas incluidas), por ejemplo la primera liquidacion o una semana que no cuadra:
- *      java -jar ReporteConsignacionRapydReproceso.jar 2026-09-28 2026-10-04
+ *      java -jar ReporteConsignacionRapydReproceso.jar 2026-09-29 2026-10-05
  *
  * 2. Sin argumentos: corre como si hoy fuera general.parametros.FECHAREPROCESO (yyyy-MM-dd); el periodo se
  *    calcula igual que en el proceso normal. Para un martes:
  *      UPDATE general.parametros SET valortexto = '2026-10-06' WHERE valorparametro = 'FECHAREPROCESO';
- *    reporta del lunes 2026-09-28 al domingo 2026-10-04.
+ *    reporta los siete dias UTC que terminan en el corte: del 2026-09-29 al 2026-10-05.
  */
 public class ReporteConsignacionRapydReproceso {
 

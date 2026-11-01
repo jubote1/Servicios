@@ -23,9 +23,23 @@ import utilidadesSer.CorreoConsignacion;
 /**
  * Consignacion semanal de RAPYD (antes PAYU) por los pagos de la tienda virtual.
  *
- * Reemplaza a ReporteConsignacionPAYU, que era quincenal. Rapyd liquida UNA vez por semana, el martes, con lo
- * cobrado entre un lunes y un domingo a las 00:00 UTC. Por eso, por defecto, el reporte corre el martes y cubre
- * del lunes anterior (ejecucion - 8 dias) al domingo anterior (ejecucion - 2 dias).
+ * Reemplaza a ReporteConsignacionPAYU, que era quincenal. Rapyd liquida UNA vez por semana, el martes, y el
+ * corte es el martes a las 00:00 UTC, o sea el lunes a las 7 PM de Colombia. Por eso el reporte corre el martes
+ * y cubre los siete dias UTC que terminan en ese corte: del martes anterior (ejecucion - 7) al lunes
+ * (ejecucion - 1).
+ *
+ * LOS DOS DIAS DE COMPENSACION NO RECORTAN EL PERIODO
+ *
+ * Esto estaba mal y se corrigio con la respuesta escrita de Rapyd del 2026-10: "The two compensation days delay
+ * when funds arrive at your bank - they do not change the transaction window". Antes el reporte restaba esos
+ * dos dias al final del periodo (DIASFIN = 2, terminando el domingo), y asi cada liquidacion quedaba corrida un
+ * dia y le faltaba el ultimo: los totales nunca iban a cuadrar con lo que Rapyd consigna.
+ *
+ * El ejemplo que dio Rapyd es el que decide, y sirve de prueba: un pago del domingo 4 de octubre a las 9 PM de
+ * Colombia son las 02:00 UTC del lunes 5, y entra en la liquidacion del MARTES 6. Con DIASFIN = 2 el periodo
+ * terminaba el 4 y ese pago se quedaba por fuera; con DIASFIN = 1 termina el 5 y entra, que es lo correcto.
+ *
+ * Los dos dias siguen existiendo, pero en el banco: la plata llega de 1 a 3 dias habiles despues del martes.
  *
  * Lo que se descuenta es lo mismo que antes -comision, IVA de la comision, retencion en la fuente y ReteICA-,
  * con los mismos parametros (COMISIONEPAYCO, ADICIONCOMISIONEPAYCO, VALORMINIMOEPAYCO, VALORMINCOMISIONEPAYCO,
@@ -33,7 +47,7 @@ import utilidadesSer.CorreoConsignacion;
  *
  * Parametros nuevos, todos en general.parametros.valornumericod y todos opcionales:
  *   RAPYDDIASVENTANA  dias que cubre cada liquidacion                 (7)
- *   RAPYDDIASFIN      dias entre el ultimo dia cubierto y la ejecucion  (2: ejecutando el martes, termina el domingo)
+ *   RAPYDDIASFIN      dias entre el ultimo dia cubierto y la ejecucion  (1: ejecutando el martes, termina el lunes)
  *   RAPYDCORTEUTC     1 = el dia termina a las 00:00 UTC (7 PM de Colombia); 0 = por jornada del pedido  (1)
  *
  * El correo trae una tabla por dia con la venta segun el criterio elegido y segun el otro, precisamente para
@@ -44,7 +58,11 @@ import utilidadesSer.CorreoConsignacion;
 public class ReporteConsignacionRapyd {
 
 	private static final double VENTANA_DEFECTO = 7;
-	private static final double DIAS_FIN_DEFECTO = 2;
+	/**
+	 * Un dia, no dos: el periodo termina el LUNES, porque el corte de Rapyd es el martes a las 00:00 UTC y aqui
+	 * los dias se cuentan en UTC. Los dos dias de compensacion solo atrasan la plata en el banco.
+	 */
+	private static final double DIAS_FIN_DEFECTO = 1;
 	private static final double CORTE_UTC_DEFECTO = 1;
 	/** Horas que hay que sumarle a la hora de Colombia para llevarla a UTC. Colombia no tiene horario de verano. */
 	private static final int HORAS_COLOMBIA_A_UTC = 5;
