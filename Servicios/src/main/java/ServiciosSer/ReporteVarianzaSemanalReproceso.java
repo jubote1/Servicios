@@ -17,7 +17,7 @@ package ServiciosSer;
  * La de FECHAREPROCESO, en general.parametros. Esa fecha es el dia en que el
  * proceso DEBIO correr, no el ultimo dia de la semana que se quiere: el rango
  * se arma igual que en la corrida normal, los siete dias completos anteriores.
- * Si se pone el domingo 2026-09-14, saca del 2026-09-07 al 2026-09-13.
+ * Si se pone el lunes 2026-09-14, saca del 2026-09-07 al 2026-09-13.
  *
  * OJO: FECHAREPROCESO es uno solo y lo comparten todos los reprocesos del
  * servidor. Antes de correr esto hay que mirar que no quedo puesto para otra

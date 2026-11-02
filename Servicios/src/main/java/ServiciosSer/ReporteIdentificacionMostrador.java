@@ -26,8 +26,14 @@ import utilidadesSer.CorreoIdentificacion;
  * Sin la medicion publicada esto se desinfla en dos semanas, por eso el correo
  * esta armado como una tabla de posiciones y no como un informe.
  *
- * Corre una vez por semana con los ultimos 7 dias. Una tienda que no responda
- * no tumba el reporte de las demas.
+ * Corre una vez por semana, MARTES 00:30, con la ultima semana lunes a domingo
+ * completa. Una tienda que no responda no tumba el reporte de las demas.
+ *
+ * A diferencia del de varianza, este SI sale tienda por tienda en vivo, asi que
+ * no depende de la replica del datamart. Igual corre el martes por dos razones:
+ * el domingo a las 23:55 las tiendas todavia estan facturando, y sobre todo
+ * porque tiene que cubrir exactamente la misma semana que el de varianza -los
+ * dos se leen uno contra otro-.
  */
 public class ReporteIdentificacionMostrador {
 

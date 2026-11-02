@@ -15,7 +15,7 @@ import utilidadesSer.ControladorEnvioCorreo;
 import utilidadesSer.CorreoVarianzaSemanal;
 
 /**
- * Publica los domingos cuanta plata se perdio en varianza de inventario.
+ * Publica cada semana cuanta plata se perdio en varianza de inventario.
  *
  * POR QUE EXISTE
  *
@@ -38,10 +38,25 @@ import utilidadesSer.CorreoVarianzaSemanal;
  *
  * EL RANGO
  *
- * Los ultimos siete dias COMPLETOS. Como la replica de varianza corre a las
- * 23:50 con el dia anterior, el dia en que corre el proceso todavia no tiene
- * datos: incluirlo meteria un dia vacio que baja los totales y hace ver la
- * semana mejor de lo que fue.
+ * La ultima semana LUNES A DOMINGO completa. Como la replica de varianza corre
+ * a las 23:50 con el dia anterior, el dia en que corre el proceso todavia no
+ * tiene datos: incluirlo meteria un dia vacio que baja los totales y hace ver
+ * la semana mejor de lo que fue.
+ *
+ * CUANDO TIENE QUE CORRER: MARTES 00:30
+ *
+ * Esto no se deduce leyendo el codigo y es la mitad del asunto. Este reporte NO
+ * sale a las tiendas: hace una sola consulta a datamart.varianza_resumen_historico,
+ * donde ServicioDiarioReplicaVarianza deja cada noche lo del dia ANTERIOR. O sea
+ * que el domingo solo existe en el datamart despues de la replica del LUNES 23:50.
+ *
+ * Corriendo el domingo -como estuvo hasta noviembre de 2026- el rango sale bien
+ * armado pero de la semana pasada, y eso no se nota: el correo se ve igual de
+ * correcto. El martes a las 00:30 deja 40 minutos de colchon sobre la replica;
+ * el lunes 23:55 dejaba cinco, que para once tiendas remotas es muy apretado.
+ *
+ * Lo mismo aplica a ReporteIdentificacionMostrador, que debe cubrir la misma
+ * semana.
  *
  * Se le pueden pasar dos fechas en yyyy-MM-dd para volver a sacar una semana
  * vieja:  java ReporteVarianzaSemanal 2026-09-07 2026-09-13
@@ -72,7 +87,7 @@ public class ReporteVarianzaSemanal {
 	 * FECHAREPROCESO es el dia en que el proceso DEBIO correr, no el ultimo dia
 	 * de la semana que se quiere. Es la misma lectura que tienen los otros
 	 * reprocesos -en Rappi ese parametro es el dia del corte- y hace que
-	 * reprocesar sea literalmente "hagalo como si hoy fuera ese domingo".
+	 * reprocesar sea literalmente "hagalo como si hoy fuera ese dia".
 	 *
 	 * OJO: FECHAREPROCESO es uno solo y lo comparten todos los reprocesos. Si
 	 * alguien lo movio para reprocesar otra cosa, esto sale con esa fecha. Por
@@ -134,7 +149,7 @@ public class ReporteVarianzaSemanal {
 
 	/**
 	 * Arma y manda el reporte de un rango. Es el unico sitio donde esta la
-	 * logica: la corrida de los domingos y el reproceso entran por aca.
+	 * logica: la corrida semanal y el reproceso entran por aca.
 	 */
 	public static void ejecutar(final String desde, final String hasta) {
 		System.out.println("Varianza semanal del " + desde + " al " + hasta);
