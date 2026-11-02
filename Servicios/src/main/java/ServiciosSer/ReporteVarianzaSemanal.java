@@ -111,8 +111,17 @@ public class ReporteVarianzaSemanal {
 	 * @return {desde, hasta} en yyyy-MM-dd
 	 */
 	public static String[] rangoParaCorridaDel(final Calendar diaDeCorrida) {
+		//Ultimo dia con datos: el anterior al de la corrida.
 		final Calendar hasta = (Calendar) diaDeCorrida.clone();
 		hasta.add(Calendar.DAY_OF_YEAR, -1);
+		//Y de ahi se retrocede hasta el domingo: la semana de Pizza Americana va de
+		//LUNES A DOMINGO. Antes se tomaban los siete dias anteriores sin anclarlos a
+		//nada, asi que el rango dependia del dia en que corriera: corriendo un domingo
+		//salia de domingo a sabado, que no es ninguna semana nuestra y no se puede
+		//comparar contra el corte de la operacion.
+		while (hasta.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) {
+			hasta.add(Calendar.DAY_OF_YEAR, -1);
+		}
 		final Calendar desde = (Calendar) hasta.clone();
 		desde.add(Calendar.DAY_OF_YEAR, -(DIAS - 1));
 		return (new String[] {formato().format(desde.getTime()), formato().format(hasta.getTime())});

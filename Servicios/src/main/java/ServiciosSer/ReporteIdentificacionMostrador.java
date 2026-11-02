@@ -63,8 +63,15 @@ public class ReporteIdentificacionMostrador {
 	 */
 	public static String[] rangoParaCorridaDel(final Calendar diaDeCorrida) {
 		final SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
+		//Ultimo dia con datos: el anterior al de la corrida.
 		final Calendar hasta = (Calendar) diaDeCorrida.clone();
 		hasta.add(Calendar.DAY_OF_YEAR, -1);
+		//Y de ahi se retrocede hasta el domingo: la semana de Pizza Americana va de
+		//LUNES A DOMINGO. Sin este anclaje el rango dependia del dia de la corrida y
+		//podia salir de domingo a sabado, que no es ninguna semana nuestra.
+		while (hasta.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) {
+			hasta.add(Calendar.DAY_OF_YEAR, -1);
+		}
 		final Calendar desde = (Calendar) hasta.clone();
 		desde.add(Calendar.DAY_OF_YEAR, -(DIAS - 1));
 		return (new String[] {formato.format(desde.getTime()), formato.format(hasta.getTime())});
