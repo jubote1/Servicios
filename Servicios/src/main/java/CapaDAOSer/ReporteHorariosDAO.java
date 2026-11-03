@@ -14,6 +14,41 @@ public class ReporteHorariosDAO {
 	
 	
 	
+	/**
+	 * El tipo de empleado (general.empleado.idtipoempleado) de cada persona, por id. Los reportes
+	 * semanales de horarios lo usan para decidir si las horas de cada uno se muestran enteras
+	 * (tienda y contact center) o con decimales (Bodega): ver capaModeloPOS.ReglaHorasEmpleado.
+	 * Un id que no este en el mapa se trata como de tienda (enteras), que es lo que se hacia antes.
+	 */
+	public static java.util.HashMap<Integer, Integer> obtenerTiposEmpleado()
+	{
+		java.util.HashMap<Integer, Integer> tipos = new java.util.HashMap<Integer, Integer>();
+		ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection con1 = con.obtenerConexionBDGeneralLocal();
+		try
+		{
+			Statement stm = con1.createStatement();
+			ResultSet rs = stm.executeQuery("select id, idtipoempleado from empleado");
+			while(rs.next())
+			{
+				tipos.put(Integer.valueOf(rs.getInt("id")), Integer.valueOf(rs.getInt("idtipoempleado")));
+			}
+			rs.close();
+			stm.close();
+			con1.close();
+		}catch(Exception e)
+		{
+			System.out.println("obtenerTiposEmpleado: " + e.toString());
+			try
+			{
+				con1.close();
+			}catch(Exception e1)
+			{
+			}
+		}
+		return tipos;
+	}
+
 	public static ArrayList obtenerReporteHorarios(String fechaInicial, String fechaFinal)
 	{
 		ArrayList informeHorarios = new ArrayList();

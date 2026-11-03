@@ -31,6 +31,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.util.IOUtils;
 
 import CapaDAOSer.GeneralDAO;
+import capaModeloPOS.ReglaHorasEmpleado;
 import CapaDAOSer.HorarioResumenDAO;
 import CapaDAOSer.HorarioTrabajadoDAO;
 import CapaDAOSer.ParametrosDAO;
@@ -337,6 +338,9 @@ public class ReporteSemanalHorariosTienda {
 				double horas = 0;
 				String strHoras = "";
 				double acumuladoHoras = 0;
+				//Tipo de cada empleado: enteras para tienda y contact center, decimales para la Bodega
+				//(administrativos, produccion, logistica). Igual que ReporteSemanalHorariosBase.
+				final java.util.HashMap<Integer, Integer> tiposEmpleado = ReporteHorariosDAO.obtenerTiposEmpleado();
 				String tienda = "";
 				int idTienda;
 				//Creaci�n de variables para apoyar la liquidaci�n de n�mina
@@ -444,8 +448,10 @@ public class ReporteSemanalHorariosTienda {
 						//redondeados. Si este reporte y el otro no redondearan igual,
 						//el mismo empleado tendria dos totales distintos segun quien
 						//abra el correo.
-						horas = Math.round(Double.parseDouble(fila[5]));
-						strHoras = String.valueOf((long) horas);
+						final Integer tipoEmp = tiposEmpleado.get(Integer.valueOf(idEmpleadoActual));
+						final int tipoEmpleado = (tipoEmp == null) ? 0 : tipoEmp.intValue();
+						horas = ReglaHorasEmpleado.horasParaMostrar(Double.parseDouble(fila[5]), tipoEmpleado);
+						strHoras = ReglaHorasEmpleado.formatearHoras(horas, tipoEmpleado);
 					}catch(Exception e)
 					{
 						horas = 0;

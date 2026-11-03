@@ -36,6 +36,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.util.IOUtils;
 
 import CapaDAOSer.GeneralDAO;
+import capaModeloPOS.ReglaHorasEmpleado;
 import CapaDAOSer.HorarioPlanificadoDAO;
 import CapaDAOSer.HorarioResumenDAO;
 import CapaDAOSer.HorarioTrabajadoDAO;
@@ -569,6 +570,9 @@ public class ReporteSemanalHorariosBase {
 			double horas = 0;
 			String strHoras = "";
 			double acumuladoHoras = 0;
+			//Tipo de cada empleado, para decidir si sus horas van enteras (tienda y contact center) o con
+			//decimales (Bodega: administrativos, produccion, logistica). Ver ReglaHorasEmpleado.
+			final java.util.HashMap<Integer, Integer> tiposEmpleado = ReporteHorariosDAO.obtenerTiposEmpleado();
 			String tienda = "";
 			int idTienda;
 			//Creaci�n de variables para apoyar la liquidaci�n de n�mina
@@ -753,6 +757,12 @@ public class ReporteSemanalHorariosBase {
 				try
 				{
 					
+					//ACTUALIZACION 2026-11-03: el redondeo solo vale para el personal de TIENDA y de contact
+					//center. El de la Bodega (administrativos, produccion, logistica) marca varias entradas y
+					//salidas al dia, y redondear cada tramo deja un almuerzo de 15 minutos en 0 y uno de 45 en
+					//1: sus horas van con decimales, sin aproximar. Lo decide el TIPO de empleado
+					//(ReglaHorasEmpleado), no la tienda.
+					//
 					//Las horas del dia se REDONDEAN a entero: 5,1 queda en 5 y 5,7 en 6.
 					//Decision de Juan David el 2026-10-21.
 					//
@@ -767,8 +777,10 @@ public class ReporteSemanalHorariosBase {
 					//entero: el acumulado, los domingos, los festivos y las extras que
 					//salen del acumulado. Redondear solo al pintar dejaria una tabla
 					//cuyos renglones no suman su propio total.
-					horas = Math.round(Double.parseDouble(fila[5]));
-					strHoras = String.valueOf((long) horas);
+					final Integer tipoEmp = tiposEmpleado.get(Integer.valueOf(idEmpleadoActual));
+					final int tipoEmpleado = (tipoEmp == null) ? 0 : tipoEmp.intValue();
+					horas = ReglaHorasEmpleado.horasParaMostrar(Double.parseDouble(fila[5]), tipoEmpleado);
+					strHoras = ReglaHorasEmpleado.formatearHoras(horas, tipoEmpleado);
 				}catch(Exception e)
 				{
 					horas = 0;
