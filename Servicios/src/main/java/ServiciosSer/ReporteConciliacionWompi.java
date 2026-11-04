@@ -17,9 +17,44 @@ import ModeloSer.GastoSemanal;
 import capaModeloCC.Tienda;
 import utilidadesSer.ControladorEnvioCorreo;
 
+/**
+ * Conciliacion semanal de pagos virtuales (Wompi), tarjeta, QR Bancolombia y
+ * tarjeta regalo Pizza Americana, con el correo a REPORTECONCILIACIONWOMPI.
+ *
+ * Corre en dias habiles y cubre desde el ultimo dia habil hasta el dia de la
+ * corrida. El reproceso (ReporteConciliacionWompiReproceso) toma la fecha de
+ * ejecucion de general.parametros.FECHAREPROCESO y hace exactamente lo mismo.
+ *
+ * TODA LA LOGICA VIVE EN generar(). El reproceso es una clase de tres lineas
+ * que la llama: hasta noviembre de 2026 era una COPIA COMPLETA de este archivo
+ * -325 lineas contra 324- que solo se diferenciaba en de donde salia la fecha.
+ * Dos copias obligan a acordarse de repetir cada arreglo en las dos, y eso no
+ * pasa: fue exactamente lo que le ocurrio al reporte de Bold, donde la
+ * conciliacion contra la tienda quedo solo en una de las dos.
+ *
+ * OJO: este proceso INSERTA en inventarioamericana.gasto_semanal, que tiene
+ * llave unica (descripcion, idtienda, idgasto_conf, fecha). Al reprocesar una
+ * semana ya cargada el insert falla y GastoSemanalDAO se traga la excepcion en
+ * silencio: el correo sale con las cifras nuevas pero gasto_semanal conserva
+ * las viejas. Si lo que se quiere es corregir el gasto, hay que borrar primero
+ * las filas de esa fecha.
+ */
 public class ReporteConciliacionWompi {
-	
+
 	public static void main( String[] args )
+	{
+		generar(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
+	}
+
+	/**
+	 * Arma y manda la conciliacion de la semana que le toca a una corrida hecha
+	 * ese dia.
+	 *
+	 * @param fechaEjecucion yyyy-MM-dd, el dia en que "corre" el proceso. El
+	 *                       inicio de la semana se deduce de que dia de la
+	 *                       semana sea, igual que en la corrida normal.
+	 */
+	public static void generar(final String fechaEjecucion)
 	{
 		//TRABAJO CON LAS FECHAS///////
 		//Recuperamos la fecha actual del sistema con la fecha apertura
@@ -37,7 +72,7 @@ public class ReporteConciliacionWompi {
 		try
 		{
 			//OJO
-			fechaActual = dateFormat.format(calendarioActual.getTime());
+			fechaActual = fechaEjecucion;
 			//fechaActual = "2020-07-26";
 		}catch(Exception exc)
 		{
