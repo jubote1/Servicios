@@ -38,25 +38,28 @@ import utilidadesSer.CorreoVarianzaSemanal;
  *
  * EL RANGO
  *
- * La ultima semana LUNES A DOMINGO completa. Como la replica de varianza corre
- * a las 23:50 con el dia anterior, el dia en que corre el proceso todavia no
- * tiene datos: incluirlo meteria un dia vacio que baja los totales y hace ver
- * la semana mejor de lo que fue.
+ * La semana LUNES A DOMINGO que termina en el domingo mas reciente que no sea
+ * posterior al dia de la corrida. Corriendo un domingo, es la semana que acaba
+ * ese mismo dia; corriendo lunes, martes o cualquier otro dia, es la semana que
+ * acabo el domingo anterior (por eso el reproceso con FECHAREPROCESO da lo mismo
+ * que la corrida del domingo de esa semana).
  *
- * CUANDO TIENE QUE CORRER: MARTES 00:30
+ * CUANDO CORRE: DOMINGO 23:50  (cron: 50 23 * * 0)
  *
- * Esto no se deduce leyendo el codigo y es la mitad del asunto. Este reporte NO
- * sale a las tiendas: hace una sola consulta a datamart.varianza_resumen_historico,
- * donde ServicioDiarioReplicaVarianza deja cada noche lo del dia ANTERIOR. O sea
- * que el domingo solo existe en el datamart despues de la replica del LUNES 23:50.
+ * Desde noviembre de 2026 el reporte NO lee el datamart: consulta varianza_resumen
+ * de cada tienda directamente. Antes leia datamart.varianza_resumen_historico, que
+ * ServicioDiarioReplicaVarianza llena a las 23:50 con el dia ANTERIOR, y por eso
+ * tenia que correr el martes de madrugada para tener el domingo. Leyendo la
+ * tienda, el domingo ya esta disponible el mismo domingo.
  *
- * Corriendo el domingo -como estuvo hasta noviembre de 2026- el rango sale bien
- * armado pero de la semana pasada, y eso no se nota: el correo se ve igual de
- * correcto. El martes a las 00:30 deja 40 minutos de colchon sobre la replica;
- * el lunes 23:55 dejaba cinco, que para once tiendas remotas es muy apretado.
+ * LO QUE HAY QUE TENER PRESENTE: salir a las tiendas significa que una puede estar
+ * caida, o puede no haber cargado todavia la varianza del domingo. El reporte lo
+ * dice -un cuadro de advertencia arriba y "(INCOMPLETO)" en el asunto- en vez de
+ * mandar una cifra parcial que parezca la de toda la semana. Cuando eso pasa, se
+ * corre ReporteVarianzaSemanalReproceso mas tarde y sale completo.
  *
- * Lo mismo aplica a ReporteIdentificacionMostrador, que debe cubrir la misma
- * semana.
+ * Lo mismo aplica a ReporteIdentificacionMostrador, que cubre la misma semana
+ * (ese sigue corriendo el martes y no depende de esto).
  *
  * Se le pueden pasar dos fechas en yyyy-MM-dd para volver a sacar una semana
  * vieja:  java ReporteVarianzaSemanal 2026-09-07 2026-09-13
@@ -115,10 +118,10 @@ public class ReporteVarianzaSemanal {
 	/**
 	 * El rango de siete dias que le toca a una corrida hecha ese dia.
 	 *
-	 * Termina el dia ANTERIOR al de la corrida, no el mismo dia: la replica de
-	 * varianza corre a las 23:50 con el dia anterior, asi que el dia en curso
-	 * no tiene datos. Incluirlo meteria un dia vacio que baja los totales y
-	 * hace ver la semana mejor de lo que fue.
+	 * Termina en el domingo mas reciente que no sea posterior al dia de la corrida
+	 * (el mismo dia si es domingo) y arranca seis dias antes, el lunes. La semana de
+	 * Pizza Americana va de LUNES A DOMINGO; el rango se ancla al domingo para que no
+	 * dependa de que dia se corra y se pueda comparar contra el corte de la operacion.
 	 *
 	 * Es publico para poder probarlo: es la clase de cuenta que se ve obvia y
 	 * sale corrida por un dia.
@@ -126,14 +129,7 @@ public class ReporteVarianzaSemanal {
 	 * @return {desde, hasta} en yyyy-MM-dd
 	 */
 	public static String[] rangoParaCorridaDel(final Calendar diaDeCorrida) {
-		//Ultimo dia con datos: el anterior al de la corrida.
 		final Calendar hasta = (Calendar) diaDeCorrida.clone();
-		hasta.add(Calendar.DAY_OF_YEAR, -1);
-		//Y de ahi se retrocede hasta el domingo: la semana de Pizza Americana va de
-		//LUNES A DOMINGO. Antes se tomaban los siete dias anteriores sin anclarlos a
-		//nada, asi que el rango dependia del dia en que corriera: corriendo un domingo
-		//salia de domingo a sabado, que no es ninguna semana nuestra y no se puede
-		//comparar contra el corte de la operacion.
 		while (hasta.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) {
 			hasta.add(Calendar.DAY_OF_YEAR, -1);
 		}
@@ -154,8 +150,13 @@ public class ReporteVarianzaSemanal {
 	public static void ejecutar(final String desde, final String hasta) {
 		System.out.println("Varianza semanal del " + desde + " al " + hasta);
 
-		final ArrayList<VarianzaSemanalDAO.Linea> lineas =
-				VarianzaSemanalDAO.obtenerSemana(desde, hasta);
+		final VarianzaSemanalDAO.Semana semana =
+				VarianzaSemanalDAO.obtenerSemana(desde, hasta, DIAS);
+		final ArrayList<VarianzaSemanalDAO.Linea> lineas = semana.lineas;
+		if (!semana.completa()) {
+			System.out.println("REPORTE INCOMPLETO. Sin respuesta: " + semana.sinRespuesta
+					+ " | A medias: " + semana.incompletas);
+		}
 		if (lineas.isEmpty()) {
 			//Sin datos no se manda un correo en ceros: un correo que dice cero
 			//se lee como "esta semana no se perdio nada", que es lo contrario de
@@ -180,7 +181,7 @@ public class ReporteVarianzaSemanal {
 			neto = neto + filas.get(i).neto();
 		}
 
-		enviar(filas, desde, hasta, neto);
+		enviar(filas, desde, hasta, neto, semana);
 	}
 
 	/**
@@ -242,7 +243,8 @@ public class ReporteVarianzaSemanal {
 	}
 
 	private static void enviar(final ArrayList<CorreoVarianzaSemanal.FilaTienda> filas,
-			final String desde, final String hasta, final double neto) {
+			final String desde, final String hasta, final double neto,
+			final VarianzaSemanalDAO.Semana semana) {
 		try {
 			final ArrayList correos = GeneralDAO.obtenerCorreosParametro(LISTA_CORREO);
 			if (correos.size() == 0) {
@@ -254,10 +256,11 @@ public class ReporteVarianzaSemanal {
 			final CorreoElectronico info = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES",
 					"CLAVECORREOREPORTE");
 			final Correo correo = new Correo();
-			correo.setAsunto(CorreoVarianzaSemanal.asunto(desde, hasta, neto));
+			correo.setAsunto(CorreoVarianzaSemanal.asunto(desde, hasta, neto, !semana.completa()));
 			correo.setUsuarioCorreo(info.getCuentaCorreo());
 			correo.setContrasena(info.getClaveCorreo());
-			correo.setMensaje(CorreoVarianzaSemanal.cuerpo(filas, desde, hasta));
+			correo.setMensaje(CorreoVarianzaSemanal.cuerpo(filas, desde, hasta,
+					semana.sinRespuesta, semana.incompletas));
 			final ControladorEnvioCorreo envio = new ControladorEnvioCorreo(correo, correos);
 			envio.enviarCorreoHTML();
 			System.out.println("Reporte de varianza enviado a " + correos.size() + " destinatario(s): "

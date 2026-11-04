@@ -16,8 +16,15 @@ package ServiciosSer;
  *
  * La de FECHAREPROCESO, en general.parametros. Esa fecha es el dia en que el
  * proceso DEBIO correr, no el ultimo dia de la semana que se quiere: el rango
- * se arma igual que en la corrida normal, los siete dias completos anteriores.
- * Si se pone el lunes 2026-09-14, saca del 2026-09-07 al 2026-09-13.
+ * se arma igual que en la corrida normal, la semana lunes a domingo que termina
+ * en el domingo mas reciente que no sea posterior a esa fecha.
+ * Si se pone el domingo 2026-09-13 (o el lunes 2026-09-14), saca del 2026-09-07
+ * al 2026-09-13.
+ *
+ * Como la corrida normal es el domingo 23:50 y consulta directo a las tiendas
+ * (no al datamart), este reproceso tambien va directo a las tiendas. Sirve sobre
+ * todo cuando el correo salio marcado como INCOMPLETO (una tienda sin responder o
+ * sin la varianza del domingo cargada): se corre mas tarde y sale completo.
  *
  * OJO: FECHAREPROCESO es uno solo y lo comparten todos los reprocesos del
  * servidor. Antes de correr esto hay que mirar que no quedo puesto para otra

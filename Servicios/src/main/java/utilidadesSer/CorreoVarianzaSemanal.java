@@ -60,9 +60,19 @@ public final class CorreoVarianzaSemanal {
 
 	/** El asunto. Sin tildes ni enes a proposito: el asunto no viaja en UTF-8. */
 	public static String asunto(final String desde, final String hasta, final double neto) {
+		return (asunto(desde, hasta, neto, false));
+	}
+
+	/**
+	 * El asunto, marcando si el reporte salio incompleto (una tienda sin responder o sin
+	 * todos los dias). Esa marca va en el asunto y no solo en el cuerpo porque el reporte
+	 * sale a las tiendas y una cifra parcial no debe leerse como la de la semana completa.
+	 */
+	public static String asunto(final String desde, final String hasta, final double neto,
+			final boolean incompleto) {
 		final String signo = neto < 0 ? "perdida" : "a favor";
 		return ("Varianza de inventario " + desde + " a " + hasta + " - " + signo + " "
-				+ pesos(Math.abs(neto)));
+				+ pesos(Math.abs(neto)) + (incompleto ? " (INCOMPLETO)" : ""));
 	}
 
 	// =======================================================================
@@ -71,6 +81,17 @@ public final class CorreoVarianzaSemanal {
 
 	public static String cuerpo(final ArrayList<FilaTienda> filas, final String desde,
 			final String hasta) {
+		return (cuerpo(filas, desde, hasta, new ArrayList<String>(), new ArrayList<String>()));
+	}
+
+	/**
+	 * El cuerpo con el estado de la consulta a las tiendas.
+	 *
+	 * @param sinRespuesta tiendas a las que no se pudo conectar: NO estan en las cifras.
+	 * @param incompletas tiendas que respondieron sin todos los dias: estan, pero a medias.
+	 */
+	public static String cuerpo(final ArrayList<FilaTienda> filas, final String desde,
+			final String hasta, final ArrayList<String> sinRespuesta, final ArrayList<String> incompletas) {
 		double faltante = 0;
 		double sobrante = 0;
 		double caros = 0;
@@ -91,6 +112,7 @@ public final class CorreoVarianzaSemanal {
 		h.append("<div style=\"max-width:860px;margin:0 auto;\">");
 
 		encabezado(h, desde, hasta);
+		avisos(h, sinRespuesta, incompletas);
 		tarjetas(h, faltante, sobrante, neto);
 		resumenPorTienda(h, filas, caros, carnes, otros, neto);
 		detallePorTienda(h, filas);
@@ -108,6 +130,35 @@ public final class CorreoVarianzaSemanal {
 			.append("Varianza de inventario de la semana</div>");
 		h.append("<div style=\"color:#C9D2E8;font-size:13px;margin-top:3px;\">Del ")
 			.append(desde).append(" al ").append(hasta).append("</div>");
+		h.append("</td></tr></table>");
+	}
+
+	/**
+	 * Cuadro de advertencia, solo si algo no llego completo. Va ARRIBA de las cifras: si el
+	 * total no incluye una tienda, quien lee el total tiene que saberlo antes de verlo.
+	 */
+	private static void avisos(final StringBuilder h, final ArrayList<String> sinRespuesta,
+			final ArrayList<String> incompletas) {
+		if ((sinRespuesta == null || sinRespuesta.isEmpty()) && (incompletas == null || incompletas.isEmpty())) {
+			return;
+		}
+		h.append("<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" ")
+			.append("style=\"background-color:#FFF6DD;border:1px solid #E8D08A;\"><tr>")
+			.append("<td style=\"padding:10px 20px;font-size:12.5px;color:").append(AMBAR).append(";\">");
+		h.append("<b>Este reporte salio incompleto.</b> Las cifras de abajo NO incluyen lo que se lista aqui.");
+		if (sinRespuesta != null && !sinRespuesta.isEmpty()) {
+			h.append("<br>Sin respuesta (no estan en las cifras): ");
+			for (int i = 0; i < sinRespuesta.size(); i++) {
+				h.append(i > 0 ? ", " : "").append(escapar(sinRespuesta.get(i)));
+			}
+		}
+		if (incompletas != null && !incompletas.isEmpty()) {
+			h.append("<br>Con datos a medias:");
+			for (int i = 0; i < incompletas.size(); i++) {
+				h.append("<br>&nbsp;&nbsp;- ").append(escapar(incompletas.get(i)));
+			}
+		}
+		h.append("<br>Se puede volver a sacar con el reproceso cuando las tiendas hayan cargado la varianza.");
 		h.append("</td></tr></table>");
 	}
 
@@ -247,7 +298,8 @@ public final class CorreoVarianzaSemanal {
 			.append("nunca es ganancia: suele ser un conteo malo o una receta mal parametrizada.<br>");
 		h.append("Los valores salen del costo que tiene cada insumo en el maestro de inventarios. ")
 			.append("Un insumo sin costo cargado no suma nada aca.<br>");
-		h.append("Poblado y Medayoung no aparecen porque no replican su inventario al central.");
+		h.append("Poblado y Medayoung no aparecen porque no replican su inventario al central.<br>");
+		h.append("Los datos se leen directo de cada tienda, no del datamart.");
 		h.append("</div>");
 	}
 
