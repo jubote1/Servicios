@@ -41,12 +41,12 @@ import utilidadesSer.ControladorEnvioCorreo;
  *    el martes se pone al dia el miercoles, sin que nadie haga nada.
  *
  * Uso:   ServicioReplicaPedidos [diasAtras]
- *        diasAtras = cuantos dias hacia atras revisa (por defecto 3: ayer y los dos anteriores).
+ *        diasAtras = cuantos dias hacia atras revisa (por defecto 7: ayer y los seis anteriores; hasta noviembre de 2026 eran 3 y una tienda apagada mas de 3 dias dejaba un hueco que nadie llenaba).
  *        Para cargar historia nueva (por ejemplo las tablas del enrutamiento) se corre una vez con 45.
  */
 public class ServicioReplicaPedidos {
 
-	private static final int DIAS_POR_DEFECTO = 3;
+	private static final int DIAS_POR_DEFECTO = 7;
 	private static final int DIAS_MAXIMO = 120;
 	private static final int ID_BODEGA = 12;
 
