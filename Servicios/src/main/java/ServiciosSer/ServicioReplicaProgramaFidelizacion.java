@@ -152,6 +152,28 @@ public void generarReplicaProgramaFidelidad()
     	//Disminuimos los puntos vencidos utilizamos el método de redimir aunque estrictamente no es redención.
     	ClienteFidelizacionDAO.redimirPuntosClienteFidelizacion(venTemp.getCorreo(), puntosVencidos);
     }
+	/*
+	 * Los rangos de puntos y la plantilla de Brevo que le toca a cada uno.
+	 *
+	 * Antes esto estaba QUEMADO: siete bloques identicos mas abajo, cada uno con
+	 * su templateId y sus cortes escritos a mano, y los mismos siete repetidos en
+	 * ServicioReplicaProgramaFidelizacionRep. Cambiar una plantilla obligaba a
+	 * tocar catorce sitios y desplegar.
+	 *
+	 * Se lee UNA vez por corrida, no por tienda ni por destinatario.
+	 */
+	ArrayList<CapaDAOSer.PlantillaCorreoPuntosDAO.Rango> rangosCorreo =
+			CapaDAOSer.PlantillaCorreoPuntosDAO.obtenerRangos();
+	ArrayList<String> problemasRangos =
+			CapaDAOSer.PlantillaCorreoPuntosDAO.revisarCobertura(rangosCorreo);
+	for(int iP = 0; iP < problemasRangos.size(); iP++)
+	{
+		//Se grita en el log. Una configuracion con huecos se nota como clientes
+		//que no reciben correo, que es justo lo que nadie ve: los cortes viejos
+		//dejaban por fuera a quien tuviera 99, 149, 199, 249 o 299 puntos exactos
+		//-106 clientes al 2026-11-04- y nadie se entero en meses.
+		System.out.println("AVISO general.plantilla_correo_puntos: " + problemasRangos.get(iP));
+	}
 	for(Tienda tien : tiendas)
 	{
 		destinatarios = new ArrayList();
@@ -237,370 +259,95 @@ public void generarReplicaProgramaFidelidad()
 							+ "): " + excPedido);
 				}
 			}
-			//REALIZAMOS UNA SEPARACIÓN POR CANTIDAD DE PUNTOS 
-			
-			
-			//INICIAMOS POR MENOS DE 50 PUNTOS
-			//Realiza el envío de correo con Brevo por tienda
-			// Construcción del JSON principal
-			JSONObject paramsDefault = new JSONObject();
-	        paramsDefault.put("nombre", "maria isabel");
-	        paramsDefault.put("puntos", 0);
-	        paramsDefault.put("puntostotal", 0);
-	        paramsDefault.put("puntosavencer", 0);
-	        JSONObject jsonRequest = new JSONObject();
-	        jsonRequest.put("subject", subjectDefault);
-	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
-	        jsonRequest.put("templateId", 2);
-	        jsonRequest.put("params", paramsDefault);
-	        // Construcción de `messageVersions` con parámetros personalizados
-	        JSONArray messageVersions = new JSONArray();
-	        for (JSONObject destinatario : destinatarios) {
-	        	if(destinatario.getInt("puntostotal") < 50)
-	        	{
-	        		// Parámetros personalizados por destinatario
-		            JSONObject params = new JSONObject();
-		            params.put("nombre", destinatario.getString("nombre"));
-		            params.put("puntos", destinatario.getInt("puntos"));
-		            params.put("puntostotal", destinatario.getInt("puntostotal"));
-		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
-		            JSONObject messageVersion = new JSONObject();
-		            messageVersion.put("to", new JSONArray().put(
-		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
-		            ));
-		            messageVersion.put("params", params);
-		            messageVersion.put("subject", "Hola " + destinatario.getString("nombre") + ", gracias por tu compra");
-		           
-		            messageVersions.put(messageVersion);
-	        	} 
-	        }
-	        if(messageVersions.length() > 0)
-	        {
-	        	jsonRequest.put("messageVersions", messageVersions);
-		        // Envío de la solicitud HTTP
-		        RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonRequest.toString());
-		        Request request = new Request.Builder()
-		                .url("https://api.brevo.com/v3/smtp/email")
-		                .post(body)
-		                .addHeader("Content-Type", "application/json")
-		                .addHeader("Accept", "application/json")
-		                .addHeader("api-key", apiKey)
-		                .build();
-		        // Ejecución de la solicitud
-		        try (Response response = client.newCall(request).execute()) {
-		            System.out.println("Response Code: " + response.code());
-		            System.out.println("Response Body: " + response.body().string());
-		        } catch (IOException e) {
-		            e.printStackTrace();
-		        }
-	        }
-	        
-	        //50 A 99 PUNTOS: #17
-	        paramsDefault = new JSONObject();
-	        paramsDefault.put("nombre", "maria isabel");
-	        paramsDefault.put("puntos", 0);
-	        paramsDefault.put("puntostotal", 0);
-	        paramsDefault.put("puntosavencer", 0);
-	        jsonRequest = new JSONObject();
-	        jsonRequest.put("subject", subjectDefault);
-	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
-	        jsonRequest.put("templateId", 17);
-	        jsonRequest.put("params", paramsDefault);
-	        messageVersions = new JSONArray();
-	        for (JSONObject destinatario : destinatarios) {
-	        	if(destinatario.getInt("puntostotal") >= 50 && destinatario.getInt("puntostotal") < 99 )
-	        	{
-	        		// Parámetros personalizados por destinatario
-		            JSONObject params = new JSONObject();
-		            params.put("nombre", destinatario.getString("nombre"));
-		            params.put("puntos", destinatario.getInt("puntos"));
-		            params.put("puntostotal", destinatario.getInt("puntostotal"));
-		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
-		            JSONObject messageVersion = new JSONObject();
-		            messageVersion.put("to", new JSONArray().put(
-		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
-		            ));
-		            messageVersion.put("params", params);
-		            messageVersion.put("subject", "Hola " + destinatario.getString("nombre") + ", gracias por tu compra");
-		           
-		            messageVersions.put(messageVersion);
-	        	} 
-	        }
-	        if(messageVersions.length() > 0)
-	        {
-	        	jsonRequest.put("messageVersions", messageVersions);
-		        // Envío de la solicitud HTTP
-		        RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonRequest.toString());
-		        Request request = new Request.Builder()
-		                .url("https://api.brevo.com/v3/smtp/email")
-		                .post(body)
-		                .addHeader("Content-Type", "application/json")
-		                .addHeader("Accept", "application/json")
-		                .addHeader("api-key", apiKey)
-		                .build();
-		        // Ejecución de la solicitud
-		        try (Response response = client.newCall(request).execute()) {
-		            System.out.println("Response Code: " + response.code());
-		            System.out.println("Response Body: " + response.body().string());
-		        } catch (IOException e) {
-		            e.printStackTrace();
-		        }
-	        }
-	        //100 A 149 PUNTOS #18
-	        paramsDefault = new JSONObject();
-	        paramsDefault.put("nombre", "maria isabel");
-	        paramsDefault.put("puntos", 0);
-	        paramsDefault.put("puntostotal", 0);
-	        paramsDefault.put("puntosavencer", 0);
-	        jsonRequest = new JSONObject();
-	        jsonRequest.put("subject", subjectDefault);
-	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
-	        jsonRequest.put("templateId", 18);
-	        jsonRequest.put("params", paramsDefault);
-	        messageVersions = new JSONArray();
-	        for (JSONObject destinatario : destinatarios) {
-	        	if(destinatario.getInt("puntostotal") >= 100 && destinatario.getInt("puntostotal") < 149 )
-	        	{
-	        		// Parámetros personalizados por destinatario
-		            JSONObject params = new JSONObject();
-		            params.put("nombre", destinatario.getString("nombre"));
-		            params.put("puntos", destinatario.getInt("puntos"));
-		            params.put("puntostotal", destinatario.getInt("puntostotal"));
-		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
-		            JSONObject messageVersion = new JSONObject();
-		            messageVersion.put("to", new JSONArray().put(
-		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
-		            ));
-		            messageVersion.put("params", params);
-		            messageVersion.put("subject", "Hola " + destinatario.getString("nombre") + ", gracias por tu compra");
-		           
-		            messageVersions.put(messageVersion);
-	        	} 
-	        }
-	        if(messageVersions.length() > 0)
-	        {
-	        	jsonRequest.put("messageVersions", messageVersions);
-		        // Envío de la solicitud HTTP
-		        RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonRequest.toString());
-		        Request request = new Request.Builder()
-		                .url("https://api.brevo.com/v3/smtp/email")
-		                .post(body)
-		                .addHeader("Content-Type", "application/json")
-		                .addHeader("Accept", "application/json")
-		                .addHeader("api-key", apiKey)
-		                .build();
-		        // Ejecución de la solicitud
-		        try (Response response = client.newCall(request).execute()) {
-		            System.out.println("Response Code: " + response.code());
-		            System.out.println("Response Body: " + response.body().string());
-		        } catch (IOException e) {
-		            e.printStackTrace();
-		        }
-	        }
-	        //150 A 199 PUNTOS: #19
-	        paramsDefault = new JSONObject();
-	        paramsDefault.put("nombre", "maria isabel");
-	        paramsDefault.put("puntos", 0);
-	        paramsDefault.put("puntostotal", 0);
-	        paramsDefault.put("puntosavencer", 0);
-	        jsonRequest = new JSONObject();
-	        jsonRequest.put("subject", subjectDefault);
-	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
-	        jsonRequest.put("templateId", 19);
-	        jsonRequest.put("params", paramsDefault);
-	        messageVersions = new JSONArray();
-	        for (JSONObject destinatario : destinatarios) {
-	        	if(destinatario.getInt("puntostotal") >= 150 && destinatario.getInt("puntostotal") < 199 )
-	        	{
-	        		// Parámetros personalizados por destinatario
-		            JSONObject params = new JSONObject();
-		            params.put("nombre", destinatario.getString("nombre"));
-		            params.put("puntos", destinatario.getInt("puntos"));
-		            params.put("puntostotal", destinatario.getInt("puntostotal"));
-		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
-		            JSONObject messageVersion = new JSONObject();
-		            messageVersion.put("to", new JSONArray().put(
-		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
-		            ));
-		            messageVersion.put("params", params);
-		            messageVersion.put("subject", "Hola " + destinatario.getString("nombre") + ", gracias por tu compra");
-		           
-		            messageVersions.put(messageVersion);
-	        	} 
-	        }
-	        if(messageVersions.length() > 0)
-	        {
-	        	jsonRequest.put("messageVersions", messageVersions);
-		        // Envío de la solicitud HTTP
-		        RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonRequest.toString());
-		        Request request = new Request.Builder()
-		                .url("https://api.brevo.com/v3/smtp/email")
-		                .post(body)
-		                .addHeader("Content-Type", "application/json")
-		                .addHeader("Accept", "application/json")
-		                .addHeader("api-key", apiKey)
-		                .build();
-		        // Ejecución de la solicitud
-		        try (Response response = client.newCall(request).execute()) {
-		            System.out.println("Response Code: " + response.code());
-		            System.out.println("Response Body: " + response.body().string());
-		        } catch (IOException e) {
-		            e.printStackTrace();
-		        }
-	        }
-	        //200 A 249 PUNTOS #20 
-	        paramsDefault = new JSONObject();
-	        paramsDefault.put("nombre", "maria isabel");
-	        paramsDefault.put("puntos", 0);
-	        paramsDefault.put("puntostotal", 0);
-	        paramsDefault.put("puntosavencer", 0);
-	        jsonRequest = new JSONObject();
-	        jsonRequest.put("subject", subjectDefault);
-	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
-	        jsonRequest.put("templateId", 20);
-	        jsonRequest.put("params", paramsDefault);
-	        messageVersions = new JSONArray();
-	        for (JSONObject destinatario : destinatarios) {
-	        	if(destinatario.getInt("puntostotal") >= 200 && destinatario.getInt("puntostotal") < 249 )
-	        	{
-	        		// Parámetros personalizados por destinatario
-		            JSONObject params = new JSONObject();
-		            params.put("nombre", destinatario.getString("nombre"));
-		            params.put("puntos", destinatario.getInt("puntos"));
-		            params.put("puntostotal", destinatario.getInt("puntostotal"));
-		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
-		            JSONObject messageVersion = new JSONObject();
-		            messageVersion.put("to", new JSONArray().put(
-		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
-		            ));
-		            messageVersion.put("params", params);
-		            messageVersion.put("subject", "Hola " + destinatario.getString("nombre") + ", gracias por tu compra");
-		           
-		            messageVersions.put(messageVersion);
-	        	} 
-	        }
-	        if(messageVersions.length() > 0)
-	        {
-	        	jsonRequest.put("messageVersions", messageVersions);
-		        // Envío de la solicitud HTTP
-		        RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonRequest.toString());
-		        Request request = new Request.Builder()
-		                .url("https://api.brevo.com/v3/smtp/email")
-		                .post(body)
-		                .addHeader("Content-Type", "application/json")
-		                .addHeader("Accept", "application/json")
-		                .addHeader("api-key", apiKey)
-		                .build();
-		        // Ejecución de la solicitud
-		        try (Response response = client.newCall(request).execute()) {
-		            System.out.println("Response Code: " + response.code());
-		            System.out.println("Response Body: " + response.body().string());
-		        } catch (IOException e) {
-		            e.printStackTrace();
-		        }
-	        }
-	        //250 A 299 PUNTOS 21
-	        paramsDefault = new JSONObject();
-	        paramsDefault.put("nombre", "maria isabel");
-	        paramsDefault.put("puntos", 0);
-	        paramsDefault.put("puntostotal", 0);
-	        paramsDefault.put("puntosavencer", 0);
-	        jsonRequest = new JSONObject();
-	        jsonRequest.put("subject", subjectDefault);
-	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
-	        jsonRequest.put("templateId", 21);
-	        jsonRequest.put("params", paramsDefault);
-	        messageVersions = new JSONArray();
-	        for (JSONObject destinatario : destinatarios) {
-	        	if(destinatario.getInt("puntostotal") >= 250 && destinatario.getInt("puntostotal") < 299 )
-	        	{
-	        		// Parámetros personalizados por destinatario
-		            JSONObject params = new JSONObject();
-		            params.put("nombre", destinatario.getString("nombre"));
-		            params.put("puntos", destinatario.getInt("puntos"));
-		            params.put("puntostotal", destinatario.getInt("puntostotal"));
-		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
-		            JSONObject messageVersion = new JSONObject();
-		            messageVersion.put("to", new JSONArray().put(
-		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
-		            ));
-		            messageVersion.put("params", params);
-		            messageVersion.put("subject", "Hola " + destinatario.getString("nombre") + ", gracias por tu compra");
-		           
-		            messageVersions.put(messageVersion);
-	        	} 
-	        }
-	        if(messageVersions.length() > 0)
-	        {
-	        	jsonRequest.put("messageVersions", messageVersions);
-		        // Envío de la solicitud HTTP
-		        RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonRequest.toString());
-		        Request request = new Request.Builder()
-		                .url("https://api.brevo.com/v3/smtp/email")
-		                .post(body)
-		                .addHeader("Content-Type", "application/json")
-		                .addHeader("Accept", "application/json")
-		                .addHeader("api-key", apiKey)
-		                .build();
-		        // Ejecución de la solicitud
-		        try (Response response = client.newCall(request).execute()) {
-		            System.out.println("Response Code: " + response.code());
-		            System.out.println("Response Body: " + response.body().string());
-		        } catch (IOException e) {
-		            e.printStackTrace();
-		        }
-	        }
-	        //300 PUNTOS EN ADELANTE: #22
-	        paramsDefault = new JSONObject();
-	        paramsDefault.put("nombre", "maria isabel");
-	        paramsDefault.put("puntos", 0);
-	        paramsDefault.put("puntostotal", 0);
-	        paramsDefault.put("puntosavencer", 0);
-	        jsonRequest = new JSONObject();
-	        jsonRequest.put("subject", subjectDefault);
-	        jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
-	        jsonRequest.put("templateId", 22);
-	        jsonRequest.put("params", paramsDefault);
-	        messageVersions = new JSONArray();
-	        for (JSONObject destinatario : destinatarios) {
-	        	if(destinatario.getInt("puntostotal") >= 300)
-	        	{
-	        		// Parámetros personalizados por destinatario
-		            JSONObject params = new JSONObject();
-		            params.put("nombre", destinatario.getString("nombre"));
-		            params.put("puntos", destinatario.getInt("puntos"));
-		            params.put("puntostotal", destinatario.getInt("puntostotal"));
-		            params.put("puntosavencer", destinatario.getInt("puntosavencer"));
-		            JSONObject messageVersion = new JSONObject();
-		            messageVersion.put("to", new JSONArray().put(
-		                new JSONObject().put("email", destinatario.getString("email")).put("name", destinatario.getString("nombre"))
-		            ));
-		            messageVersion.put("params", params);
-		            messageVersion.put("subject", "Hola " + destinatario.getString("nombre") + ", gracias por tu compra");
-		           
-		            messageVersions.put(messageVersion);
-	        	} 
-	        }
-	        if(messageVersions.length() > 0)
-	        {
-	        	jsonRequest.put("messageVersions", messageVersions);
-		        // Envío de la solicitud HTTP
-		        RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonRequest.toString());
-		        Request request = new Request.Builder()
-		                .url("https://api.brevo.com/v3/smtp/email")
-		                .post(body)
-		                .addHeader("Content-Type", "application/json")
-		                .addHeader("Accept", "application/json")
-		                .addHeader("api-key", apiKey)
-		                .build();
-		        // Ejecución de la solicitud
-		        try (Response response = client.newCall(request).execute()) {
-		            System.out.println("Response Code: " + response.code());
-		            System.out.println("Response Body: " + response.body().string());
-		        } catch (IOException e) {
-		            e.printStackTrace();
-		        }
-	        }
+			/*
+			 * EL CORREO DE PUNTOS, UNA PLANTILLA POR RANGO
+			 *
+			 * Aqui habia SIETE bloques copiados, uno por plantilla, con el templateId
+			 * y los cortes quemados. Ahora es un solo ciclo sobre lo que diga
+			 * general.plantilla_correo_puntos.
+			 *
+			 * Los rangos son INCLUSIVOS en los dos extremos. Los viejos estaban
+			 * escritos como ">= 50 y < 99", ">= 100 y < 149" y asi, de modo que 99,
+			 * 149, 199, 249 y 299 no caian en ninguno y esos clientes no recibian
+			 * correo: 106 estaban parados justo ahi al 2026-11-04.
+			 */
+			for(int iR = 0; iR < rangosCorreo.size(); iR++)
+			{
+				CapaDAOSer.PlantillaCorreoPuntosDAO.Rango rango = rangosCorreo.get(iR);
+
+				JSONObject paramsDefault = new JSONObject();
+				paramsDefault.put("nombre", "maria isabel");
+				paramsDefault.put("puntos", 0);
+				paramsDefault.put("puntostotal", 0);
+				paramsDefault.put("puntosavencer", 0);
+
+				JSONObject jsonRequest = new JSONObject();
+				jsonRequest.put("subject", rango.asunto.length() > 0 ? rango.asunto : subjectDefault);
+				jsonRequest.put("sender", new JSONObject().put("email", senderEmail).put("name", senderName));
+				jsonRequest.put("templateId", rango.idPlantillaBrevo);
+				jsonRequest.put("params", paramsDefault);
+
+				JSONArray messageVersions = new JSONArray();
+				for (JSONObject destinatario : destinatarios)
+				{
+					if(!rango.cubre(destinatario.getInt("puntostotal")))
+					{
+						continue;
+					}
+					JSONObject params = new JSONObject();
+					params.put("nombre", destinatario.getString("nombre"));
+					params.put("puntos", destinatario.getInt("puntos"));
+					params.put("puntostotal", destinatario.getInt("puntostotal"));
+					params.put("puntosavencer", destinatario.getInt("puntosavencer"));
+					JSONObject messageVersion = new JSONObject();
+					messageVersion.put("to", new JSONArray().put(
+						new JSONObject().put("email", destinatario.getString("email"))
+							.put("name", destinatario.getString("nombre"))
+					));
+					messageVersion.put("params", params);
+					messageVersion.put("subject", "Hola " + destinatario.getString("nombre")
+							+ ", gracias por tu compra");
+					messageVersions.put(messageVersion);
+				}
+				if(messageVersions.length() == 0)
+				{
+					continue;
+				}
+				jsonRequest.put("messageVersions", messageVersions);
+				System.out.println("Correo de puntos: plantilla " + rango.idPlantillaBrevo
+						+ " (" + rango.descripcion + ") a " + messageVersions.length()
+						+ " destinatario(s) de la tienda " + tien.getIdTienda() + ".");
+				RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonRequest.toString());
+				Request request = new Request.Builder()
+						.url("https://api.brevo.com/v3/smtp/email")
+						.post(body)
+						.addHeader("Content-Type", "application/json")
+						.addHeader("Accept", "application/json")
+						.addHeader("api-key", apiKey)
+						.build();
+				try (Response response = client.newCall(request).execute()) {
+					System.out.println("Response Code: " + response.code());
+					System.out.println("Response Body: " + response.body().string());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			/*
+			 * Y a quien no le toco ninguna plantilla se le DICE. Antes se perdia en
+			 * silencio, que es como el hueco de los 99 puntos duro meses sin que
+			 * nadie lo notara.
+			 */
+			for (JSONObject destinatario : destinatarios)
+			{
+				if(CapaDAOSer.PlantillaCorreoPuntosDAO.laQuePlantillaLeToca(rangosCorreo,
+						destinatario.getInt("puntostotal")) == null)
+				{
+					System.out.println("Correo de puntos: SIN PLANTILLA para "
+							+ destinatario.getString("email") + " con "
+							+ destinatario.getInt("puntostotal")
+							+ " puntos. Revise general.plantilla_correo_puntos.");
+				}
+			}
 	    //FINALIZACION    
 		}
 	}
