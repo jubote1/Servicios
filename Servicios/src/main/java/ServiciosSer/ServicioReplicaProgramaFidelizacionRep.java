@@ -270,6 +270,10 @@ public void generarReplicaProgramaFidelidad()
 				}
 				if(messageVersions.length() == 0)
 				{
+					//Tambien se anota el rango vacio: la bitacora tiene que mostrar
+					//la corrida completa.
+					CapaDAOSer.PlantillaCorreoPuntosDAO.registrar("REPROCESO", rango, 0,
+							CapaDAOSer.PlantillaCorreoPuntosDAO.SIN_DESTINATARIOS, null);
 					continue;
 				}
 				jsonRequest.put("messageVersions", messageVersions);
@@ -285,10 +289,22 @@ public void generarReplicaProgramaFidelidad()
 						.addHeader("api-key", apiKey)
 						.build();
 				try (Response response = client.newCall(request).execute()) {
+					String cuerpo = response.body() == null ? "" : response.body().string();
 					System.out.println("Response Code: " + response.code());
-					System.out.println("Response Body: " + response.body().string());
+					System.out.println("Response Body: " + cuerpo);
+					//El reproceso se marca distinto del diario: cuando algo sale
+					//raro, lo primero que uno quiere saber es cual de los dos fue.
+					boolean bien = response.code() >= 200 && response.code() < 300;
+					CapaDAOSer.PlantillaCorreoPuntosDAO.registrar("REPROCESO", rango,
+							messageVersions.length(),
+							bien ? CapaDAOSer.PlantillaCorreoPuntosDAO.ENVIADO
+								 : CapaDAOSer.PlantillaCorreoPuntosDAO.ERROR,
+							bien ? null : "HTTP " + response.code() + " " + cuerpo);
 				} catch (IOException e) {
 					e.printStackTrace();
+					CapaDAOSer.PlantillaCorreoPuntosDAO.registrar("REPROCESO", rango,
+							messageVersions.length(),
+							CapaDAOSer.PlantillaCorreoPuntosDAO.ERROR, e.toString());
 				}
 			}
 			/*

@@ -160,6 +160,74 @@ public class PlantillaCorreoPuntosDAO {
 		return (problemas);
 	}
 
+	/** El correo salio. */
+	public static final String ENVIADO = "ENVIADO";
+	/** Ese rango no le toco a nadie esa noche: normal, y conviene que se vea. */
+	public static final String SIN_DESTINATARIOS = "SIN DESTINATARIOS";
+	/** Brevo contesto mal o se cayo la llamada. */
+	public static final String ERROR = "ERROR";
+
+	/**
+	 * Deja escrito que plantilla se uso, a cuantos y como le fue.
+	 *
+	 * POR QUE EXISTE
+	 *
+	 * El 2026-11-05 salieron las plantillas VIEJAS un dia despues de desplegar
+	 * el cambio que las saca de la base, y para saber si habia corrido el codigo
+	 * nuevo o el viejo no habia NADA que mirar. Hubo que deducirlo por un
+	 * defecto del codigo viejo -los clientes parados en 99, 149, 199, 249 o 299
+	 * puntos no recibian correo- y pidiendole los numeros de plantilla a Brevo.
+	 *
+	 * Con esto la pregunta se responde con un SELECT sobre
+	 * general.log_correo_puntos: si las plantillas son las nuevas, corrio el
+	 * codigo nuevo; si son las viejas, el jar del servidor no se cambio.
+	 *
+	 * NO SE GUARDAN LOS CORREOS DE LOS CLIENTES. Para responder "que plantilla
+	 * salio" no hacen falta, y seria dejar datos personales en una bitacora
+	 * tecnica que nadie vigila. El detalle por persona esta en Brevo.
+	 *
+	 * NUNCA TUMBA EL ENVIO. Si no se puede escribir la bitacora se dice por el
+	 * log y se sigue: quedarse sin rastro es malo, no mandarle el correo al
+	 * cliente es peor.
+	 *
+	 * @param proceso DIARIO o REPROCESO, para saber cual de los dos fue
+	 */
+	public static void registrar(final String proceso, final Rango rango, final int destinatarios,
+			final String resultado, final String detalle) {
+		if (rango == null) {
+			return;
+		}
+		final ConexionBaseDatos con = new ConexionBaseDatos();
+		Connection cn = null;
+		try {
+			cn = con.obtenerConexionBDGeneral();
+			final java.sql.PreparedStatement ps = cn.prepareStatement(
+					"insert into log_correo_puntos"
+					+ " (proceso, idplantilla_brevo, puntos_desde, puntos_hasta, destinatarios, resultado, detalle)"
+					+ " values (?, ?, ?, ?, ?, ?, ?)");
+			ps.setString(1, texto(proceso));
+			ps.setInt(2, rango.idPlantillaBrevo);
+			ps.setInt(3, rango.puntosDesde);
+			//-1 es como el DAO representa "sin tope"; en la tabla eso es NULL.
+			if (rango.puntosHasta < 0) {
+				ps.setNull(4, java.sql.Types.INTEGER);
+			} else {
+				ps.setInt(4, rango.puntosHasta);
+			}
+			ps.setInt(5, destinatarios);
+			ps.setString(6, texto(resultado));
+			final String recorte = texto(detalle);
+			ps.setString(7, recorte.length() == 0 ? null
+					: recorte.substring(0, Math.min(recorte.length(), 300)));
+			ps.executeUpdate();
+			ps.close();
+		} catch (final Exception e) {
+			System.out.println("PlantillaCorreoPuntosDAO.registrar: " + e.toString());
+		} finally {
+			cerrar(cn);
+		}
+	}
+
 	private static String texto(final String valor) {
 		return (valor == null ? "" : valor);
 	}

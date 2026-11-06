@@ -311,6 +311,11 @@ public void generarReplicaProgramaFidelidad()
 				}
 				if(messageVersions.length() == 0)
 				{
+					//Tambien se anota el rango que no le toco a nadie: en la bitacora
+					//se tiene que ver la corrida COMPLETA, o no se sabe si un rango
+					//falto porque no habia clientes o porque el codigo no lo conocia.
+					CapaDAOSer.PlantillaCorreoPuntosDAO.registrar("DIARIO", rango, 0,
+							CapaDAOSer.PlantillaCorreoPuntosDAO.SIN_DESTINATARIOS, null);
 					continue;
 				}
 				jsonRequest.put("messageVersions", messageVersions);
@@ -326,10 +331,22 @@ public void generarReplicaProgramaFidelidad()
 						.addHeader("api-key", apiKey)
 						.build();
 				try (Response response = client.newCall(request).execute()) {
+					String cuerpo = response.body() == null ? "" : response.body().string();
 					System.out.println("Response Code: " + response.code());
-					System.out.println("Response Body: " + response.body().string());
+					System.out.println("Response Body: " + cuerpo);
+					//Queda escrito QUE plantilla salio y a cuantos. Es lo que el
+					//2026-11-05 no se pudo responder sin ir a Brevo.
+					boolean bien = response.code() >= 200 && response.code() < 300;
+					CapaDAOSer.PlantillaCorreoPuntosDAO.registrar("DIARIO", rango,
+							messageVersions.length(),
+							bien ? CapaDAOSer.PlantillaCorreoPuntosDAO.ENVIADO
+								 : CapaDAOSer.PlantillaCorreoPuntosDAO.ERROR,
+							bien ? null : "HTTP " + response.code() + " " + cuerpo);
 				} catch (IOException e) {
 					e.printStackTrace();
+					CapaDAOSer.PlantillaCorreoPuntosDAO.registrar("DIARIO", rango,
+							messageVersions.length(),
+							CapaDAOSer.PlantillaCorreoPuntosDAO.ERROR, e.toString());
 				}
 			}
 			/*
