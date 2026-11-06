@@ -54,8 +54,26 @@ public class ReporteSemanalRappi {
 
 	private static final String GRIS_BORDE = "#D9D9E0";
 
-	/** Costo de los pagos en línea, como porcentaje del recaudo. */
-	private static final double PORCENTAJE_COSTO_PAGO_ONLINE = 6;
+	/**
+	 * Costo de los pagos en línea, como porcentaje del recaudo.
+	 *
+	 * OJO CON ESTE NÚMERO. Reconstruido el reporte financiero de Rappi de
+	 * octubre de 2026 renglón por renglón, NO HAY NINGÚN RENGLÓN que
+	 * corresponda a este 6%. Lo más parecido es el "Gasto bancario" más su IVA,
+	 * que en las cuatro semanas valió $1.907.330 sobre una venta bruta de
+	 * $122.563.000: el 1,6%.
+	 *
+	 * Con el 6% el reporte descuenta unos $6,8 millones al mes por algo que
+	 * cuesta $1,9. Ese error empuja la consignación estimada hacia ABAJO y se
+	 * compensa en parte con renglones que no se descuentan (RappiAds, gasto
+	 * bancario, deuda de períodos anteriores), que es por lo que el total cuadra
+	 * al 2%. Si alguna vez se corrigen los otros, hay que bajar este.
+	 *
+	 * Se dejó en 6 a propósito: moverlo es una decisión de negocio.
+	 */
+	private static final String PARAM_PORCENTAJE_COSTO_PAGO_ONLINE = "PORCENTAJECOSTOPAGOONLINE";
+
+	private static final double PORCENTAJE_COSTO_PAGO_ONLINE_DEFECTO = 6;
 
 	/** Conceptos de gasto_semanal que alimenta este reporte. */
 	protected static final int CONCEPTO_RECAUDO_ONLINE = 34;
@@ -338,11 +356,15 @@ public class ReporteSemanalRappi {
 		final double porcentajeCanceladasRappi;
 		/** Compensaciones estimadas, como porcentaje de la venta. */
 		final double porcentajeCompensaciones;
+		/** Costo de los pagos en línea. Ver la constante: el 6% es dudoso. */
+		final double porcentajeCostoPagoOnline;
 
 		private TarifasCargo(final double valorDomicilio, final double porcentajeEfectivo,
 				final double porcentajeIva, final double porcentajeCancelacion,
-				final double porcentajeCanceladasRappi, final double porcentajeCompensaciones)
+				final double porcentajeCanceladasRappi, final double porcentajeCompensaciones,
+				final double porcentajeCostoPagoOnline)
 		{
+			this.porcentajeCostoPagoOnline = porcentajeCostoPagoOnline;
 			this.valorDomicilio = valorDomicilio;
 			this.porcentajeEfectivo = porcentajeEfectivo;
 			this.porcentajeIva = porcentajeIva;
@@ -365,7 +387,9 @@ public class ReporteSemanalRappi {
 					ParametrosDAO.retornarValorNumericoDouble(
 							PARAM_PORCENTAJE_CANCELADAS_RAPPI, PORCENTAJE_CANCELADAS_RAPPI_DEFECTO),
 					ParametrosDAO.retornarValorNumericoDouble(
-							PARAM_PORCENTAJE_COMPENSACIONES, PORCENTAJE_COMPENSACIONES_DEFECTO)));
+							PARAM_PORCENTAJE_COMPENSACIONES, PORCENTAJE_COMPENSACIONES_DEFECTO),
+					ParametrosDAO.retornarValorNumericoDouble(
+							PARAM_PORCENTAJE_COSTO_PAGO_ONLINE, PORCENTAJE_COSTO_PAGO_ONLINE_DEFECTO)));
 		}
 
 		/** Le aplica el IVA a un valor de Cargo. */
@@ -531,7 +555,7 @@ public class ReporteSemanalRappi {
 			}
 			totalConsignacion = totalConsignacion + totalPagosONLINE;
 			totalComision = totalComision + (totalComision * (porcentajeIvaComision / 100));
-			final double totalGastoPagoONLINE = totalPagosONLINE * (PORCENTAJE_COSTO_PAGO_ONLINE / 100);
+			final double totalGastoPagoONLINE = totalPagosONLINE * (tarifas.porcentajeCostoPagoOnline / 100);
 			totalComisionFinal = totalComisionFinal + totalComision;
 			totalGastoPagoONLINEFinal = totalGastoPagoONLINEFinal + totalGastoPagoONLINE;
 			totalTarifaServicioFinal = totalTarifaServicioFinal + totalTarifaServicio;
