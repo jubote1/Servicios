@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+import CapaDAOSer.ConsignacionEstimadaDAO;
 import CapaDAOSer.GastoSemanalDAO;
 import CapaDAOSer.GeneralDAO;
 import CapaDAOSer.ParametrosDAO;
@@ -63,15 +64,64 @@ public class ReporteSemanalRappi {
 
 	protected static final int CONCEPTO_DESCUENTO_ASUMIDO = 23;
 
-	/** Lo que se le paga a Rappi Cargo por cada domicilio que lleva. */
+	/**
+	 * RESPALDO para el domicilio de Cargo al que no se le encuentre tarifa real.
+	 *
+	 * Hasta el 2026-11-06 este parámetro era la tarifa de TODOS los domicilios,
+	 * plana. Medido del 3 al 30 de octubre de 2026 contra el portal de Cargo,
+	 * esa plana de $8.500 subestimaba el costo en $384.600 (13,2%): solo el 24%
+	 * de los pedidos cuesta la tarifa base y hubo siete de más de $15.000.
+	 *
+	 * Ahora la tarifa real de cada pedido sale del webhook -ver
+	 * PedidoDAO.obtenerTercerizadosPorTienda- y esto solo se usa para el pedido
+	 * que no la traiga. En octubre no hubo ninguno, pero más vale que exista.
+	 */
 	private static final String PARAM_VALOR_DOMICILIO_CARGO = "VALORDOMICILIOCARGO";
 
-	private static final double VALOR_DOMICILIO_CARGO_DEFECTO = 8500;
+	private static final double VALOR_DOMICILIO_CARGO_DEFECTO = 10000;
 
-	/** Lo que cobra Rappi Cargo por manejar el efectivo que recauda, en porcentaje. */
+	/**
+	 * Lo que cobra Rappi Cargo por manejar el efectivo que recauda, en porcentaje.
+	 *
+	 * YA NO ENTRA EN LA CUENTA, solo se muestra en el detalle: la tarifa del
+	 * webhook ya lo trae adentro (estimated_price = tarifa base + cobro por
+	 * distancia + este porcentaje sobre el valor del pedido, comprobado al peso
+	 * contra pedidos de octubre). Restarlo aparte sería contarlo dos veces.
+	 */
 	private static final String PARAM_PORCENTAJE_EFECTIVO_CARGO = "PORCENTAJEEFECTIVOCARGO";
 
-	private static final double PORCENTAJE_EFECTIVO_CARGO_DEFECTO = 2.8;
+	private static final double PORCENTAJE_EFECTIVO_CARGO_DEFECTO = 2.85;
+
+	/**
+	 * IVA de Cargo, en porcentaje. OJO: NO ES 19.
+	 *
+	 * Cargo no grava toda la tarifa. De las 289 órdenes de octubre, 41 salieron
+	 * con IVA en CERO y en el resto el IVA va en proporción a la parte del
+	 * servicio que sí es gravada. El IVA efectivo del mes fue $281.116 sobre
+	 * $2.623.403 = 10,72%.
+	 *
+	 * Es un promedio, no una fórmula: el IVA exacto de un pedido solo se sabe
+	 * cuando llega el reporte del portal. Conviene recalibrarlo con la
+	 * conciliación de los miércoles.
+	 */
+	private static final String PARAM_PORCENTAJE_IVA_CARGO = "PORCENTAJEIVACARGO";
+
+	private static final double PORCENTAJE_IVA_CARGO_DEFECTO = 10.72;
+
+	/**
+	 * Cuánto cobra Cargo de un domicilio cancelado, como porcentaje de lo que
+	 * habría costado.
+	 *
+	 * Rappi cobra la tarifa base completa o el 35% de ella, y cuál de las dos no
+	 * se sabe desde el webhook. En octubre cobró $47.502 en 11 de las 26
+	 * cancelaciones, que sobre los $249.703 de tarifa estimada de esas 26 da el
+	 * 19%. Otro promedio para recalibrar.
+	 *
+	 * Antes las canceladas sencillamente no se contaban y el costo salía corto.
+	 */
+	private static final String PARAM_PORCENTAJE_CANCELACION_CARGO = "PORCENTAJECANCELACIONCARGO";
+
+	private static final double PORCENTAJE_CANCELACION_CARGO_DEFECTO = 19;
 
 	private final DecimalFormat formatea = new DecimalFormat("$ ###,###,###");
 	/** Calcula el período que cerró con el corte de hoy y genera el reporte. */
@@ -236,6 +286,62 @@ public class ReporteSemanalRappi {
 	}
 
 	/**
+	 * Los cuatro números con que se liquida Rappi Cargo, leídos una sola vez por
+	 * corrida.
+	 *
+	 * Van juntos porque se usan juntos y porque pasarlos sueltos dejaba a
+	 * generarRazon con ocho parámetros, donde es fácil cruzar dos doubles sin
+	 * que el compilador diga nada.
+	 */
+	protected static final class TarifasCargo
+	{
+		/** Respaldo para el domicilio sin tarifa real en el webhook. */
+		final double valorDomicilio;
+		/** Solo informativo: la tarifa del webhook ya lo trae adentro. */
+		final double porcentajeEfectivo;
+		/** IVA efectivo de Cargo. No es 19: ver la constante. */
+		final double porcentajeIva;
+		/** Qué parte de la tarifa cobra Cargo cuando el pedido se cancela. */
+		final double porcentajeCancelacion;
+
+		private TarifasCargo(final double valorDomicilio, final double porcentajeEfectivo,
+				final double porcentajeIva, final double porcentajeCancelacion)
+		{
+			this.valorDomicilio = valorDomicilio;
+			this.porcentajeEfectivo = porcentajeEfectivo;
+			this.porcentajeIva = porcentajeIva;
+			this.porcentajeCancelacion = porcentajeCancelacion;
+		}
+
+		static TarifasCargo leer()
+		{
+			return(new TarifasCargo(
+					ParametrosDAO.retornarValorNumericoDouble(
+							PARAM_VALOR_DOMICILIO_CARGO, VALOR_DOMICILIO_CARGO_DEFECTO),
+					ParametrosDAO.retornarValorNumericoDouble(
+							PARAM_PORCENTAJE_EFECTIVO_CARGO, PORCENTAJE_EFECTIVO_CARGO_DEFECTO),
+					ParametrosDAO.retornarValorNumericoDouble(
+							PARAM_PORCENTAJE_IVA_CARGO, PORCENTAJE_IVA_CARGO_DEFECTO),
+					ParametrosDAO.retornarValorNumericoDouble(
+							PARAM_PORCENTAJE_CANCELACION_CARGO, PORCENTAJE_CANCELACION_CARGO_DEFECTO)));
+		}
+
+		/** Le aplica el IVA a un valor de Cargo. */
+		double conIva(final double valor)
+		{
+			return(valor * (1 + (this.porcentajeIva / 100)));
+		}
+
+		@Override
+		public String toString()
+		{
+			return("tarifas de Cargo: respaldo $" + this.valorDomicilio + " por domicilio, efectivo "
+					+ this.porcentajeEfectivo + "%, IVA " + this.porcentajeIva + "%, cancelación "
+					+ this.porcentajeCancelacion + "%");
+		}
+	}
+
+	/**
 	 * Genera y envía el reporte para el rango de fechas indicado, una razón
 	 * social por correo. Este es el punto de entrada que usa el reproceso.
 	 */
@@ -252,16 +358,14 @@ public class ReporteSemanalRappi {
 		{
 			System.out.println("ReporteSemanalRappi: sin PORCENTAJEIVACOMISION, se usa 19: " + e);
 		}
-		final double valorDomicilioCargo = ParametrosDAO.retornarValorNumericoDouble(
-				PARAM_VALOR_DOMICILIO_CARGO, VALOR_DOMICILIO_CARGO_DEFECTO);
-		final double porcentajeEfectivoCargo = ParametrosDAO.retornarValorNumericoDouble(
-				PARAM_PORCENTAJE_EFECTIVO_CARGO, PORCENTAJE_EFECTIVO_CARGO_DEFECTO);
+		final TarifasCargo tarifas = TarifasCargo.leer();
+		System.out.println("ReporteSemanalRappi: " + tarifas);
 		for(RazonSocial razTemp : razonesSociales)
 		{
 			try
 			{
 				this.generarRazon(razTemp, fechaAnterior, fechaActual, marcacionesComision,
-						porcentajeIvaComision, valorDomicilioCargo, porcentajeEfectivoCargo);
+						porcentajeIvaComision, tarifas);
 			}catch(Exception e)
 			{
 				//Que una razón social falle no puede dejar sin reporte a las demás.
@@ -273,7 +377,7 @@ public class ReporteSemanalRappi {
 	/** Arma y envía el correo de una razón social. */
 	protected void generarRazon(final RazonSocial razTemp, final String fechaAnterior, final String fechaActual,
 			final ArrayList<MarcacionComision> marcacionesComision, final double porcentajeIvaComision,
-			final double valorDomicilioCargo, final double porcentajeEfectivoCargo)
+			final TarifasCargo tarifas)
 	{
 		final ArrayList<Tienda> tiendas = capaDAOCC.TiendaDAO.obtenerTiendasxRazon(razTemp.getIdRazon());
 		final ArrayList pedidosONLINE = PedidoDAO.obtenerPedidosPlataformasONLINETienda(
@@ -294,6 +398,12 @@ public class ReporteSemanalRappi {
 		int cantidadCargoFinal = 0;
 		double efectivoCargoFinal = 0;
 		double noEfectivoCargoFinal = 0;
+		//La tarifa real que Cargo le puso a cada pedido, sumada. Antes esto no
+		//existia: el costo era cantidad x una tarifa plana.
+		double tarifaCargoFinal = 0;
+		int canceladosCargoFinal = 0;
+		double tarifaCanceladosFinal = 0;
+		int sinTarifaCargoFinal = 0;
 
 		for(Tienda tiendaTemp : tiendas)
 		{
@@ -338,6 +448,10 @@ public class ReporteSemanalRappi {
 				}
 			}
 			int cantidadCargo = 0;
+			double tarifaCargo = 0;
+			int canceladosCargo = 0;
+			double tarifaCancelados = 0;
+			int sinTarifaCargo = 0;
 			double efectivoCargo = 0;
 			double noEfectivoCargo = 0;
 			for(int k = 0; k < tercerizados.size(); k++)
@@ -346,8 +460,12 @@ public class ReporteSemanalRappi {
 				if(resCargo[0].equals(Integer.toString(tiendaTemp.getIdTienda())))
 				{
 					cantidadCargo = Integer.parseInt(resCargo[1]);
-					efectivoCargo = Double.parseDouble(resCargo[2]);
-					noEfectivoCargo = Double.parseDouble(resCargo[3]);
+					tarifaCargo = Double.parseDouble(resCargo[2]);
+					canceladosCargo = Integer.parseInt(resCargo[3]);
+					tarifaCancelados = Double.parseDouble(resCargo[4]);
+					sinTarifaCargo = Integer.parseInt(resCargo[5]);
+					efectivoCargo = Double.parseDouble(resCargo[6]);
+					noEfectivoCargo = Double.parseDouble(resCargo[7]);
 					break;
 				}
 			}
@@ -363,14 +481,20 @@ public class ReporteSemanalRappi {
 			cantidadCargoFinal = cantidadCargoFinal + cantidadCargo;
 			efectivoCargoFinal = efectivoCargoFinal + efectivoCargo;
 			noEfectivoCargoFinal = noEfectivoCargoFinal + noEfectivoCargo;
+			tarifaCargoFinal = tarifaCargoFinal + tarifaCargo;
+			canceladosCargoFinal = canceladosCargoFinal + canceladosCargo;
+			tarifaCanceladosFinal = tarifaCanceladosFinal + tarifaCancelados;
+			sinTarifaCargoFinal = sinTarifaCargoFinal + sinTarifaCargo;
 
 			filasDetalle.append(this.filaDetalle(tiendaTemp.getNombreTienda(), totalPedidoTienda,
 					totalPagosONLINE, totalDescuento, totalTarifaServicio, totalPropina, totalComision,
 					totalGastoPagoONLINE, false));
-			if(cantidadCargo > 0)
+			if(cantidadCargo > 0 || canceladosCargo > 0)
 			{
-				filasCargo.append(this.filaCargo(tiendaTemp.getNombreTienda(), cantidadCargo, efectivoCargo,
-						noEfectivoCargo, valorDomicilioCargo, porcentajeEfectivoCargo));
+				filasCargo.append(this.filaCargo(tiendaTemp.getNombreTienda(), cantidadCargo,
+						this.costoCargo(tarifaCargo, sinTarifaCargo, tarifas), canceladosCargo,
+						tarifas.conIva(tarifaCancelados * (tarifas.porcentajeCancelacion / 100)),
+						efectivoCargo, noEfectivoCargo));
 			}
 
 			//Que conceptos se registran cambia entre reportes: ver insertarGastos.
@@ -381,23 +505,46 @@ public class ReporteSemanalRappi {
 		//===================================================================
 		//La cuenta de la consignación
 		//===================================================================
-		//Lo nuevo son las tres últimas líneas. Rappi Cargo lleva domicilios
+		//Las cuatro últimas líneas son las de Cargo. Rappi Cargo lleva domicilios
 		//NUESTROS, así que a nosotros nos toca pagarle: ese costo no se factura
 		//aparte, se descuenta de lo que ellos nos van a consignar. Y como el
 		//domiciliario de Cargo recauda el efectivo del cliente, esa plata queda
-		//en poder de Rappi y también entra en la consignación, menos el
-		//porcentaje que ellos cobran por manejarla.
+		//en poder de Rappi y también entra en la consignación.
+		//
+		//QUÉ CAMBIÓ EL 2026-11-06
+		//
+		//  - El costo sale de la tarifa REAL de cada pedido (la del webhook) y ya
+		//    no de una tarifa plana que subestimaba un 13,2%.
+		//  - YA NO SE RESTA LA COMISIÓN DE EFECTIVO APARTE: la tarifa del webhook
+		//    la trae adentro. Restarla otra vez era contarla dos veces.
+		//  - Los cancelados SÍ cuentan. Antes se ignoraban y Rappi igual los
+		//    cobraba: $47.502 en octubre.
+		//
+		//Lo que todavía no se ve es el cobro por espera del repartidor, porque la
+		//tarifa se fija al crear la orden y la espera pasa después. En octubre esa
+		//brecha fue del 4,4% ($192.400 en 87 pedidos). Si se vuelve grande, el
+		//camino es un parámetro de ajuste, no adivinar aquí.
 		final double consignacionBruta = totalConsignacion;
-		final double costoCargo = cantidadCargoFinal * valorDomicilioCargo;
-		final double comisionEfectivoCargo = efectivoCargoFinal * (porcentajeEfectivoCargo / 100);
+		final double costoCargo = this.costoCargo(tarifaCargoFinal, sinTarifaCargoFinal, tarifas);
+		final double costoCancelados = tarifas.conIva(
+				tarifaCanceladosFinal * (tarifas.porcentajeCancelacion / 100));
+		final double comisionEfectivoCargo = efectivoCargoFinal * (tarifas.porcentajeEfectivo / 100);
 		final double consignacionAproximada = consignacionBruta
 				- totalComisionFinal
 				- totalGastoPagoONLINEFinal
 				- (this.restarTarifaServicio() ? totalTarifaServicioFinal : 0)
 				+ totalDescuentoFinal
 				- costoCargo
-				+ efectivoCargoFinal
-				- comisionEfectivoCargo;
+				- costoCancelados
+				+ efectivoCargoFinal;
+
+		//Queda guardado para que la conciliación de los miércoles pueda comparar
+		//esto contra lo que Rappi consignó de verdad sin ir a buscar el correo.
+		ConsignacionEstimadaDAO.guardar(this.nombreProceso(), razTemp, fechaAnterior, fechaActual,
+				consignacionBruta, totalComisionFinal, totalGastoPagoONLINEFinal,
+				(this.restarTarifaServicio() ? totalTarifaServicioFinal : 0), totalDescuentoFinal,
+				cantidadCargoFinal, costoCargo, canceladosCargoFinal, costoCancelados,
+				efectivoCargoFinal, comisionEfectivoCargo, consignacionAproximada);
 
 		//===================================================================
 		//El correo: primero el resumen, después el detalle
@@ -423,18 +570,30 @@ public class ReporteSemanalRappi {
 					totalTarifaServicioFinal, false));
 		}
 		html.append(this.filaResumen("+", "Descuentos asumidos por Rappi", totalDescuentoFinal, false));
-		html.append(this.filaResumen("&minus;", "Domicilios de Rappi Cargo (" + cantidadCargoFinal + " x "
-				+ this.moneda(valorDomicilioCargo) + ")", costoCargo, false));
+		html.append(this.filaResumen("&minus;", "Domicilios de Rappi Cargo entregados ("
+				+ cantidadCargoFinal + ", tarifa real + IVA)", costoCargo, false));
+		if(canceladosCargoFinal > 0)
+		{
+			html.append(this.filaResumen("&minus;", "Domicilios de Cargo cancelados ("
+					+ canceladosCargoFinal + " al "
+					+ new DecimalFormat("###.##").format(tarifas.porcentajeCancelacion) + "%)",
+					costoCancelados, false));
+		}
 		html.append(this.filaResumen("+", "Efectivo recaudado por Rappi Cargo", efectivoCargoFinal, false));
-		html.append(this.filaResumen("&minus;", "Manejo del efectivo de Cargo ("
-				+ new DecimalFormat("###.##").format(porcentajeEfectivoCargo) + "%)",
-				comisionEfectivoCargo, false));
 		html.append(this.filaResumen("=", "CONSIGNACIÓN APROXIMADA", consignacionAproximada, true));
 		html.append("</table>");
+		//La comisión del efectivo ya está dentro de la tarifa de cada domicilio,
+		//así que se muestra para que se entienda la cuenta pero NO se resta otra
+		//vez. Si algún día se vuelve a poner como renglón, se estaría cobrando dos
+		//veces y la consignación saldría baja.
+		html.append("<p style=\"margin:6px 0 18px 0;color:#777;font-size:11px\">El manejo del efectivo de "
+				+ "Cargo (" + new DecimalFormat("###.##").format(tarifas.porcentajeEfectivo) + "%, unos "
+				+ this.moneda(comisionEfectivoCargo) + ") ya viene incluido en la tarifa de cada domicilio: "
+				+ "no se descuenta aparte.</p>");
 
 		//--- Domicilios llevados por Rappi Cargo ---
 		html.append(this.subtitulo("DOMICILIOS LLEVADOS POR RAPPI CARGO"));
-		if(cantidadCargoFinal == 0)
+		if(cantidadCargoFinal == 0 && canceladosCargoFinal == 0)
 		{
 			html.append("<p style=\"margin:0 0 18px 0;color:#777\">Ninguna tienda tuvo domicilios "
 					+ "tercerizados en el período.</p>");
@@ -445,11 +604,20 @@ public class ReporteSemanalRappi {
 			html.append(this.encabezadoCargo());
 			html.append(filasCargo);
 			html.append(this.filaCargoTotal(cantidadCargoFinal, efectivoCargoFinal, noEfectivoCargoFinal,
-					costoCargo, comisionEfectivoCargo));
+					costoCargo, canceladosCargoFinal, costoCancelados));
 			html.append("</table>");
-			html.append("<p style=\"margin:6px 0 18px 0;color:#777;font-size:11px\">El costo de los "
-					+ "domicilios se le paga a Rappi y sale de la consignación. El efectivo lo recauda el "
-					+ "domiciliario de Cargo, así que entra a la consignación menos el manejo.</p>");
+			html.append("<p style=\"margin:6px 0 18px 0;color:#777;font-size:11px\">El costo sale de la "
+					+ "tarifa que Cargo le puso a CADA pedido, no de un promedio, e incluye el IVA y el "
+					+ "manejo del efectivo. El efectivo lo recauda el domiciliario de Cargo, así que queda "
+					+ "en poder de Rappi y entra completo a la consignación. Un domicilio cancelado también "
+					+ "se cobra: Rappi cobra la tarifa base o el 35% de ella según el caso.</p>");
+			if(sinTarifaCargoFinal > 0)
+			{
+				html.append("<p style=\"margin:6px 0 18px 0;color:#a00;font-size:11px\">Ojo: "
+						+ sinTarifaCargoFinal + " domicilio(s) sin tarifa en el webhook de Cargo. A esos se "
+						+ "les aplicó el valor de respaldo de " + this.moneda(tarifas.valorDomicilio)
+						+ ", así que ese pedazo es estimado.</p>");
+			}
 		}
 
 		//--- Detalle por tienda ---
@@ -578,8 +746,8 @@ public class ReporteSemanalRappi {
 
 	private String encabezadoCargo()
 	{
-		final String[] titulos = {"Tienda", "Domicilios", "Recaudo en efectivo", "Recaudo que no es efectivo",
-				"Costo de los domicilios", "Manejo del efectivo"};
+		final String[] titulos = {"Tienda", "Entregados", "Recaudo en efectivo", "Recaudo que no es efectivo",
+				"Costo de los entregados", "Cancelados", "Costo de los cancelados"};
 		final StringBuilder fila = new StringBuilder("<tr>");
 		for(int i = 0; i < titulos.length; i++)
 		{
@@ -590,24 +758,46 @@ public class ReporteSemanalRappi {
 		return(fila.append("</tr>").toString());
 	}
 
-	private String filaCargo(final String tienda, final int cantidad, final double efectivo,
-			final double noEfectivo, final double valorDomicilio, final double porcentajeEfectivo)
+	/**
+	 * Lo que nos cuestan los domicilios ENTREGADOS de una tienda, con IVA.
+	 *
+	 * Se suma la tarifa real que Cargo le puso a cada pedido y, para el que no
+	 * la traiga, el respaldo del parámetro. Lo normal es que sinTarifa sea cero:
+	 * en los 289 pedidos de octubre todos traían tarifa.
+	 */
+	protected double costoCargo(final double tarifaReal, final int sinTarifa, final TarifasCargo tarifas)
 	{
-		return("<tr>" + this.celdaTexto(tienda, false)
-				+ "<td style=\"text-align:right;border-top:1px solid " + GRIS_BORDE + "\">" + cantidad + "</td>"
-				+ this.celdaValor(efectivo, false) + this.celdaValor(noEfectivo, false)
-				+ this.celdaValor(cantidad * valorDomicilio, false)
-				+ this.celdaValor(efectivo * (porcentajeEfectivo / 100), false) + "</tr>");
+		return(tarifas.conIva(tarifaReal + (sinTarifa * tarifas.valorDomicilio)));
 	}
 
-	private String filaCargoTotal(final int cantidad, final double efectivo, final double noEfectivo,
-			final double costo, final double manejo)
+	/** Cómo se llama este proceso en consignacion_semanal_estimada. */
+	protected String nombreProceso()
 	{
+		return("SEMANALRAPPI");
+	}
+
+	private String filaCargo(final String tienda, final int entregados, final double costoEntregados,
+			final int cancelados, final double costoCancelados, final double efectivo, final double noEfectivo)
+	{
+		return("<tr>" + this.celdaTexto(tienda, false)
+				+ "<td style=\"text-align:right;border-top:1px solid " + GRIS_BORDE + "\">" + entregados + "</td>"
+				+ this.celdaValor(efectivo, false) + this.celdaValor(noEfectivo, false)
+				+ this.celdaValor(costoEntregados, false)
+				+ "<td style=\"text-align:right;border-top:1px solid " + GRIS_BORDE + "\">" + cancelados + "</td>"
+				+ this.celdaValor(costoCancelados, false) + "</tr>");
+	}
+
+	private String filaCargoTotal(final int entregados, final double efectivo, final double noEfectivo,
+			final double costo, final int cancelados, final double costoCancelados)
+	{
+		final String celdaEntera = "<td style=\"text-align:right;background:" + GRIS_FONDO
+				+ ";font-weight:bold;border-top:2px solid " + AZUL + "\">";
 		return("<tr>" + this.celdaTexto("TOTAL", true)
-				+ "<td style=\"text-align:right;background:" + GRIS_FONDO + ";font-weight:bold;border-top:2px "
-				+ "solid " + AZUL + "\">" + cantidad + "</td>"
+				+ celdaEntera + entregados + "</td>"
 				+ this.celdaValor(efectivo, true) + this.celdaValor(noEfectivo, true)
-				+ this.celdaValor(costo, true) + this.celdaValor(manejo, true) + "</tr>");
+				+ this.celdaValor(costo, true)
+				+ celdaEntera + cancelados + "</td>"
+				+ this.celdaValor(costoCancelados, true) + "</tr>");
 	}
 
 	private String celdaTexto(final String texto, final boolean total)

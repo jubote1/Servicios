@@ -146,6 +146,16 @@ public class ReporteSemanalPagoRappi extends ReporteSemanalRappi {
 				fechaActual, comision + gastoPagoONLINE, comision + gastoPagoONLINE));
 	}
 
+	/**
+	 * Los dos reportes guardan su consignación estimada por separado: son
+	 * períodos distintos del mismo cálculo y mezclarlos no tendría sentido.
+	 */
+	@Override
+	protected String nombreProceso()
+	{
+		return("SEMANALPAGORAPPI");
+	}
+
 	public static void main(String[] args)
 	{
 		new ReporteSemanalPagoRappi().generarReporteRappi();
