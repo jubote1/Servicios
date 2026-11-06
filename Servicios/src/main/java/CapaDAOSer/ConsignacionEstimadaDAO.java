@@ -38,6 +38,7 @@ public class ConsignacionEstimadaDAO {
 			final String fechaInicio, final String fechaFin,
 			final double recaudoBruto, final double comisionRappi, final double costoPagosLinea,
 			final double tarifaServicio, final double descuentosRappi,
+			final double canceladasPlataforma, final double compensaciones,
 			final int cargoPedidos, final double cargoCosto,
 			final int cargoCancelados, final double cargoCostoCancel,
 			final double cargoEfectivo, final double cargoComisionEfectivo,
@@ -52,9 +53,10 @@ public class ConsignacionEstimadaDAO {
 					"insert into consignacion_semanal_estimada"
 					+ " (proceso, idrazon, nombre_razon, fecha_inicio, fecha_fin,"
 					+ "  recaudo_bruto, comision_rappi, costo_pagos_linea, tarifa_servicio, descuentos_rappi,"
+					+ "  canceladas_plataforma, compensaciones,"
 					+ "  cargo_pedidos, cargo_costo, cargo_cancelados, cargo_costo_cancel,"
 					+ "  cargo_efectivo, cargo_comision_efect, consignacion_estimada)"
-					+ " values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+					+ " values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 					+ " on duplicate key update"
 					+ "  nombre_razon = values(nombre_razon),"
 					+ "  fecha_inicio = values(fecha_inicio),"
@@ -63,6 +65,8 @@ public class ConsignacionEstimadaDAO {
 					+ "  costo_pagos_linea = values(costo_pagos_linea),"
 					+ "  tarifa_servicio = values(tarifa_servicio),"
 					+ "  descuentos_rappi = values(descuentos_rappi),"
+					+ "  canceladas_plataforma = values(canceladas_plataforma),"
+					+ "  compensaciones = values(compensaciones),"
 					+ "  cargo_pedidos = values(cargo_pedidos),"
 					+ "  cargo_costo = values(cargo_costo),"
 					+ "  cargo_cancelados = values(cargo_cancelados),"
@@ -81,13 +85,15 @@ public class ConsignacionEstimadaDAO {
 			ps.setDouble(8, costoPagosLinea);
 			ps.setDouble(9, tarifaServicio);
 			ps.setDouble(10, descuentosRappi);
-			ps.setInt(11, cargoPedidos);
-			ps.setDouble(12, cargoCosto);
-			ps.setInt(13, cargoCancelados);
-			ps.setDouble(14, cargoCostoCancel);
-			ps.setDouble(15, cargoEfectivo);
-			ps.setDouble(16, cargoComisionEfectivo);
-			ps.setDouble(17, consignacionEstimada);
+			ps.setDouble(11, canceladasPlataforma);
+			ps.setDouble(12, compensaciones);
+			ps.setInt(13, cargoPedidos);
+			ps.setDouble(14, cargoCosto);
+			ps.setInt(15, cargoCancelados);
+			ps.setDouble(16, cargoCostoCancel);
+			ps.setDouble(17, cargoEfectivo);
+			ps.setDouble(18, cargoComisionEfectivo);
+			ps.setDouble(19, consignacionEstimada);
 			ps.executeUpdate();
 			ps.close();
 			System.out.println("ConsignacionEstimadaDAO: guardada " + proceso + " razon "

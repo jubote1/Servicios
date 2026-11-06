@@ -123,6 +123,37 @@ public class ReporteSemanalRappi {
 
 	private static final double PORCENTAJE_CANCELACION_CARGO_DEFECTO = 19;
 
+	/**
+	 * Qué parte de un pedido de la PLATAFORMA Rappi cancelado nos cobra Rappi.
+	 *
+	 * No confundir con el de Cargo, que es otro renglón: este es un pedido de
+	 * Rappi que no se entregó y aparece en su reporte como "Costo Canceladas".
+	 *
+	 * En octubre nuestra base tenía 34 pedidos de Rappi cancelados por
+	 * $1.799.650 y Rappi cobró $1.483.658, el 82,4%. Ojo: Rappi cobró 46
+	 * cancelaciones y nosotros solo tenemos 34 marcadas, así que el porcentaje
+	 * también está tapando ese hueco.
+	 */
+	private static final String PARAM_PORCENTAJE_CANCELADAS_RAPPI = "PORCENTAJECANCELADASRAPPI";
+
+	private static final double PORCENTAJE_CANCELADAS_RAPPI_DEFECTO = 82;
+
+	/**
+	 * Las compensaciones de Rappi, como porcentaje de la venta.
+	 *
+	 * Cuando un cliente se queja -pizza fría, producto faltante, producto
+	 * cambiado- Rappi le devuelve la plata al cliente y nos la descuenta. Son
+	 * las mismas del correo semanal de quejas.
+	 *
+	 * ESTE ES UN PROMEDIO PURO, no un cálculo: no hay forma de saber desde
+	 * nuestra base cuánto va a compensar Rappi, porque es decisión de ellos caso
+	 * por caso y nos enteramos cuando llega el reporte. $958.290 sobre
+	 * $122.563.000 de octubre = 0,78%. Poniéndolo en 0 se apaga la estimación.
+	 */
+	private static final String PARAM_PORCENTAJE_COMPENSACIONES = "PORCENTAJECOMPENSACIONESRAPPI";
+
+	private static final double PORCENTAJE_COMPENSACIONES_DEFECTO = 0.78;
+
 	private final DecimalFormat formatea = new DecimalFormat("$ ###,###,###");
 	/** Calcula el período que cerró con el corte de hoy y genera el reporte. */
 	public void generarReporteRappi()
@@ -303,14 +334,21 @@ public class ReporteSemanalRappi {
 		final double porcentajeIva;
 		/** Qué parte de la tarifa cobra Cargo cuando el pedido se cancela. */
 		final double porcentajeCancelacion;
+		/** Qué parte de un pedido de la PLATAFORMA Rappi cancelado nos cobran. */
+		final double porcentajeCanceladasRappi;
+		/** Compensaciones estimadas, como porcentaje de la venta. */
+		final double porcentajeCompensaciones;
 
 		private TarifasCargo(final double valorDomicilio, final double porcentajeEfectivo,
-				final double porcentajeIva, final double porcentajeCancelacion)
+				final double porcentajeIva, final double porcentajeCancelacion,
+				final double porcentajeCanceladasRappi, final double porcentajeCompensaciones)
 		{
 			this.valorDomicilio = valorDomicilio;
 			this.porcentajeEfectivo = porcentajeEfectivo;
 			this.porcentajeIva = porcentajeIva;
 			this.porcentajeCancelacion = porcentajeCancelacion;
+			this.porcentajeCanceladasRappi = porcentajeCanceladasRappi;
+			this.porcentajeCompensaciones = porcentajeCompensaciones;
 		}
 
 		static TarifasCargo leer()
@@ -323,7 +361,11 @@ public class ReporteSemanalRappi {
 					ParametrosDAO.retornarValorNumericoDouble(
 							PARAM_PORCENTAJE_IVA_CARGO, PORCENTAJE_IVA_CARGO_DEFECTO),
 					ParametrosDAO.retornarValorNumericoDouble(
-							PARAM_PORCENTAJE_CANCELACION_CARGO, PORCENTAJE_CANCELACION_CARGO_DEFECTO)));
+							PARAM_PORCENTAJE_CANCELACION_CARGO, PORCENTAJE_CANCELACION_CARGO_DEFECTO),
+					ParametrosDAO.retornarValorNumericoDouble(
+							PARAM_PORCENTAJE_CANCELADAS_RAPPI, PORCENTAJE_CANCELADAS_RAPPI_DEFECTO),
+					ParametrosDAO.retornarValorNumericoDouble(
+							PARAM_PORCENTAJE_COMPENSACIONES, PORCENTAJE_COMPENSACIONES_DEFECTO)));
 		}
 
 		/** Le aplica el IVA a un valor de Cargo. */
@@ -337,7 +379,9 @@ public class ReporteSemanalRappi {
 		{
 			return("tarifas de Cargo: respaldo $" + this.valorDomicilio + " por domicilio, efectivo "
 					+ this.porcentajeEfectivo + "%, IVA " + this.porcentajeIva + "%, cancelación "
-					+ this.porcentajeCancelacion + "%");
+					+ this.porcentajeCancelacion + "%; plataforma Rappi: canceladas "
+					+ this.porcentajeCanceladasRappi + "%, compensaciones "
+					+ this.porcentajeCompensaciones + "% de la venta");
 		}
 	}
 
@@ -384,6 +428,8 @@ public class ReporteSemanalRappi {
 				razTemp.getIdRazon(), fechaAnterior, fechaActual, MARCACION_RAPPI);
 		final ArrayList tercerizados = PedidoDAO.obtenerTercerizadosPorTienda(
 				razTemp.getIdRazon(), fechaAnterior, fechaActual);
+		final ArrayList canceladosPlataforma = PedidoDAO.obtenerCanceladosPlataformaPorTienda(
+				razTemp.getIdRazon(), fechaAnterior, fechaActual, MARCACION_RAPPI);
 
 		final StringBuilder filasDetalle = new StringBuilder();
 		final StringBuilder filasCargo = new StringBuilder();
@@ -404,6 +450,9 @@ public class ReporteSemanalRappi {
 		int canceladosCargoFinal = 0;
 		double tarifaCanceladosFinal = 0;
 		int sinTarifaCargoFinal = 0;
+		//Pedidos de la PLATAFORMA Rappi cancelados: otro renglon, no son los de Cargo.
+		int canceladosPlataformaFinal = 0;
+		double valorCanceladosPlataformaFinal = 0;
 
 		for(Tienda tiendaTemp : tiendas)
 		{
@@ -469,6 +518,17 @@ public class ReporteSemanalRappi {
 					break;
 				}
 			}
+			for(int k = 0; k < canceladosPlataforma.size(); k++)
+			{
+				final String[] resCanc = (String[]) canceladosPlataforma.get(k);
+				if(resCanc[0].equals(Integer.toString(tiendaTemp.getIdTienda())))
+				{
+					canceladosPlataformaFinal = canceladosPlataformaFinal + Integer.parseInt(resCanc[1]);
+					valorCanceladosPlataformaFinal =
+							valorCanceladosPlataformaFinal + Double.parseDouble(resCanc[2]);
+					break;
+				}
+			}
 			totalConsignacion = totalConsignacion + totalPagosONLINE;
 			totalComision = totalComision + (totalComision * (porcentajeIvaComision / 100));
 			final double totalGastoPagoONLINE = totalPagosONLINE * (PORCENTAJE_COSTO_PAGO_ONLINE / 100);
@@ -529,11 +589,20 @@ public class ReporteSemanalRappi {
 		final double costoCancelados = tarifas.conIva(
 				tarifaCanceladosFinal * (tarifas.porcentajeCancelacion / 100));
 		final double comisionEfectivoCargo = efectivoCargoFinal * (tarifas.porcentajeEfectivo / 100);
+		//Dos descuentos de la PLATAFORMA Rappi que el reporte nunca restaba y que
+		//en octubre de 2026 valieron $2.441.948 en cuatro semanas. Ninguno de los
+		//dos se sabe exacto antes de que llegue el reporte de Rappi -son decisión
+		//de ellos-, así que van estimados y se recalibran con la conciliación.
+		final double costoCanceladasPlataforma =
+				valorCanceladosPlataformaFinal * (tarifas.porcentajeCanceladasRappi / 100);
+		final double compensaciones = totalPedidosFinal * (tarifas.porcentajeCompensaciones / 100);
 		final double consignacionAproximada = consignacionBruta
 				- totalComisionFinal
 				- totalGastoPagoONLINEFinal
 				- (this.restarTarifaServicio() ? totalTarifaServicioFinal : 0)
 				+ totalDescuentoFinal
+				- costoCanceladasPlataforma
+				- compensaciones
 				- costoCargo
 				- costoCancelados
 				+ efectivoCargoFinal;
@@ -543,6 +612,7 @@ public class ReporteSemanalRappi {
 		ConsignacionEstimadaDAO.guardar(this.nombreProceso(), razTemp, fechaAnterior, fechaActual,
 				consignacionBruta, totalComisionFinal, totalGastoPagoONLINEFinal,
 				(this.restarTarifaServicio() ? totalTarifaServicioFinal : 0), totalDescuentoFinal,
+				costoCanceladasPlataforma, compensaciones,
 				cantidadCargoFinal, costoCargo, canceladosCargoFinal, costoCancelados,
 				efectivoCargoFinal, comisionEfectivoCargo, consignacionAproximada);
 
@@ -570,6 +640,19 @@ public class ReporteSemanalRappi {
 					totalTarifaServicioFinal, false));
 		}
 		html.append(this.filaResumen("+", "Descuentos asumidos por Rappi", totalDescuentoFinal, false));
+		if(canceladosPlataformaFinal > 0)
+		{
+			html.append(this.filaResumen("&minus;", "Pedidos de Rappi cancelados ("
+					+ canceladosPlataformaFinal + " al "
+					+ new DecimalFormat("###.##").format(tarifas.porcentajeCanceladasRappi) + "%)",
+					costoCanceladasPlataforma, false));
+		}
+		if(compensaciones > 0)
+		{
+			html.append(this.filaResumen("&minus;", "Compensaciones a clientes (estimadas, "
+					+ new DecimalFormat("###.##").format(tarifas.porcentajeCompensaciones) + "% de la venta)",
+					compensaciones, false));
+		}
 		html.append(this.filaResumen("&minus;", "Domicilios de Rappi Cargo entregados ("
 				+ cantidadCargoFinal + ", tarifa real + IVA)", costoCargo, false));
 		if(canceladosCargoFinal > 0)
