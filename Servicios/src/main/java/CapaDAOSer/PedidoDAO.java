@@ -2942,36 +2942,37 @@ public class PedidoDAO {
 		 * @param BDRemota
 		 * @return
 		 */
+		/**
+		 * Cuantos domicilios llevo un domiciliario. Lo usa el correo semanal de
+		 * personal temporal, que es con el que SE LES PAGA.
+		 *
+		 * DELEGA EN ConteoDomiciliosDAO, el unico sitio donde se decide que
+		 * cuenta como un domicilio. Lo que hacia antes:
+		 *
+		 *     select count(*) from pedido
+		 *      where fechainsercion between <hora ingreso> and <hora salida>
+		 *        and iddomiciliario = ?
+		 *
+		 * y por que cambio, todo medido del 31-oct al 6-nov de 2026:
+		 *
+		 *   - Cortaba por fechainsercion DENTRO de la jornada, asi que un pedido
+		 *     tomado diez minutos antes de que el marcara ingreso, y que el si
+		 *     llevo, no se le pagaba. Ahora se cuenta por DIA.
+		 *   - Si el pedido se reasigno, el que lo saco perdia el credito: 55
+		 *     pedidos en la semana en las once tiendas, 17 solo en Itagui. Ahora
+		 *     se le cuenta a los dos.
+		 *   - Contaba los pedidos del usuario "Caja", que no es un domiciliario
+		 *     (101 en Manrique en esa semana).
+		 *
+		 * OJO: los parametros siguen llegando con la hora pegada porque asi los
+		 * manda ReporteSemEmplTemporalExcel, pero ConteoDomiciliosDAO las
+		 * recorta. El conteo es POR DIA: a un domiciliario que entro dos veces
+		 * el mismo dia no se le puede preguntar dos veces por ese dia o se
+		 * cuenta doble.
+		 */
 		public static int obtenerPedidosEntregados(String fechaInicial, String fechaFinal, int idDomiciliario, String BDRemota)
 		{
-			ArrayList pedidosProgramados = new ArrayList();
-			ConexionBaseDatos con = new ConexionBaseDatos();
-			Connection con1 = con.obtenerConexionBDTiendaRemota(BDRemota);
-			int cantPedidos = 0;
-			try
-			{
-				Statement stm = con1.createStatement();
-				String consulta = "SELECT COUNT(*) FROM pedido a WHERE a.fechainsercion >= '" + fechaInicial + "' AND " + 
-						"a.fechainsercion <= '" + fechaFinal + "' AND a.iddomiciliario = " + idDomiciliario;
-				ResultSet rs = stm.executeQuery(consulta);
-				String[] resTemp = new String[9];
-				while(rs.next()){
-					cantPedidos = rs.getInt(1);
-				}
-				rs.close();
-				stm.close();
-				con1.close();
-			}catch (Exception e){
-				System.out.println("falle lanzando la consulta de cantidad de pedidos de un domiciliario temporal");
-				try
-				{
-					con1.close();
-				}catch(Exception e1)
-				{
-					System.out.println("falle cerrando la conexion");
-				}
-			}
-			return(cantPedidos);
+			return(ConteoDomiciliosDAO.contar(fechaInicial, fechaFinal, idDomiciliario, BDRemota));
 		}
 		
 
