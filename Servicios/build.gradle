@@ -144,6 +144,44 @@ task fatJarReporteQuin(type: Jar) {
    }
 }
 
+task fatJarReporteSemanalFidelizacionReproceso(type: Jar) {
+	archiveFileName = 'ReporteSemanalFidelizacionReproceso.jar'
+	zip64 = true
+	manifest {
+        attributes 'Implementation-Title': 'Reporte Semanal Fidelizacion Reproceso',
+        	'Class-Path': '.', 
+        	'Main-Class': 'ServiciosSer.ReporteSemanalFidelizacionReproceso'
+        	
+        	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+    from {
+        def cp = configurations.runtimeClasspath.files
+        def esPosRecienCompilado = { f ->
+            f.path.replace(File.separatorChar, (char) 0x2F).contains('ProyectoTiendaAmericanaCliente/build/libs')
+        }
+        (cp.findAll(esPosRecienCompilado) + cp.findAll { !esPosRecienCompilado(it) })
+            .collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+    
+    exclude "META-INF/*.SF"
+    exclude "META-INF/*.DSA"
+    exclude "META-INF/*.RSA"
+    exclude "com/esri/**"
+    exclude "javafx/**"
+    exclude "com/sun/javafx/**"
+    exclude "swing/**"
+    
+    from('src/main/java') {
+      include 'imagenes/*.png'
+      include 'imagenes/*.jpg'
+      include 'icons/*.png'
+      include 'icons/*.jpg'
+      include 'iconos/*.png'
+      include 'iconos/*.jpg'
+   }
+}
+
 task fatJarReporteQuinReproceso(type: Jar) {
 	archiveFileName = 'ReporteQuinEmplTemporalReproceso.jar'
 	zip64 = true
@@ -182,13 +220,13 @@ task fatJarReporteQuinReproceso(type: Jar) {
    }
 }
 
-task fatJarReporteSem(type: Jar) {
-	archiveFileName = 'ReporteSemEmplTemporal.jar'
+task fatJarReporteSemanalPlanFidelizacion(type: Jar) {
+	archiveFileName = 'ReporteSemanalPlanFidelizacion.jar'
 	zip64 = true
 	manifest {
-        attributes 'Implementation-Title': 'Reporte Semanal Personal Temporal',
+        attributes 'Implementation-Title': 'Reporte Semanal Plan Fidelizacion',
         	'Class-Path': '.', 
-        	'Main-Class': 'ServiciosSer.ReporteSemEmplTemporal'
+        	'Main-Class': 'ServiciosSer.ReporteSemanalPlanFidelizacion'
         	
         	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
@@ -220,13 +258,13 @@ task fatJarReporteSem(type: Jar) {
    }
 }
 
-task fatJarReporteSemanalPlanFidelizacion(type: Jar) {
-	archiveFileName = 'ReporteSemanalPlanFidelizacion.jar'
+task fatJarReporteSemanalFidelizacionReproceso(type: Jar) {
+	archiveFileName = 'ReporteSemanalFidelizacionReproceso.jar'
 	zip64 = true
 	manifest {
-        attributes 'Implementation-Title': 'Reporte Semanal Plan Fidelizacion',
+        attributes 'Implementation-Title': 'Reporte Semanal Fidelizacion Reproceso',
         	'Class-Path': '.', 
-        	'Main-Class': 'ServiciosSer.ReporteSemanalPlanFidelizacion'
+        	'Main-Class': 'ServiciosSer.ReporteSemanalFidelizacionReproceso'
         	
         	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
