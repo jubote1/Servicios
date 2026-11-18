@@ -1,166 +1,113 @@
 package ServiciosSer;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.text.DateFormat;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
 import CapaDAOSer.ClienteFidelizacionDAO;
-import CapaDAOSer.EmpleadoTemporalDiaDAO;
-import CapaDAOSer.EmpresaTemporalDAO;
 import CapaDAOSer.GeneralDAO;
-import CapaDAOSer.ParametrosDAO;
-import CapaDAOSer.PedidoDAO;
-import CapaDAOSer.TiempoPedidoDAO;
-import CapaDAOSer.TiendaDAO;
-import CapaDAOSer.UsuarioDAO;
+import ModeloSer.CasoSospechosoFidelizacion;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
-import ModeloSer.DiaFestivo;
-import ModeloSer.EmpleadoBiometria;
-import ModeloSer.EmpleadoTemporalDia;
-import ModeloSer.EmpresaTemporal;
 import ModeloSer.FidelizacionRedencion;
-import ModeloSer.Pedido;
-import ModeloSer.TiempoPedido;
-import ModeloSer.Tienda;
-import ModeloSer.Usuario;
-import capaDAOPOS.DatafonoCierreDAO;
-import capaDAOPOS.DatafonoDAO;
-import capaModeloPOS.DatafonoCierre;
 import utilidadesSer.ControladorEnvioCorreo;
+import utilidadesSer.CorreoPlanFidelizacion;
 
+/**
+ * Reporte Semanal del Plan de Fidelización de Pizza Americana.
+ * 
+ * Genera el informe institucional de afiliaciones, acumulación y redención de puntos,
+ * e incluye el módulo de auditoría de seguridad para detectar los 5 casos más sospechosos
+ * de mal manejo de puntos (personal de nómina, reincidencia diaria, frecuencia excesiva semanal
+ * y auto-acumulación en caja propia).
+ */
 public class ReporteSemanalPlanFidelizacion {
-	
-			
-		
-	public static void main( String[] args )
-	        
-	{
-		//Requerimos primero que todo obtener el rango de fechas con el fin de tener dicho rango para las consultas
-		//Definimos el formato como manejaremos las fechas
-		
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		DecimalFormat formatea = new DecimalFormat("###,###.##");
-		//Traemos la fechaActual en Blanco
+
+	public static void main(final String[] args) {
+		final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		String fechaActual = "";
-		//Traemos la fecha actual en un date
-		Date datFechaActual = new Date();
-		Date datFechaAnterior;
 		String fechaAnterior = "";
-		//Creamos el objeto calendario
-		Calendar calendarioActual = Calendar.getInstance();
-		//Comenzamos a traer la fecha actual como un String
-		fechaActual = dateFormat.format(datFechaActual);
-		try
-		{
-			//Al objeto calendario le fijamos la fecha actual del sitema
-			calendarioActual.setTime(dateFormat.parse(fechaActual));
-			
-		}catch(Exception e)
-		{
-			System.out.println(e.toString());
-		}
-		//Retormanos el d�a de la semana actual segun la fecha del calendario
-		//OJO
-		//int diaActual = 1;
-		int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
-		
-		//Domingo
-		if(diaActual == 1)
-		{
-			calendarioActual.add(Calendar.DAY_OF_YEAR, -6);
-		}
-		else if(diaActual == 2)
-		{
-			calendarioActual.add(Calendar.DAY_OF_YEAR, -7);
-		}
-		else if(diaActual == 3)
-		{
 
-			calendarioActual.add(Calendar.DAY_OF_YEAR, -8);
+		// Soporte para fechas por parámetro (para pruebas o reprocesos manuales)
+		if (args != null && args.length >= 2 && args[0] != null && args[1] != null && !args[0].isEmpty() && !args[1].isEmpty()) {
+			fechaAnterior = args[0].trim();
+			fechaActual = args[1].trim();
+		} else {
+			final Date datFechaActual = new Date();
+			fechaActual = dateFormat.format(datFechaActual);
+			final Calendar calendarioActual = Calendar.getInstance();
+			try {
+				calendarioActual.setTime(dateFormat.parse(fechaActual));
+			} catch (final Exception e) {
+				System.out.println("Error parseando fecha: " + e.toString());
+			}
+
+			final int diaActual = calendarioActual.get(Calendar.DAY_OF_WEEK);
+			// Cálculo de semana (Lunes a Domingo inmediatamente anterior)
+			if (diaActual == 1) { // Domingo
+				calendarioActual.add(Calendar.DAY_OF_YEAR, -6);
+			} else if (diaActual == 2) { // Lunes
+				calendarioActual.add(Calendar.DAY_OF_YEAR, -7);
+			} else if (diaActual == 3) { // Martes
+				calendarioActual.add(Calendar.DAY_OF_YEAR, -8);
+			} else if (diaActual == 4) { // Miércoles
+				calendarioActual.add(Calendar.DAY_OF_YEAR, -2);
+			} else if (diaActual == 5) { // Jueves
+				calendarioActual.add(Calendar.DAY_OF_YEAR, -3);
+			} else if (diaActual == 6) { // Viernes
+				calendarioActual.add(Calendar.DAY_OF_YEAR, -4);
+			} else if (diaActual == 7) { // Sábado
+				calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
+			}
+			fechaAnterior = dateFormat.format(calendarioActual.getTime());
 		}
-		else if(diaActual == 4)
-		{
-			//Si es miercoles se resta dos
-			calendarioActual.add(Calendar.DAY_OF_YEAR, -2);
+
+		System.out.println("Generando Reporte Semanal Plan Fidelización entre: " + fechaAnterior + " y " + fechaActual);
+
+		// 1. Total histórico de personas en el plan de fidelización
+		final int totalPersonasPlan = ClienteFidelizacionDAO.obtenerTotalClienteFidelizacion();
+
+		// 2. Total de personas afiliadas en la última semana
+		final int totalPersonaSemana = ClienteFidelizacionDAO.obtenerTotalClienteAfiliadosTiempo(fechaAnterior, fechaActual);
+
+		// 3. Total de puntos acumulados en la última semana
+		final double totalPuntosAcumulados = ClienteFidelizacionDAO.obtenerTotalPuntosAcumuladosTiempo(fechaAnterior, fechaActual);
+
+		// 4. Total de puntos redimidos en la última semana
+		final double totalPuntosRedimidos = ClienteFidelizacionDAO.obtenerTotalPuntosRedimidosTiempo(fechaAnterior, fechaActual);
+
+		// 5. Análisis y detección de los 5 casos más sospechosos de mal manejo de puntos
+		final ArrayList<CasoSospechosoFidelizacion> casosSospechosos = ClienteFidelizacionDAO.obtenerCasosSospechosos(fechaAnterior, fechaActual, 5);
+
+		// 6. Detalle de redenciones efectuadas en la semana
+		final ArrayList<FidelizacionRedencion> redenciones = ClienteFidelizacionDAO.obtenerRedencionesFecha(fechaAnterior, fechaActual);
+
+		// 7. Construcción del cuerpo de correo con formato institucional
+		final String htmlMensaje = CorreoPlanFidelizacion.armarReporte(
+				fechaAnterior,
+				fechaActual,
+				totalPersonasPlan,
+				totalPersonaSemana,
+				totalPuntosAcumulados,
+				totalPuntosRedimidos,
+				casosSospechosos,
+				redenciones);
+
+		// 8. Envío del correo electrónico a la lista de distribución
+		try {
+			final ArrayList correos = GeneralDAO.obtenerCorreosParametro("FIDELIZACION");
+			final Correo correo = new Correo();
+			final CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
+			correo.setAsunto("REPORTE SEMANAL PLAN DE FIDELIZACION ENTRE " + fechaAnterior + " Y " + fechaActual);
+			correo.setContrasena(infoCorreo.getClaveCorreo());
+			correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
+			correo.setMensaje(htmlMensaje);
+			final ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
+			contro.enviarCorreoHTML();
+			System.out.println("Reporte Semanal Plan Fidelización enviado con éxito a lista FIDELIZACION.");
+		} catch (final Exception eEnvio) {
+			System.out.println("Error enviando reporte fidelización: " + eEnvio.toString());
 		}
-		else if(diaActual == 5)
-		{
-			//Si es jueves se resta tres
-			calendarioActual.add(Calendar.DAY_OF_YEAR, -3);
-		}
-		else if(diaActual == 6)
-		{
-			//Si es viernes se resta cuatro
-			calendarioActual.add(Calendar.DAY_OF_YEAR, -4);
-		}
-		else if(diaActual == 7)
-		{
-			//Si es sabado se resta cinco
-			calendarioActual.add(Calendar.DAY_OF_YEAR, -5);
-		}
-		//Llevamos a un string la fecha anterior para el c�lculo de la venta
-		datFechaAnterior = calendarioActual.getTime();
-		fechaAnterior = dateFormat.format(datFechaAnterior);
-		
-		
-		String respuesta = "";
-		
-		//TOTAL DE PERSONAS EN EL PLAN DE FIDELIZACIÓN
-		int totalPersonasPlan = ClienteFidelizacionDAO.obtenerTotalClienteFidelizacion();
-		respuesta = respuesta + "<table border='2'> <tr><td width='300'>TOTAL CLIENTES EN PROGRAMA</td></tr>";
-		respuesta = respuesta + "<tr>"
-				+  "<td><strong>" + totalPersonasPlan +"</strong></td></tr></table> <br/>";
-		
-		//TOTAL DE PERSONAS AFILIADAS EN EL PLAN DE FIDELIZACION LA ULTIMA SEMANA
-		int totalPersonaSemana = ClienteFidelizacionDAO.obtenerTotalClienteAfiliadosTiempo(fechaAnterior, fechaActual);
-		respuesta = respuesta + "<table border='2'> <tr><td width='300' >TOTAL CLIENTES VINCULADOS LA ÚLTIMA SEMANA</td></tr>";
-		respuesta = respuesta + "<tr>"
-				+  "<td><strong>" + totalPersonaSemana +"</strong></td></tr></table> <br/>";
-		
-		//TOTAL DE PUNTOS ACUMULADOS LA ÚLTIMA SEMANA EN EL PLAN DE FIDELIZACION
-		double totalPuntosAcumulados = ClienteFidelizacionDAO.obtenerTotalPuntosAcumuladosTiempo(fechaAnterior, fechaActual);
-		respuesta = respuesta + "<table border='2'> <tr><td width='300'>TOTAL PUNTOS ACUMULADOS LA ÚLTIMA SEMANA</td></tr>";
-		respuesta = respuesta + "<tr>"
-				+  "<td><strong>" + totalPuntosAcumulados +"</strong></td></tr></table> <br/>";
-		
-		//TOTAL PUNTOS REDIMIDOS LA ÚLTIMA SEMANA EN EL PLAN DE FIDELIZACION
-		double totalPuntosRedimidos = ClienteFidelizacionDAO.obtenerTotalPuntosRedimidosTiempo(fechaAnterior, fechaActual);
-		respuesta = respuesta + "<table border='2'> <tr><td width='300'>TOTAL PUNTOS REDIMIDOS LA ÚLTIMA SEMANA</td></tr>";
-		respuesta = respuesta + "<tr>"
-				+  "<td><strong>" + totalPuntosRedimidos +"</strong></td></tr></table> <br/>";
-		
-		//TRANSACCIONES DE FIDELIZACION
-		ArrayList<FidelizacionRedencion> redenciones = ClienteFidelizacionDAO.obtenerRedencionesFecha(fechaAnterior, fechaActual);
-		respuesta = respuesta + "<table border='2'> <tr><td colspan='3'>REDENCIONES DE LA SEMANA</td></tr>";
-		respuesta = respuesta + "<tr>"
-				+  "<th width='170'><strong>CORREO</strong></td>"
-				+  "<th width='60'><strong>FECHA</strong></td>"
-				+  "<th width='70'><strong>PUNTOS REDIMIDOS</strong></td></tr>";
-		for(FidelizacionRedencion redencionTemp : redenciones)
-		{
-			respuesta = respuesta + "<tr>"
-					+  "<td><strong>" + redencionTemp.getCorreo() +"</strong></td><td>" + redencionTemp.getFechaRedencion() + "</td><td>" + redencionTemp.getPuntosRedimidos()  +"</td></tr>";
-		}
-		respuesta = respuesta + "</table> <br/>";
-		//Recuperar la lista de distribuci�n para este correo
-		ArrayList correos = GeneralDAO.obtenerCorreosParametro("FIDELIZACION");
-		Correo correo = new Correo();
-		CorreoElectronico infoCorreo = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES", "CLAVECORREOREPORTE");
-		correo.setAsunto("REPORTE SEMANAL PLAN DE FIDELIZACION ENTRE " + fechaAnterior + " Y " + fechaActual);
-		correo.setContrasena(infoCorreo.getClaveCorreo());
-		correo.setUsuarioCorreo(infoCorreo.getCuentaCorreo());
-		correo.setMensaje("A continuacion el estado actual del plan de fidelizacion: \n " + respuesta);
-		ControladorEnvioCorreo contro = new ControladorEnvioCorreo(correo, correos);
-		contro.enviarCorreoHTML();
-		
 	}
-	
 }
-
