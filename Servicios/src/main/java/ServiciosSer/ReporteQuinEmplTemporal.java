@@ -65,7 +65,7 @@ public class ReporteQuinEmplTemporal {
 		} else if (diaActual > 15 && diaActual <= 31) {
 			diaActual = 1;
 		}
-		fechaAnterior = anoActual + "-" + mesActual + "-" + diaActual;
+		fechaAnterior = String.format("%04d-%02d-%02d", anoActual, mesActual, diaActual);
 
 		final ArrayList<Tienda> tiendas = TiendaDAO.obtenerTiendasLocal();
 		final ArrayList<EmpresaTemporal> empresasTemp = EmpresaTemporalDAO.retornarEmpresasTemporales();

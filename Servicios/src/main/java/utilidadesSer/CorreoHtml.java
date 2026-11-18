@@ -76,20 +76,24 @@ public class CorreoHtml {
 		return sb.toString();
 	}
 
-	public static String abrir(final String titulo, final String subtitulo) {
+	public static String abrir(final String titulo, final String subtitulo, final int ancho) {
 		final StringBuilder sb = new StringBuilder();
-		sb.append("<div style=\"background:#f3f4f7;padding:20px 0;font-family:'Segoe UI',Arial,sans-serif;\">");
-		sb.append("<table role=\"presentation\" width=\"640\" align=\"center\" cellpadding=\"0\" cellspacing=\"0\""
-				+ " style=\"width:640px;max-width:100%;background:#ffffff;border-radius:10px;\">");
-		sb.append("<tr><td style=\"background:").append(AZUL).append(";padding:22px 26px;border-bottom:5px solid ")
-				.append(AMARILLO).append(";border-radius:10px 10px 0 0;\">");
-		sb.append("<div style=\"color:#ffffff;font-size:20px;font-weight:bold;\">").append(h(titulo))
+		sb.append("<div style=\"background:#f3f4f7;padding:24px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;\">");
+		sb.append("<table role=\"presentation\" width=\"").append(ancho).append("\" align=\"center\" cellpadding=\"0\" cellspacing=\"0\""
+				+ " style=\"width:").append(ancho).append("px;max-width:96%;background:#ffffff;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.06);overflow:hidden;\">");
+		sb.append("<tr><td style=\"background:").append(AZUL).append(";padding:22px 28px;border-bottom:5px solid ")
+				.append(AMARILLO).append(";\">");
+		sb.append("<div style=\"color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:-0.2px;\">").append(h(titulo))
 				.append("</div>");
-		sb.append("<div style=\"color:#c9d3ee;font-size:13px;margin-top:4px;\">").append(h(subtitulo))
+		sb.append("<div style=\"color:#cbd5e1;font-size:13px;margin-top:6px;font-weight:500;\">").append(h(subtitulo))
 				.append("</div>");
 		sb.append("</td></tr>");
-		sb.append("<tr><td style=\"padding:22px 26px;color:#1c1f24;font-size:14px;\">");
+		sb.append("<tr><td style=\"padding:24px 28px;color:#1c1f24;font-size:14px;\">");
 		return sb.toString();
+	}
+
+	public static String abrir(final String titulo, final String subtitulo) {
+		return abrir(titulo, subtitulo, 640);
 	}
 
 	public static String cerrar(final String pie) {

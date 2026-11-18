@@ -106,6 +106,44 @@ task fatJar(type: Jar) {
     
 }
 
+task fatJarReporteQuin(type: Jar) {
+	archiveFileName = 'ReporteQuinEmplTemporal.jar'
+	zip64 = true
+	manifest {
+        attributes 'Implementation-Title': 'Reporte Quincenal Personal Temporal',
+        	'Class-Path': '.', 
+        	'Main-Class': 'ServiciosSer.ReporteQuinEmplTemporal'
+        	
+        	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+    from {
+        def cp = configurations.runtimeClasspath.files
+        def esPosRecienCompilado = { f ->
+            f.path.replace(File.separatorChar, (char) 0x2F).contains('ProyectoTiendaAmericanaCliente/build/libs')
+        }
+        (cp.findAll(esPosRecienCompilado) + cp.findAll { !esPosRecienCompilado(it) })
+            .collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+    
+    exclude "META-INF/*.SF"
+    exclude "META-INF/*.DSA"
+    exclude "META-INF/*.RSA"
+    exclude "com/esri/**"
+    exclude "javafx/**"
+    exclude "com/sun/javafx/**"
+    exclude "swing/**"
+    
+    from('src/main/java') {
+      include 'imagenes/*.png'
+      include 'imagenes/*.jpg'
+      include 'icons/*.png'
+      include 'icons/*.jpg'
+      include 'iconos/*.png'
+      include 'iconos/*.jpg'
+   }
+}
+
 dependencies {
    implementation  'log4j:log4j:1.2.16'
    implementation fileTree(dir: 'libs', include: '*.jar')
