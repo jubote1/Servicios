@@ -1,4 +1,5 @@
 # Salidas de compilacion: nunca van al repositorio.
+.gradle/
 Servicios/build/
 Servicios/bin/
 Servicios/.gradle/
