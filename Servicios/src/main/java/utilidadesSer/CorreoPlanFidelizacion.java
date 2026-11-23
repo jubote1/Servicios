@@ -241,6 +241,11 @@ public final class CorreoPlanFidelizacion {
 			h.append("<div><strong>Tiendas: </strong>").append(CorreoHtml.h(c.getTiendas())).append("</div>");
 			h.append("<div style=\"margin-top:3px;color:#64748b;\"><strong>Cajeros: </strong>")
 					.append(CorreoHtml.h(c.getCajeros())).append("</div>");
+			if (c.getPedidos() != null && !c.getPedidos().isEmpty()) {
+				h.append("<div style=\"margin-top:5px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 6px;color:#1e40af;font-size:11px;font-weight:600;\">");
+				h.append("📦 <strong>Pedidos: </strong>#").append(CorreoHtml.h(c.getPedidos().replace(", ", ", #")));
+				h.append("</div>");
+			}
 			h.append("</td>");
 
 			h.append("</tr>");
@@ -303,11 +308,12 @@ public final class CorreoPlanFidelizacion {
 		h.append("<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"font-size:12px;border-collapse:collapse;\">");
 		h.append("<thead>");
 		h.append("<tr style=\"background:#f1f5f9;border-bottom:2px solid #cbd5e1;color:#334155;font-size:11px;text-transform:uppercase;\">");
-		h.append("<th style=\"padding:8px 10px;text-align:left;min-width:180px;\">Cliente</th>");
-		h.append("<th style=\"padding:8px 10px;text-align:left;width:120px;\">Tienda</th>");
-		h.append("<th style=\"padding:8px 10px;text-align:center;width:130px;\">Fecha y Hora</th>");
+		h.append("<th style=\"padding:8px 10px;text-align:left;min-width:170px;\">Cliente</th>");
+		h.append("<th style=\"padding:8px 10px;text-align:left;width:110px;\">Tienda</th>");
+		h.append("<th style=\"padding:8px 10px;text-align:center;width:95px;\"># Pedido</th>");
+		h.append("<th style=\"padding:8px 10px;text-align:center;width:125px;\">Fecha y Hora</th>");
 		h.append("<th style=\"padding:8px 10px;text-align:right;width:110px;\">Puntos Redimidos</th>");
-		h.append("<th style=\"padding:8px 10px;text-align:center;width:110px;\">Auditoría</th>");
+		h.append("<th style=\"padding:8px 10px;text-align:center;width:90px;\">Auditoría</th>");
 		h.append("</tr>");
 		h.append("</thead>");
 		h.append("<tbody>");
@@ -329,6 +335,11 @@ public final class CorreoPlanFidelizacion {
 			// Tienda
 			final String tiendaTxt = (r.getTienda() != null && !r.getTienda().isEmpty()) ? r.getTienda() : "-";
 			h.append("<td style=\"padding:8px 10px;text-align:left;color:#475569;\">").append(CorreoHtml.h(tiendaTxt)).append("</td>");
+
+			// Pedido Tienda
+			final String pedTxt = (r.getIdpedidotienda() > 0) ? ("#" + r.getIdpedidotienda()) : "-";
+			h.append("<td style=\"padding:8px 10px;text-align:center;font-weight:bold;color:#0369a1;\">")
+					.append(CorreoHtml.h(pedTxt)).append("</td>");
 
 			// Fecha
 			h.append("<td style=\"padding:8px 10px;text-align:center;color:#64748b;font-size:11px;\">")
@@ -355,6 +366,7 @@ public final class CorreoPlanFidelizacion {
 		h.append("<tr style=\"background:#fff8e1;border-top:2px solid ").append(CorreoHtml.AZUL).append(";font-weight:bold;\">");
 		h.append("<td style=\"padding:10px 10px;color:").append(CorreoHtml.AZUL).append(";\">TOTAL GENERAL REDENCIONES</td>");
 		h.append("<td style=\"padding:10px 10px;color:#64748b;\">").append(totalRedenciones).append(" canjes</td>");
+		h.append("<td style=\"padding:10px 10px;text-align:center;color:#94a3b8;\">-</td>");
 		h.append("<td style=\"padding:10px 10px;text-align:center;color:#94a3b8;\">-</td>");
 		h.append("<td style=\"padding:10px 10px;text-align:right;color:#d97706;font-size:14px;\">")
 				.append(CorreoHtml.decimales(totalPuntosRedimidos)).append(" pts</td>");

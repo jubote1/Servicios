@@ -27,6 +27,7 @@ public class CasoSospechosoFidelizacion {
 	private double totalVenta = 0.0;
 	private String tiendas = "";
 	private String cajeros = "";
+	private String pedidos = "";
 	private int autoCajeroCount = 0;
 	private double puntosRedimidosSemana = 0.0;
 	private String nivelRiesgo = "MEDIO";
@@ -121,6 +122,14 @@ public class CasoSospechosoFidelizacion {
 
 	public void setCajeros(final String cajeros) {
 		this.cajeros = cajeros == null ? "" : cajeros.trim();
+	}
+
+	public String getPedidos() {
+		return pedidos;
+	}
+
+	public void setPedidos(final String pedidos) {
+		this.pedidos = pedidos == null ? "" : pedidos.trim();
 	}
 
 	public int getAutoCajeroCount() {

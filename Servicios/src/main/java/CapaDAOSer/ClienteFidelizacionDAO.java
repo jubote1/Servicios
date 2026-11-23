@@ -233,6 +233,9 @@ public class ClienteFidelizacionDAO {
 
 				FidelizacionRedencion redencionTemp = new FidelizacionRedencion(correo, fechaRedencion, puntosRedimidos, nombreTienda, usuario, estado);
 				try {
+					redencionTemp.setIdpedidotienda(rs.getInt("idpedidotienda"));
+				} catch (Exception ignored) {}
+				try {
 					if (rs.getInt("es_empleado") == 1) {
 						redencionTemp.setEsEmpleado(true);
 						redencionTemp.setEmpleadoNombre(rs.getString("empleado_nombre"));
@@ -292,6 +295,7 @@ public class ClienteFidelizacionDAO {
 					+ " SUM(ft.valor_neto) AS total_venta, "
 					+ " GROUP_CONCAT(DISTINCT t.nombre ORDER BY t.nombre SEPARATOR ', ') AS tiendas, "
 					+ " GROUP_CONCAT(DISTINCT ft.usuario ORDER BY ft.usuario SEPARATOR ', ') AS cajeros, "
+					+ " GROUP_CONCAT(DISTINCT ft.idpedidotienda ORDER BY ft.idpedidotienda SEPARATOR ', ') AS pedidos, "
 					+ " SUM(IF(ft.usuario = emp.nombre OR ft.usuario = CAST(emp.id AS CHAR), 1, 0)) AS auto_cajero_count, "
 					+ " IFNULL(red.puntos_redimidos_semana, 0) AS puntos_redimidos_semana "
 					+ "FROM fidelizacion_transaccion ft "
@@ -348,6 +352,7 @@ public class ClienteFidelizacionDAO {
 						+ " SUM(ft.valor_neto) AS total_venta, "
 						+ " GROUP_CONCAT(DISTINCT t.nombre ORDER BY t.nombre SEPARATOR ', ') AS tiendas, "
 						+ " GROUP_CONCAT(DISTINCT ft.usuario ORDER BY ft.usuario SEPARATOR ', ') AS cajeros, "
+						+ " GROUP_CONCAT(DISTINCT ft.idpedidotienda ORDER BY ft.idpedidotienda SEPARATOR ', ') AS pedidos, "
 						+ " 0 AS auto_cajero_count, "
 						+ " IFNULL(red.puntos_redimidos_semana, 0) AS puntos_redimidos_semana "
 						+ "FROM fidelizacion_transaccion ft "
@@ -393,6 +398,9 @@ public class ClienteFidelizacionDAO {
 				caso.setTotalVenta(rs.getDouble("total_venta"));
 				caso.setTiendas(rs.getString("tiendas"));
 				caso.setCajeros(rs.getString("cajeros"));
+				try {
+					caso.setPedidos(rs.getString("pedidos"));
+				} catch (Exception ignored) {}
 				caso.setAutoCajeroCount(rs.getInt("auto_cajero_count"));
 				caso.setPuntosRedimidosSemana(rs.getDouble("puntos_redimidos_semana"));
 

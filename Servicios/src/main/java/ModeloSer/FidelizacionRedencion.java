@@ -8,6 +8,7 @@ public class FidelizacionRedencion {
 	private String tienda = "";
 	private String usuario = "";
 	private String estado = "";
+	private int idpedidotienda = 0;
 	private boolean esEmpleado = false;
 	private String empleadoNombre = "";
 
@@ -73,6 +74,14 @@ public class FidelizacionRedencion {
 
 	public void setEmpleadoNombre(final String empleadoNombre) {
 		this.empleadoNombre = empleadoNombre == null ? "" : empleadoNombre;
+	}
+
+	public int getIdpedidotienda() {
+		return idpedidotienda;
+	}
+
+	public void setIdpedidotienda(final int idpedidotienda) {
+		this.idpedidotienda = idpedidotienda;
 	}
 
 	public FidelizacionRedencion(final String correo, final String fechaRedencion, final double puntosRedimidos) {
