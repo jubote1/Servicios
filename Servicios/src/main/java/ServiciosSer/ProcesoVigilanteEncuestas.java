@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import CapaDAOSer.GeneralDAO;
+import capaDAOCC.PremioSospechosoDAO;
 import ModeloSer.Correo;
 import ModeloSer.CorreoElectronico;
 import utilidadesSer.ControladorEnvioCorreo;
@@ -65,7 +66,14 @@ public class ProcesoVigilanteEncuestas {
 		String dia;
 		int encuestas;
 		int minutos;
-		int premiosRetenidos;
+		int premiosMarcados;
+
+		/** Lo que va a leer quien dispersa, en la pantalla, al lado del premio. */
+		String motivo() {
+			final String fuente = REGLA_TELEFONO.equals(regla) ? "el mismo telefono" : "el mismo equipo";
+			return encuestas + " encuestas desde " + fuente + " en " + tienda + " el " + dia
+					+ (minutos > 0 ? ", en " + minutos + " minutos" : ", en pocos minutos");
+		}
 	}
 
 	public static void main(final String[] args) {
@@ -84,10 +92,8 @@ public class ProcesoVigilanteEncuestas {
 				dias = parametroNumerico(con, "VIGILANTEENCUESTA_DIAS", 2);
 			}
 			final int umbral = parametroNumerico(con, "VIGILANTEENCUESTA_UMBRAL", 5);
-			final boolean retiene = !"N".equalsIgnoreCase(parametroTexto(con, "VIGILANTEENCUESTA_RETIENE", "S"));
 
-			System.out.println("Vigilante de encuestas: ultimos " + dias + " dias, umbral " + umbral
-					+ ", retiene premios: " + (retiene ? "SI" : "NO"));
+			System.out.println("Vigilante de encuestas: ultimos " + dias + " dias, umbral " + umbral);
 
 			final List<Grupo> grupos = new ArrayList<Grupo>();
 			grupos.addAll(buscarPorTelefono(con, dias, umbral));
@@ -98,9 +104,9 @@ public class ProcesoVigilanteEncuestas {
 				if (yaAvisado(con, g)) {
 					continue;
 				}
-				if (retiene) {
-					g.premiosRetenidos = retenerPremios(con, g);
-				}
+				// Red de seguridad: el premio ya se marco al nacer, en el giro. Esto
+				// recoge lo que se le haya escapado y es lo que manda el aviso.
+				g.premiosMarcados = marcarPremios(con, g);
 				anotarAviso(con, g);
 				nuevos.add(g);
 			}
@@ -111,10 +117,11 @@ public class ProcesoVigilanteEncuestas {
 			}
 			int premios = 0;
 			for (final Grupo g : nuevos) {
-				premios += g.premiosRetenidos;
+				premios += g.premiosMarcados;
 				System.out.println("  " + g.regla + " " + g.llave + " | tienda " + g.tienda + " | " + g.dia
-						+ " | " + g.encuestas + " encuestas en " + g.minutos + " min | premios retenidos: "
-						+ g.premiosRetenidos);
+						+ " | " + g.encuestas + " encuestas en " + g.minutos + " min | premios marcados: "
+						+ g.premiosMarcados
+);
 			}
 			enviarCorreo(nuevos, premios, umbral, dias);
 		} catch (final Exception e) {
@@ -217,38 +224,27 @@ public class ProcesoVigilanteEncuestas {
 			ps.setString(4, g.dia);
 			ps.setInt(5, g.encuestas);
 			ps.setInt(6, g.minutos);
-			ps.setInt(7, g.premiosRetenidos);
+			ps.setInt(7, g.premiosMarcados);
 			ps.executeUpdate();
 		}
 	}
 
 	/**
-	 * Marca con -2 los premios de ruleta pendientes de los pedidos de ese grupo.
-	 * Solo toca los que estan en 0 -o sea pendientes- y solo los que de verdad son
-	 * premio, nunca un giro perdedor: de los 315 pedidos del caso real, 294 no
-	 * habian ganado nada y marcarlos no tendria sentido.
+	 * Deja la marca de sospecha en los premios del grupo, SIN bloquearlos.
+	 *
+	 * Esto es lo que se hace siempre. El premio sigue pendiente y dispersable, y
+	 * quien oprime el boton ve el motivo al lado y decide: lo entrega o lo
+	 * reporta. Se decidio asi -y no reteniendo- porque la dispersion ya es
+	 * manual, o sea que la marca alcanza a un humano antes de que se mueva la
+	 * plata, y porque hay casos legitimos que caen en la regla: una familia, un
+	 * pedido corregido varias veces. Retener le quitaria la decision a esa
+	 * persona y obligaria a meterse a la base para soltarlo.
+	 *
+	 * Solo marca giros que de verdad ganaron: de los 315 pedidos del caso real,
+	 * 294 no habian ganado nada.
 	 */
-	private static int retenerPremios(final Connection con, final Grupo g) throws Exception {
-		final String sub = REGLA_TELEFONO.equals(g.regla)
-				? " and exists (select 1 from pizzaamericana.encuesta_servicio e"
-						+ "   join pizzaamericana.cliente_servicio c"
-						+ "     on c.idpedido = e.idpedido and c.idtienda = e.idtienda"
-						+ "  where e.idtienda = r.idtienda and e.idpedido = r.idpedido"
-						+ "    and c.telefono = ? and date(e.fecha_creacion) = ?)"
-				: " and exists (select 1 from pizzaamericana.encuesta_origen o"
-						+ "  where o.idtienda = r.idtienda and o.idpedido = r.idpedido"
-						+ "    and concat(ifnull(o.ip,'?'),' / ',left(ifnull(o.navegador,'?'),60)) = ?"
-						+ "    and date(o.fecha) = ?)";
-		final String sql = "update pizzaamericana.resultado_ruleta r"
-				+ " join pizzaamericana.ruleta_oferta ro on ro.idopcion = r.idopcion and ro.activo = 'S'"
-				+ "  set r.idofertacliente = -2"
-				+ " where r.idtienda = ? and r.idofertacliente = 0" + sub;
-		try (PreparedStatement ps = con.prepareStatement(sql)) {
-			ps.setInt(1, g.idTienda);
-			ps.setString(2, g.llave);
-			ps.setString(3, g.dia);
-			return ps.executeUpdate();
-		}
+	private static int marcarPremios(final Connection con, final Grupo g) throws Exception {
+		return PremioSospechosoDAO.marcarGrupo(con, g.regla, g.llave, g.idTienda, g.dia, g.motivo());
 	}
 
 	private static void enviarCorreo(final List<Grupo> grupos, final int premios, final int umbral,
@@ -260,36 +256,36 @@ public class ProcesoVigilanteEncuestas {
 			h.append("<p style=\"margin-top:0\">Encuestas llenadas en masa en los ultimos ").append(dias)
 					.append(" dias. La regla es: <b>").append(umbral)
 					.append(" o mas encuestas de la misma fuente, en una tienda, en un dia</b>.</p>");
-			h.append("<p><b>Premios de ruleta retenidos: ").append(premios)
-					.append("</b>. Se retiene el premio, no la encuesta: ")
-					.append("la encuesta se conserva y el premio no se entrega hasta que alguien lo revise ")
-					.append("en Administrador &gt; Dispersion Premios Ruleta, donde aparece como ")
-					.append("<b>BLOQUEADO POR REVISAR</b>.</p>");
+			h.append("<p><b>Premios marcados como sospechosos: ").append(premios)
+					.append("</b>. NO estan bloqueados: siguen pendientes y quien dispersa decide ")
+					.append("si los entrega o si los reporta. En Administrador &gt; Dispersion Premios ")
+					.append("Ruleta aparecen como ")
+					.append("<b>SOSPECHOSO</b>, con el motivo al lado.</p>");
 			h.append("<table cellpadding=\"6\" cellspacing=\"0\" border=\"1\" ")
 					.append("style=\"border-collapse:collapse;font-size:13px\">");
 			h.append("<tr style=\"background:#FDC806\"><th>Regla</th><th>Fuente</th><th>Nombre</th>")
 					.append("<th>Punto de venta</th><th>Dia</th><th>Encuestas</th><th>En minutos</th>")
-					.append("<th>Premios retenidos</th></tr>");
+					.append("<th>Premios marcados</th></tr>");
 			for (final Grupo g : grupos) {
 				h.append("<tr><td>").append(g.regla).append("</td><td>").append(escapar(g.llave))
 						.append("</td><td>").append(escapar(g.nombre)).append("</td><td>")
 						.append(escapar(g.tienda)).append("</td><td>").append(g.dia).append("</td>")
 						.append("<td align=\"center\"><b>").append(g.encuestas).append("</b></td>")
 						.append("<td align=\"center\">").append(g.minutos).append("</td>")
-						.append("<td align=\"center\">").append(g.premiosRetenidos).append("</td></tr>");
+						.append("<td align=\"center\">").append(g.premiosMarcados).append("</td></tr>");
 			}
 			h.append("</table>");
 			h.append("<p style=\"font-size:12px;color:#666\">Esto es un aviso, no una condena: ")
 					.append("puede haber casos legitimos -una familia, un pedido corregido varias veces-. ")
-					.append("Por eso se retiene el premio y no la encuesta, y soltarlo es volver a poner el ")
-					.append("registro en pendiente.</p>");
+					.append("Por eso se MARCA el premio y no se bloquea: la decision sigue siendo de ")
+					.append("quien dispersa.</p>");
 			h.append("</div>");
 
 			final Correo correo = new Correo();
 			final CorreoElectronico info = ControladorEnvioCorreo.recuperarCorreo("CUENTACORREOREPORTES",
 					"CLAVECORREOREPORTE");
 			correo.setAsunto("POSIBLE FRAUDE EN ENCUESTAS - " + grupos.size() + " caso(s), " + premios
-					+ " premio(s) retenido(s)");
+					+ " premio(s) marcado(s)");
 			correo.setContrasena(info.getClaveCorreo());
 			correo.setUsuarioCorreo(info.getCuentaCorreo());
 			correo.setMensaje(h.toString());
@@ -315,21 +311,6 @@ public class ProcesoVigilanteEncuestas {
 				final int v = rs.getInt(1);
 				if (v > 0) {
 					return v;
-				}
-			}
-		} catch (final Exception ignored) {
-		}
-		return porDefecto;
-	}
-
-	private static String parametroTexto(final Connection con, final String nombre, final String porDefecto) {
-		try (Statement st = con.createStatement();
-				ResultSet rs = st.executeQuery("select valortexto from general.parametros"
-						+ " where valorparametro = '" + nombre + "'")) {
-			if (rs.next()) {
-				final String v = rs.getString(1);
-				if (v != null && !v.trim().isEmpty()) {
-					return v.trim();
 				}
 			}
 		} catch (final Exception ignored) {
