@@ -111,8 +111,18 @@ public class ProcesoVigilanteEncuestas {
 				nuevos.add(g);
 			}
 
+			// La regla de canal no va por grupos sino pedido por pedido, asi que se
+			// barre aparte. Alcanza los premios que nacieron antes de que esto
+			// existiera y recoge lo que se le escape al camino en vivo.
+			final int porCanal = PremioSospechosoDAO.marcarCanalPendientes(con, dias);
+			if (porCanal > 0) {
+				System.out.println("  CANAL | " + porCanal
+						+ " premio(s) de pedidos del central contestados como punto de venta");
+			}
+
 			if (nuevos.isEmpty()) {
-				System.out.println("Vigilante de encuestas: nada nuevo que avisar.");
+				System.out.println("Vigilante de encuestas: nada nuevo que avisar"
+						+ (porCanal > 0 ? " (fuera de los " + porCanal + " marcados por canal)." : "."));
 				return;
 			}
 			int premios = 0;
